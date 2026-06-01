@@ -35,7 +35,7 @@ export default function MarketPanel({ player, market }: Props) {
               <th className="text-right py-1 pr-2">Stock</th>
               <th className="text-right py-1 pr-2">Own</th>
               <th className="text-right py-1 pr-2">P/L</th>
-              <th className="text-right py-1 pr-2 w-12">Qty</th>
+              <th className="text-right py-1 pr-2">Qty</th>
               <th className="py-1 pl-1"></th>
             </tr>
           </thead>
@@ -73,15 +73,21 @@ export default function MarketPanel({ player, market }: Props) {
                       </span>
                     ) : <span className="text-pip-green-dim">—</span>}
                   </td>
+                  {/* [−] qty [+] stepper */}
                   <td className="py-1 pr-1">
-                    <input
-                      type="number"
-                      min={1}
-                      max={Math.max(stock, owned)}
-                      value={q}
-                      onChange={e => setQty(prev => ({ ...prev, [chemId]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                      className="pip-input w-12 text-center text-xs py-0"
-                    />
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        className="pip-btn text-xs px-1.5 py-0 leading-4"
+                        onClick={() => setQty(prev => ({ ...prev, [chemId]: Math.max(1, q - 1) }))}
+                        tabIndex={-1}
+                      >−</button>
+                      <span className="text-pip-green font-display text-sm w-5 text-center select-none">{q}</span>
+                      <button
+                        className="pip-btn text-xs px-1.5 py-0 leading-4"
+                        onClick={() => setQty(prev => ({ ...prev, [chemId]: q + 1 }))}
+                        tabIndex={-1}
+                      >+</button>
+                    </div>
                   </td>
                   <td className="py-1 pl-1">
                     <div className="flex gap-1">
