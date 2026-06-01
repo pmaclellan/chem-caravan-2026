@@ -7,11 +7,11 @@
 export type FlashOverlayVariant = 'buy' | 'sell' | 'heal' | 'damage' | 'gain'
 
 const VARIANT_COLOR: Record<FlashOverlayVariant, string> = {
-  buy:    'rgba(57,  255, 20,  0.16)',
-  heal:   'rgba(57,  255, 20,  0.16)',
-  sell:   'rgba(255, 51,  51,  0.18)',
-  damage: 'rgba(255, 51,  51,  0.20)',
-  gain:   'rgba(255, 170, 0,   0.14)',
+  buy:    'rgba(74,  112, 24,  0.22)',   // olive green wash — gaining stock
+  heal:   'rgba(74,  112, 24,  0.22)',
+  sell:   'rgba(180, 60,  40,  0.22)',   // rust red wash — losing stock
+  damage: 'rgba(180, 40,  40,  0.28)',   // stronger rust — taking a hit
+  gain:   'rgba(196, 100, 26,  0.22)',   // amber wash — caps/reward
 }
 
 interface Props {
