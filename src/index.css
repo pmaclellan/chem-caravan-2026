@@ -95,3 +95,31 @@
   .log-profit  { @apply text-pip-amber; }
   .log-system  { @apply text-pip-green-dim; }
 }
+
+/* ── Transaction flash animations ─────────────────────────────────────── */
+
+/* Inventory row overlay: fades from colored → transparent */
+@keyframes pip-flash-overlay {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Caps number: amber glow blooms then decays */
+@keyframes pip-flash-caps {
+  0%   {
+    color: #ffd866;
+    text-shadow: 0 0 14px rgba(255,200,0,0.85), 0 0 4px rgba(255,170,0,0.5);
+  }
+  55%  {
+    color: #ffbb22;
+    text-shadow: 0 0 6px rgba(255,170,0,0.35);
+  }
+  100% {
+    color: #ffaa00;
+    text-shadow: none;
+  }
+}
+
+.pip-flash-caps {
+  animation: pip-flash-caps 480ms ease-out forwards;
+}

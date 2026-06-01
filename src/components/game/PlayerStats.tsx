@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { PlayerState } from '../../types/game'
 
 interface Props { player: PlayerState; turn: number; maxTurns: number }
@@ -6,6 +7,17 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
   const hpPct = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
   const hpColor = hpPct > 60 ? 'bg-pip-green' : hpPct > 30 ? 'bg-pip-amber' : 'bg-pip-red'
   const debtColor = player.debt > 0 ? (player.ageOfDebt >= 10 ? 'text-pip-red' : player.ageOfDebt >= 5 ? 'text-pip-amber' : 'text-pip-green') : 'text-pip-green-dim'
+
+  // Caps flash — key increments on each change, remounting the element and restarting animation
+  const [capsFlashKey, setCapsFlashKey] = useState(0)
+  const prevCapsRef = useRef(player.caps)
+
+  useEffect(() => {
+    if (prevCapsRef.current !== player.caps) {
+      setCapsFlashKey(k => k + 1)
+    }
+    prevCapsRef.current = player.caps
+  }, [player.caps])
 
   return (
     <div className="pip-panel flex flex-col gap-3 h-full">
@@ -26,7 +38,13 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
 
       <div className="border-t border-pip-border pt-2">
         <div className="pip-label">Caps on Hand</div>
-        <div className="pip-value text-pip-amber">{player.caps.toLocaleString()} ¤</div>
+        {/* key remounts this element each time caps change, restarting the glow animation */}
+        <div
+          key={capsFlashKey}
+          className={`pip-value text-pip-amber${capsFlashKey > 0 ? ' pip-flash-caps' : ''}`}
+        >
+          {player.caps.toLocaleString()} ¤
+        </div>
       </div>
 
       {player.bank > 0 && (
