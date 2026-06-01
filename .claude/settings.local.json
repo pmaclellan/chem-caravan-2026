@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Read(//Users/pmaclellan/**)",
+      "Bash(brew list *)",
+      "Bash(brew search *)",
+      "Bash(brew install *)",
+      "Bash(cat >> *)",
+      "Read(//private/tmp/chem-caravan-scaffold/**)",
+      "Bash(cp -r /tmp/chem-caravan-scaffold/. /Users/pmaclellan/repos/chem-caravan-2026/)",
+      "Bash(rm -rf /tmp/chem-caravan-scaffold)",
+      "Bash(node -e ' *)",
+      "Bash(export *)",
+      "Bash(npm *)"
+    ],
+    "additionalDirectories": [
+      "/Users/pmaclellan"
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-pip-bg text-pip-green font-mono;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Pip-Boy CRT screen effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px
+    );
+    z-index: 9999;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0f0a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f4a1f;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a7a1a;
+  }
+}
+
+@layer components {
+  .pip-panel {
+    @apply bg-pip-bg-light border border-pip-border rounded p-4;
+  }
+
+  .pip-btn {
+    @apply border border-pip-green text-pip-green font-display text-lg px-4 py-1
+           hover:bg-pip-green hover:text-pip-bg transition-colors duration-100
+           disabled:border-pip-green-dim disabled:text-pip-green-dim disabled:cursor-not-allowed
+           disabled:hover:bg-transparent disabled:hover:text-pip-green-dim;
+  }
+
+  .pip-btn-danger {
+    @apply border border-pip-red text-pip-red font-display text-lg px-4 py-1
+           hover:bg-pip-red hover:text-pip-bg transition-colors duration-100
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .pip-btn-amber {
+    @apply border border-pip-amber text-pip-amber font-display text-lg px-4 py-1
+           hover:bg-pip-amber hover:text-pip-bg transition-colors duration-100
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .pip-input {
+    @apply bg-pip-bg border border-pip-border text-pip-green font-mono
+           focus:border-pip-green focus:outline-none px-2 py-1;
+  }
+
+  .pip-label {
+    @apply text-pip-green-dim text-xs uppercase tracking-widest;
+  }
+
+  .pip-value {
+    @apply text-pip-green font-display text-xl;
+  }
+
+  .pip-section-title {
+    @apply text-pip-green font-display text-2xl border-b border-pip-border pb-1 mb-3;
+  }
+
+  .log-info    { @apply text-pip-green; }
+  .log-danger  { @apply text-pip-red; }
+  .log-profit  { @apply text-pip-amber; }
+  .log-system  { @apply text-pip-green-dim; }
+}
