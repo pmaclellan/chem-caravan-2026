@@ -30,7 +30,11 @@ export default function InventoryPanel({ player, market }: Props) {
             const pnlColor = pnl === null ? 'text-pip-green-dim' : pnl >= 0 ? 'text-pip-amber' : 'text-pip-red'
 
             return (
-              <div key={chemId} className="border border-pip-border-dim p-2 rounded">
+              <div key={chemId} className="border border-pip-border-dim p-2 rounded flex gap-2">
+                {chem?.imageUrl && (
+                  <img src={chem.imageUrl} alt={chem.name} className="w-8 h-8 object-contain flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
                 <div className="flex justify-between">
                   <span className="text-pip-green text-sm">{chem?.name ?? chemId}</span>
                   <span className="text-pip-green font-display">×{entry.quantity}</span>
@@ -44,6 +48,7 @@ export default function InventoryPanel({ player, market }: Props) {
                     <span className={pnlColor}>{pnl! >= 0 ? '+' : ''}{pnl} ¤</span>
                   </div>
                 )}
+                </div>
               </div>
             )
           })}

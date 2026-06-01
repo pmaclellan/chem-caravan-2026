@@ -11,8 +11,17 @@
       "Bash(cp -r /tmp/chem-caravan-scaffold/. /Users/pmaclellan/repos/chem-caravan-2026/)",
       "Bash(rm -rf /tmp/chem-caravan-scaffold)",
       "Bash(node -e ' *)",
-      "Bash(export *)",
-      "Bash(npm *)"
+      "WebFetch(domain:fallout.fandom.com)",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aifrom=Fo4&ailimit=50&format=json' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&prop=imageinfo&iiprop=url&format=json&titles=File:Fallout4%20Jet.png|File:Fallout4%20Psycho.png|File:Fallout4%20Stimpak.png' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&prop=imageinfo&iiprop=url&format=json&titles=File:Fallout4%20Jet.png|File:Fallout4%20Psycho.png|File:Fallout4%20Buffout.png|File:Fallout4%20Mentats.png|File:Fallout4%20Rad-X.png|File:Fallout4%20RadAway.png|File:Fallout4%20Stimpak.png|File:Fo4%20Med-X.png' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&titles=Daytripper_\\(chem\\)&prop=images&format=json' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aiprefix=Fallout4&ailimit=50&format=json&aiprop=url|name' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aiprefix=Fallout4_&ailimit=50&format=json&aiprop=name' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aiprefix=Fallout4_&aifrom=Fallout4_J&ailimit=50&format=json&aiprop=name' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aiprefix=Fallout4_&aifrom=Fallout4_R&ailimit=50&format=json&aiprop=name' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&prop=imageinfo&iiprop=url&format=json&titles=File:Fo4_Ultrajet.png|File:Fo4_Daytripper.png|File:Fo4%20Ultrajet.png|File:Fo4%20Daytripper.png|File:FO4_Ultrajet.png|File:FO4_Daytripper.png' -H 'User-Agent: ChemCaravanFanGame/1.0')",
+      "Bash(curl -s 'https://fallout.fandom.com/api.php?action=query&list=allimages&aiprefix=Fo4_&ailimit=50&format=json&aiprop=name' -H 'User-Agent: ChemCaravanFanGame/1.0')"
     ],
     "additionalDirectories": [
       "/Users/pmaclellan"

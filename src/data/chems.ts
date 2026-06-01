@@ -8,7 +8,11 @@ export interface ChemDefinition {
   highPriceMsg: string     // shown in log when price is above average
   lowPriceMsg: string      // shown in log when price is below average
   description: string
+  imageUrl: string | null  // Fallout wiki item icon (null = no image available)
 }
+
+// Images sourced from the Fallout wiki (fallout.fandom.com) — Bethesda copyright, fan use only
+const W = 'https://static.wikia.nocookie.net/fallout/images'
 
 export const CHEMS: Record<string, ChemDefinition> = {
   jet: {
@@ -21,6 +25,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Brahmin ranchers been buying up all the Jet.",
     lowPriceMsg: "Chem cookers must be working overtime — Jet is dirt cheap.",
     description: "The Commonwealth's most popular chem. Slows time to a crawl.",
+    imageUrl: `${W}/4/4d/Fallout4_Jet.png`,
   },
   psycho: {
     id: 'psycho',
@@ -32,6 +37,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Raiders cleared out the local Psycho supply.",
     lowPriceMsg: "Surplus Psycho hit the market from a Super Mutant camp.",
     description: "Military-grade combat drug. Rage in a syringe.",
+    imageUrl: `${W}/7/73/Fallout4_Psycho.png`,
   },
   medx: {
     id: 'medx',
@@ -43,6 +49,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "The Institute's been buying Med-X in bulk.",
     lowPriceMsg: "Caravan brought in a shipment — Med-X is on sale.",
     description: "Morphine derivative. Treats pain, creates dependency.",
+    imageUrl: `${W}/c/cb/Fo4_Med-X.png`,
   },
   buffout: {
     id: 'buffout',
@@ -54,6 +61,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Super Mutants cornered the Buffout market again.",
     lowPriceMsg: "Pre-war stockpile found — Buffout prices tanked.",
     description: "Anabolic steroid cocktail. Strength and endurance boost.",
+    imageUrl: `${W}/b/b8/Fallout4_Buffout.png`,
   },
   mentats: {
     id: 'mentats',
@@ -65,6 +73,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Diamond City traders buying Mentats hand over fist.",
     lowPriceMsg: "Mentats recipe leaked — prices dropped hard.",
     description: "Cognitive enhancers. Beloved by merchants and hackers.",
+    imageUrl: `${W}/3/37/Fallout4_Mentats.png`,
   },
   radx: {
     id: 'radx',
@@ -76,6 +85,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Glowing Sea explorers cleaned out all the Rad-X.",
     lowPriceMsg: "Rad-X flowing cheap after a Vault-Tec cache was cracked open.",
     description: "Radiation resistance pill. Ubiquitous in the wasteland.",
+    imageUrl: `${W}/1/19/Fallout4_Rad-X.png`,
   },
   radaway: {
     id: 'radaway',
@@ -87,6 +97,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Radiation spike sent RadAway prices sky-high.",
     lowPriceMsg: "Synth scavengers flooded the market with RadAway.",
     description: "Radiation flush solution. Essential for survivors.",
+    imageUrl: `${W}/2/2b/Fallout4_RadAway.png`,
   },
   stimpak: {
     id: 'stimpak',
@@ -98,6 +109,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Railroad and BoS are buying every Stimpak in sight.",
     lowPriceMsg: "A factory found intact — Stimpaks are rock bottom.",
     description: "Healing nanomachine injection. The most valuable chem.",
+    imageUrl: `${W}/e/e7/Fallout4_Stimpak.png`,
   },
   ultrajet: {
     id: 'ultrajet',
@@ -109,6 +121,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Word is the Ultrajet recipe is a state secret — prices soaring.",
     lowPriceMsg: "A wandering chemist undercut everyone — Ultrajet cheap today.",
     description: "Refined Jet. Rarer and far more potent.",
+    imageUrl: `${W}/4/4d/Fallout4_Jet.png`, // no dedicated icon; Ultrajet is refined Jet
   },
   daytripper: {
     id: 'daytripper',
@@ -120,6 +133,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Goodneighbor pleasure-seekers drove up Daytripper prices.",
     lowPriceMsg: "Bad batch went around — sellers are dumping inventory.",
     description: "Euphoria chem. Popular in settlements with a nightlife.",
+    imageUrl: null, // no icon on Fallout wiki — TODO: source or create
   },
 }
 

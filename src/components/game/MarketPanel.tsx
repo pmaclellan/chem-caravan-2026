@@ -33,21 +33,35 @@ export default function MarketPanel({ player, market }: Props) {
 
         return (
           <div key={chemId} className="border border-pip-border p-3 rounded">
-            <div className="flex justify-between items-start mb-1">
-              <div>
-                <span className="text-pip-green font-display text-lg">{chem.name}</span>
-                {owned > 0 && (
-                  <span className="text-pip-green-dim text-xs ml-2">
-                    (own {owned} @ {paidPrice} ¤{' '}
-                    <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
-                      {pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit}
-                    </span>)
-                  </span>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-pip-amber font-display text-xl">{price} ¤</div>
-                <div className="text-pip-green-dim text-xs">stock: {stock}</div>
+            <div className="flex items-start gap-3 mb-1">
+              {chem.imageUrl ? (
+                <img
+                  src={chem.imageUrl}
+                  alt={chem.name}
+                  className="w-12 h-12 object-contain flex-shrink-0"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <div className="w-12 h-12 flex items-center justify-center border border-pip-border-dim text-pip-green-dim text-xs flex-shrink-0">¿</div>
+              )}
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-pip-green font-display text-lg">{chem.name}</span>
+                    {owned > 0 && (
+                      <span className="text-pip-green-dim text-xs ml-2">
+                        (own {owned} @ {paidPrice} ¤{' '}
+                        <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
+                          {pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit}
+                        </span>)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-pip-amber font-display text-xl">{price} ¤</div>
+                    <div className="text-pip-green-dim text-xs">stock: {stock}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
