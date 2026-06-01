@@ -6,7 +6,7 @@ import { SETTLEMENTS } from '../data/settlements'
 import { applyMarketEvents } from '../engine/market'
 import PlayerStats from '../components/game/PlayerStats'
 import MarketPanel from '../components/game/MarketPanel'
-import TravelPanel from '../components/game/TravelPanel'
+import MapPanel from '../components/game/MapPanel'
 import CombatPanel from '../components/game/CombatPanel'
 import EventPanel from '../components/game/EventPanel'
 import ServicesPanel from '../components/game/ServicesPanel'
@@ -55,7 +55,7 @@ export default function Game() {
     if ((phase === 'event' || phase === 'traveling') && pendingEvent) return <EventPanel event={pendingEvent} player={player} />
     switch (tab) {
       case 'market':   return <MarketPanel player={player} market={market} />
-      case 'travel':   return <TravelPanel player={player} />
+      case 'travel':   return <MapPanel player={player} />
       case 'services': return <ServicesPanel player={player} />
     }
   }

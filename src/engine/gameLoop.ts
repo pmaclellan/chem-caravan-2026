@@ -75,14 +75,7 @@ export function startTravel(state: GameState, destinationId: string): GameState 
   const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
   if (!road) return state
 
-  if (state.player.caps < road.travelCost) {
-    return {
-      ...state,
-      log: [...state.log, makeLog(state.world.turn, "You can't afford the travel costs.", 'danger')],
-    }
-  }
-
-  let player = { ...state.player, caps: state.player.caps - road.travelCost }
+  let player = { ...state.player }
   const log = [...state.log, makeLog(state.world.turn, `Heading to ${SETTLEMENTS[destinationId].name} via ${road.name}...`, 'info')]
 
   // Apply interest and check debt enforcement
