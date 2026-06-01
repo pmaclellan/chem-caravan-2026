@@ -7,29 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        'pip-bg':        '#0a0f0a',
-        'pip-bg-light':  '#0f1a0f',
-        'pip-green':     '#39ff14',
-        'pip-green-dim': '#2a7a1a',
-        'pip-green-mid': '#4cff4c',
-        'pip-amber':     '#ffaa00',
-        'pip-red':       '#ff3333',
-        'pip-border':    '#1f4a1f',
-        'pip-border-dim':'#0f2a0f',
+        // Wasteland palette — sandy earth + worn parchment + rusty accents
+        'pip-bg':          '#b89a52',   // sandy wasteland ground (body)
+        'pip-bg-light':    '#e2cfa0',   // aged parchment (panels)
+        'pip-green':       '#2c4a10',   // dark olive — primary text, HP bar high
+        'pip-green-dim':   '#6a5828',   // warm earthy brown — secondary/dim text
+        'pip-green-mid':   '#4a7018',   // mid olive — mid-positive states
+        'pip-amber':       '#c4501a',   // burnt sienna — caps, profit
+        'pip-red':         '#8c1c1c',   // blood rust — danger
+        'pip-border':      '#8a6020',   // worn earth — main borders
+        'pip-border-dim':  '#cdb070',   // sand — row separators, subtle borders
       },
       fontFamily: {
-        'mono': ['"Share Tech Mono"', 'Courier New', 'monospace'],
-        'display': ['"VT323"', '"Share Tech Mono"', 'monospace'],
+        'mono':    ['"Courier Prime"', 'Courier New', 'monospace'],
+        'display': ['"Special Elite"', '"Courier Prime"', 'serif'],
       },
       animation: {
-        'scanline': 'scanline 8s linear infinite',
-        'blink':    'blink 1s step-end infinite',
+        'blink': 'blink 1s step-end infinite',
       },
       keyframes: {
-        scanline: {
-          '0%':   { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100vh)' },
-        },
         blink: {
           '0%, 100%': { opacity: '1' },
           '50%':      { opacity: '0' },
