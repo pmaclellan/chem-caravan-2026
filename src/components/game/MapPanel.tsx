@@ -51,6 +51,7 @@ export default function MapPanel({ player }: Props) {
       <div className="flex-1 relative min-h-0">
         <svg
           viewBox="0 0 400 320"
+          preserveAspectRatio="xMidYMin meet"
           className="absolute inset-0 w-full h-full"
           style={{ fontFamily: '"Share Tech Mono", monospace' }}
         >

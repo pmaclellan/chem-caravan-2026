@@ -1,15 +1,10 @@
-import { useEffect, useRef } from 'react'
 import type { LogEntry } from '../../types/game'
 
 interface Props { log: LogEntry[] }
 
 export default function GameLog({ log }: Props) {
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const displayed = log.slice(-50)
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [log.length])
+  // Newest first — no auto-scroll needed
+  const displayed = [...log].reverse().slice(0, 50)
 
   return (
     <div className="pip-panel flex flex-col h-full">
@@ -21,7 +16,6 @@ export default function GameLog({ log }: Props) {
             {entry.message}
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
     </div>
   )
