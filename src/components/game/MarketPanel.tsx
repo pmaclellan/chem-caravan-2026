@@ -13,87 +13,102 @@ export default function MarketPanel({ player, market }: Props) {
   const capacity = calculateCapacity(player.brahmin)
   const used = totalInventoryItems(player.inventory)
   const space = capacity - used
+  const available = CHEM_IDS.filter(id => market.prices[id])
+
+  if (available.length === 0) {
+    return <div className="text-pip-green-dim text-xs">No chems available here right now.</div>
+  }
 
   return (
-    <div className="h-full overflow-y-auto space-y-2">
-      <div className="text-pip-green-dim text-xs mb-2">
-        {Object.keys(market.prices).length === 0
-          ? "No chems available here right now."
-          : `${Object.keys(market.prices).length} chems on the market — space: ${space} units`}
+    <div className="flex flex-col h-full">
+      <div className="text-pip-green-dim text-xs mb-1 flex-shrink-0">
+        {available.length} chems · space: {space} units
       </div>
 
-      {CHEM_IDS.filter(id => market.prices[id]).map(chemId => {
-        const chem = CHEMS[chemId]
-        const price = market.prices[chemId]
-        const stock = market.stock[chemId] ?? 0
-        const owned = player.inventory[chemId]?.quantity ?? 0
-        const paidPrice = player.inventory[chemId]?.pricePaid ?? 0
-        const pnlPerUnit = price - paidPrice
-        const q = qty[chemId] ?? 1
+      <div className="flex-1 overflow-y-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead className="sticky top-0 bg-pip-bg-light z-10">
+            <tr className="text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border">
+              <th className="text-left py-1 pr-2 w-6"></th>
+              <th className="text-left py-1 pr-2">Chem</th>
+              <th className="text-right py-1 pr-2">Price</th>
+              <th className="text-right py-1 pr-2">Stock</th>
+              <th className="text-right py-1 pr-2">Own</th>
+              <th className="text-right py-1 pr-2">P/L</th>
+              <th className="text-right py-1 pr-2 w-12">Qty</th>
+              <th className="py-1 pl-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {available.map(chemId => {
+              const chem = CHEMS[chemId]
+              const price = market.prices[chemId]
+              const stock = market.stock[chemId] ?? 0
+              const owned = player.inventory[chemId]?.quantity ?? 0
+              const paidPrice = player.inventory[chemId]?.pricePaid ?? 0
+              const pnlPerUnit = owned > 0 ? price - paidPrice : null
+              const q = qty[chemId] ?? 1
+              const canBuy = player.caps >= price * q && stock >= q && space >= q
+              const canSell = owned >= q
 
-        return (
-          <div key={chemId} className="border border-pip-border p-3 rounded">
-            <div className="flex items-start gap-3 mb-1">
-              {chem.imageUrl ? (
-                <img
-                  src={chem.imageUrl}
-                  alt={chem.name}
-                  className="w-12 h-12 object-contain flex-shrink-0"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : (
-                <div className="w-12 h-12 flex items-center justify-center border border-pip-border-dim text-pip-green-dim text-xs flex-shrink-0">¿</div>
-              )}
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-pip-green font-display text-lg">{chem.name}</span>
-                    {owned > 0 && (
-                      <span className="text-pip-green-dim text-xs ml-2">
-                        (own {owned} @ {paidPrice} ¤{' '}
-                        <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
-                          {pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit}
-                        </span>)
-                      </span>
+              return (
+                <tr key={chemId} className="border-b border-pip-border-dim hover:bg-pip-border-dim transition-colors">
+                  <td className="py-1 pr-1">
+                    {chem.imageUrl ? (
+                      <img src={chem.imageUrl} alt={chem.name} className="w-6 h-6 object-contain" />
+                    ) : (
+                      <div className="w-6 h-6 text-center text-pip-green-dim text-xs leading-6">?</div>
                     )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-pip-amber font-display text-xl">{price} ¤</div>
-                    <div className="text-pip-green-dim text-xs">stock: {stock}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 mt-2">
-              <input
-                type="number"
-                min={1}
-                max={Math.max(stock, owned)}
-                value={q}
-                onChange={e => setQty(prev => ({ ...prev, [chemId]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                className="pip-input w-16 text-center"
-              />
-              <button
-                className="pip-btn-amber text-sm"
-                disabled={player.caps < price * q || stock < q || space < q}
-                onClick={() => buy(chemId, q)}
-              >
-                BUY ({(price * q).toLocaleString()} ¤)
-              </button>
-              {owned > 0 && (
-                <button
-                  className="pip-btn text-sm"
-                  disabled={owned < q}
-                  onClick={() => sell(chemId, q)}
-                >
-                  SELL ({(price * q).toLocaleString()} ¤)
-                </button>
-              )}
-            </div>
-          </div>
-        )
-      })}
+                  </td>
+                  <td className="py-1 pr-2">
+                    <span className="text-pip-green font-display text-base">{chem.name}</span>
+                  </td>
+                  <td className="py-1 pr-2 text-right text-pip-amber font-display">{price}</td>
+                  <td className="py-1 pr-2 text-right text-pip-green-dim">{stock}</td>
+                  <td className="py-1 pr-2 text-right text-pip-green-dim">{owned > 0 ? owned : '—'}</td>
+                  <td className="py-1 pr-2 text-right">
+                    {pnlPerUnit !== null ? (
+                      <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
+                        {pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit}
+                      </span>
+                    ) : <span className="text-pip-green-dim">—</span>}
+                  </td>
+                  <td className="py-1 pr-1">
+                    <input
+                      type="number"
+                      min={1}
+                      max={Math.max(stock, owned)}
+                      value={q}
+                      onChange={e => setQty(prev => ({ ...prev, [chemId]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                      className="pip-input w-12 text-center text-xs py-0"
+                    />
+                  </td>
+                  <td className="py-1 pl-1">
+                    <div className="flex gap-1">
+                      <button
+                        className="pip-btn-amber text-xs px-2 py-0.5"
+                        disabled={!canBuy}
+                        onClick={() => buy(chemId, q)}
+                      >
+                        BUY
+                      </button>
+                      {owned > 0 && (
+                        <button
+                          className="pip-btn text-xs px-2 py-0.5"
+                          disabled={!canSell}
+                          onClick={() => sell(chemId, q)}
+                        >
+                          SELL
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
