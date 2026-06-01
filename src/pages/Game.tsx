@@ -32,6 +32,12 @@ export default function Game() {
     }
   }, [toast, _setToast])
 
+  // Switch to market view automatically when arriving at a settlement
+  const phase = gameState?.phase
+  useEffect(() => {
+    if (phase === 'settlement') setTab('market')
+  }, [phase, gameState?.player.location])
+
   if (!gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center text-pip-green font-display text-2xl">
@@ -40,7 +46,7 @@ export default function Game() {
     )
   }
 
-  const { player, world, phase, pendingEvent, combat, log } = gameState
+  const { player, world, pendingEvent, combat, log } = gameState
   const settlement = SETTLEMENTS[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
@@ -119,8 +125,8 @@ export default function Game() {
             </div>
           )}
 
-          {/* Main panel */}
-          <div className="pip-panel flex-1 overflow-y-auto">
+          {/* Main panel — overflow-hidden + flex when showing map so SVG fills height */}
+          <div className={`pip-panel flex-1 min-h-0 ${tab === 'travel' && !isActionBlocked ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
             {mainContent()}
           </div>
         </div>

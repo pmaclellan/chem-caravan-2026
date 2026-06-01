@@ -48,10 +48,10 @@ export default function MapPanel({ player }: Props) {
         </span>
       </div>
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         <svg
           viewBox="0 0 400 320"
-          className="w-full h-full"
+          className="absolute inset-0 w-full h-full"
           style={{ fontFamily: '"Share Tech Mono", monospace' }}
         >
           {/* Background */}
