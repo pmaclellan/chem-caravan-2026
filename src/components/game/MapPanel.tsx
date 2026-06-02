@@ -3,10 +3,10 @@ import { getAdjacentRoads, getRoadDestination } from '../../engine/travel'
 import { useGameStore } from '../../store/gameStore'
 import type { PlayerState } from '../../types/game'
 
-// 1200-px scaled version of the 5120×5120 Commonwealth overhead map
+// Full-resolution URL — thumbnail paths return 404 from cross-origin Referers
 const MAP_URL =
   'https://static.wikia.nocookie.net/fallout/images/2/2d/Commonwealth-local.jpg' +
-  '/revision/latest/scale-to-width-down/1200?cb=20210413232104'
+  '/revision/latest?cb=20210413232104'
 
 type Anchor = 'middle' | 'start' | 'end'
 
@@ -63,31 +63,19 @@ export default function MapPanel({ player }: Props) {
           preserveAspectRatio="xMidYMin meet"
           className="absolute inset-0 w-full h-full"
         >
-          <defs>
-            {/* Warm sepia conversion: grayscale terrain → aged parchment map */}
-            <filter id="map-sepia" x="0%" y="0%" width="100%" height="100%"
-              colorInterpolationFilters="sRGB">
-              <feColorMatrix type="matrix"
-                values="0.82 0.14 0.04 0 0.05
-                        0.52 0.36 0.12 0 0.02
-                        0.22 0.06 0.42 0 0.00
-                        0.00 0.00 0.00 0.80 0.00" />
-            </filter>
-          </defs>
-
-          {/* Sandy fallback if image is still loading */}
+          {/* Sandy fallback visible until image loads */}
           <rect width="1000" height="1000" fill="#c8a850" />
 
-          {/* Commonwealth terrain image — sepia-toned */}
+          {/* Commonwealth terrain — no SVG filter to avoid cross-origin CORS block */}
           <image
             href={MAP_URL}
             x="0" y="0" width="1000" height="1000"
             preserveAspectRatio="xMidYMid meet"
-            filter="url(#map-sepia)"
+            opacity="0.82"
           />
 
-          {/* Warm amber veil for depth and readability */}
-          <rect width="1000" height="1000" fill="rgba(140, 80, 20, 0.12)" />
+          {/* Warm amber wash converts grayscale terrain to parchment feel */}
+          <rect width="1000" height="1000" fill="rgba(155, 95, 28, 0.42)" />
 
           {/* ── Roads: non-adjacent first so adjacent render on top ── */}
           {ROADS.filter(r => !isAdjRoad(r)).map(road => {
