@@ -1,10 +1,11 @@
 import { SETTLEMENT_IDS, SETTLEMENTS } from '../data/settlements'
 import { CONFIG } from '../data/config'
-import type { GameState, LogEntry, PlayerState, WorldState } from '../types/game'
+import type { GameState, LogEntry, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, checkDebtEnforcement, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
 import { initiateCombat } from './combat'
+import { rng } from './rng'
 import { ROADS } from '../data/settlements'
 
 function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntry {
@@ -265,6 +266,10 @@ export function startCombat(state: GameState): GameState {
   }
 }
 
+// Danger threshold above which a second raider wave can spawn.
+// Probability = dangerLevel - 0.40 (25% at 0.65, 30% at 0.70, 35% at 0.75).
+const SECOND_WAVE_MIN_DANGER = 0.65
+
 export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
   const { player, combat } = result
   const dest = state.pendingDestination
@@ -282,15 +287,39 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     }
   }
 
-  if (combat.phase === 'won' && dest) {
-    return completeTravel({ ...state, player, combat, log: [...state.log, ...newLogs] }, dest)
+  const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
+
+  if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
+    // On dangerous roads, roll for a second raider wave.
+    // Only on the first encounter (payload flag prevents a third).
+    const isFirstEncounter = !state.pendingEvent?.payload?.['isSecondEncounter']
+    if (isFirstEncounter) {
+      const road = ROADS.find(r =>
+        (r.from === player.location && r.to === dest) ||
+        (r.to   === player.location && r.from === dest)
+      )
+      if (road && road.dangerLevel >= SECOND_WAVE_MIN_DANGER && rng() < road.dangerLevel - 0.40) {
+        const warningMsg = combat.phase === 'won'
+          ? 'You push forward — only to find another raider pack closing in.'
+          : 'Still running — and you sprint right into a second ambush.'
+        const secondWave: TravelEvent = {
+          type: 'raider_ambush',
+          title: 'SECOND WAVE!',
+          description: 'More Raiders emerge from cover. This road earns its reputation.',
+          payload: { isSecondEncounter: true },
+        }
+        return {
+          ...resolvedState,
+          phase: 'event',
+          pendingEvent: secondWave,
+          log: [...resolvedState.log, makeLog(turn, warningMsg, 'danger')],
+        }
+      }
+    }
+    return completeTravel(resolvedState, dest)
   }
 
-  if (combat.phase === 'fled' && dest) {
-    return completeTravel({ ...state, player, combat, log: [...state.log, ...newLogs] }, dest)
-  }
-
-  return { ...state, player, combat, log: [...state.log, ...newLogs] }
+  return resolvedState
 }
 
 export function endGame(state: GameState): GameState {
