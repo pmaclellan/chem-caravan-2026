@@ -138,3 +138,9 @@
 
 /* Legacy alias */
 .pip-flash-caps { animation: pip-flash-text-amber 480ms ease-out forwards; }
+
+/* Map panel: pulsing ring on current location node */
+@keyframes map-ring-pulse {
+  0%, 100% { stroke-opacity: 0.75; }
+  50%       { stroke-opacity: 0.10; }
+}
