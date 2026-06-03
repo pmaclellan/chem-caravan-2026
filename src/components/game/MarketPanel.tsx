@@ -109,22 +109,31 @@ export default function MarketPanel({ player, market }: Props) {
                       >
                         BUY
                       </button>
-                      {/* MAX: buys as many as caps/stock/space allow */}
+                      {/* BUY MAX: buys as many as caps/stock/space allow */}
                       <button
                         className="pip-btn text-xs px-1.5 py-0.5"
                         disabled={!canBuyMax}
                         onClick={() => buy(chemId, maxQty)}
-                        title={`Buy all ${maxQty} affordable`}
                       >
-                        MAX
+                        BUY MAX
                       </button>
-                      {/* SELL ALL: dumps entire holding of this chem */}
+                      {/* SELL: sells qty-stepper amount */}
                       {owned > 0 && (
                         <button
                           className="pip-btn text-xs px-2 py-0.5"
-                          onClick={() => sell(chemId, owned)}
+                          disabled={owned < q}
+                          onClick={() => sell(chemId, q)}
                         >
                           SELL
+                        </button>
+                      )}
+                      {/* SELL ALL: dumps entire holding */}
+                      {owned > 0 && (
+                        <button
+                          className="pip-btn text-xs px-1.5 py-0.5"
+                          onClick={() => sell(chemId, owned)}
+                        >
+                          SELL ALL
                         </button>
                       )}
                     </div>
