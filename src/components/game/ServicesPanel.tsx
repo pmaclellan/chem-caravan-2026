@@ -84,7 +84,7 @@ export default function ServicesPanel({ player }: Props) {
 
       {activeTab === 'loanshark' && (
         <div className="border border-pip-border p-3 rounded space-y-3">
-          <div className="pip-label">LOANSHARK — 10% interest per turn</div>
+          <div className="pip-label">LOANSHARK — 5% interest per turn</div>
           <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
           <div className="flex items-center gap-2">
             <input type="number" min={100} step={100} value={amount} onChange={e => setAmount(Math.max(100, parseInt(e.target.value) || 100))} className="pip-input w-24" />

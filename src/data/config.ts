@@ -3,7 +3,7 @@ export const CONFIG = {
   STARTING_DEBT: 2000,
   STARTING_HEALTH: 100,
   MAX_TURNS: 31,
-  INTEREST_RATE: 0.10,       // applied per travel turn
+  INTEREST_RATE: 0.05,       // applied per travel turn
   STARTING_BRAHMIN: 1,
   BASE_CAPACITY: 20,
   CAPACITY_PER_BRAHMIN: 10,
