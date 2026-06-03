@@ -4,6 +4,7 @@ import type { GameState, GameRow } from '../types/game'
 import {
   initializeGame,
   startTravel,
+  continueTravel,
   completeTravel,
   resolveChemStash,
   resolveBrotherhoodToll,
@@ -46,6 +47,7 @@ interface GameStore {
 
   // Travel
   travelTo: (destinationId: string) => void
+  continueTravel: () => void
 
   // Events
   resolveEvent: (choice: string) => void
@@ -188,6 +190,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     travelTo: (destinationId) => {
       mutate(state => startTravel(state, destinationId))
+    },
+
+    continueTravel: () => {
+      mutate(state => continueTravel(state))
     },
 
     resolveEvent: (choice) => {

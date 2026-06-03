@@ -6,6 +6,7 @@ import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './trave
 import { applyTurnInterest, checkDebtEnforcement, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
 import { initiateCombat } from './combat'
 import { rng } from './rng'
+import { pickQuote } from '../data/quotes'
 import { ROADS } from '../data/settlements'
 
 function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntry {
@@ -65,19 +66,43 @@ export function initializeGame(characterName: string): GameState {
     phase: 'settlement',
     pendingEvent: null,
     pendingDestination: null,
+    pendingQuote: null,
     combat: null,
     gameOverReason: null,
     log,
   }
 }
 
+// Phase 1: show the transit splash with an overheard quote.
+// Debt and event resolution happen in continueTravel when the player clicks Continue.
 export function startTravel(state: GameState, destinationId: string): GameState {
   const roads = getAdjacentRoads(state.player.location)
   const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
   if (!road) return state
 
-  let player = { ...state.player }
   const log = [...state.log, makeLog(state.world.turn, `Heading to ${SETTLEMENTS[destinationId].name} via ${road.name}...`, 'info')]
+
+  return {
+    ...state,
+    phase: 'traveling',
+    pendingDestination: destinationId,
+    pendingEvent: null,
+    pendingQuote: pickQuote(),
+    log,
+  }
+}
+
+// Phase 2: apply debt, select event, and either enter the event phase or arrive.
+export function continueTravel(state: GameState): GameState {
+  const destinationId = state.pendingDestination
+  if (!destinationId) return state
+
+  const roads = getAdjacentRoads(state.player.location)
+  const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
+  if (!road) return state
+
+  let player = { ...state.player }
+  const log = [...state.log]
 
   // Apply interest and check debt enforcement
   player = applyTurnInterest(player)
@@ -90,6 +115,7 @@ export function startTravel(state: GameState, destinationId: string): GameState 
       player: { ...player, health: 0 },
       phase: 'game_over',
       gameOverReason: 'debt',
+      pendingQuote: null,
       log,
     }
   }
@@ -102,7 +128,7 @@ export function startTravel(state: GameState, destinationId: string): GameState 
     }
   }
 
-  // Check for travel event
+  // Select a travel event, if any
   const event = selectTravelEvent(road, player)
   if (event) {
     return {
@@ -110,13 +136,13 @@ export function startTravel(state: GameState, destinationId: string): GameState 
       player,
       phase: 'event',
       pendingEvent: event,
-      pendingDestination: destinationId,
+      pendingQuote: null,
       log,
     }
   }
 
-  // No event — complete travel immediately
-  return completeTravel({ ...state, player, log }, destinationId)
+  // No event — arrive directly
+  return completeTravel({ ...state, player, pendingQuote: null, log }, destinationId)
 }
 
 export function completeTravel(state: GameState, destinationId: string): GameState {

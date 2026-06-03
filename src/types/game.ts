@@ -93,12 +93,18 @@ export interface WorldState {
   activeMarketEvents: MarketEvent[]
 }
 
+export interface TransitQuote {
+  text: string
+  speaker: string
+}
+
 export interface GameState {
   player: PlayerState
   world: WorldState
   phase: GamePhase
   pendingEvent: TravelEvent | null
   pendingDestination: string | null  // where we're heading during travel/event phase
+  pendingQuote: TransitQuote | null  // shown on the transit splash while phase === 'traveling'
   combat: CombatState | null
   gameOverReason: GameOverReason | null
   log: LogEntry[]

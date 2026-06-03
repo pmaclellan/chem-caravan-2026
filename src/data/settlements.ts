@@ -10,6 +10,7 @@ export interface Settlement {
   hasGuards: boolean
   hasBrahminMarket: boolean
   doctorCost: number    // caps to heal fully
+  imageUrl: string | null
 }
 
 export interface Road {
@@ -21,6 +22,8 @@ export interface Road {
   dangerLevel: number   // 0-1, drives event probability
   description: string
 }
+
+const W = 'https://static.wikia.nocookie.net/fallout/images'
 
 export const SETTLEMENTS: Record<string, Settlement> = {
   diamond_city: {
@@ -35,6 +38,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: true,
     hasBrahminMarket: true,
     doctorCost: 200,
+    imageUrl: `${W}/b/b2/FO4_DC_Exterior_1.jpg/revision/latest?cb=20210107094238`,
   },
   goodneighbor: {
     id: 'goodneighbor',
@@ -48,6 +52,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: true,
     hasBrahminMarket: false,
     doctorCost: 150,
+    imageUrl: `${W}/a/a9/Goodneighbor-Fallout4.jpg/revision/latest?cb=20161118011110`,
   },
   bunker_hill: {
     id: 'bunker_hill',
@@ -61,6 +66,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: true,
     hasBrahminMarket: true,
     doctorCost: 0,
+    imageUrl: `${W}/7/73/BunkerHill-Fallout4.jpg/revision/latest?cb=20161226024033`,
   },
   the_castle: {
     id: 'the_castle',
@@ -74,6 +80,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: true,
     hasBrahminMarket: false,
     doctorCost: 100,
+    imageUrl: `${W}/3/37/FO4_Castle_Aerial.jpg/revision/latest?cb=20170107181704`,
   },
   vault_81: {
     id: 'vault_81',
@@ -87,6 +94,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: false,
     hasBrahminMarket: false,
     doctorCost: 100,
+    imageUrl: `${W}/2/29/Fo4_Vault_81_ext_TV_1.png/revision/latest?cb=20200801003938`,
   },
   sanctuary_hills: {
     id: 'sanctuary_hills',
@@ -100,6 +108,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: false,
     hasBrahminMarket: false,
     doctorCost: 0,
+    imageUrl: `${W}/d/d4/FO4_Sanctuary_post-war_aerial.jpg/revision/latest?cb=20170312125126`,
   },
   graygarden: {
     id: 'graygarden',
@@ -113,6 +122,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: false,
     hasBrahminMarket: false,
     doctorCost: 0,
+    imageUrl: `${W}/c/c8/FO4_Graygarden_Exterior_02.png/revision/latest?cb=20200731025558`,
   },
   jamaica_plain: {
     id: 'jamaica_plain',
@@ -126,6 +136,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: false,
     hasBrahminMarket: false,
     doctorCost: 0,
+    imageUrl: `${W}/8/8c/Jamaica_Plain_Settlement.jpg/revision/latest?cb=20170122151831`,
   },
   park_street_station: {
     id: 'park_street_station',
@@ -139,6 +150,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGuards: false,
     hasBrahminMarket: false,
     doctorCost: 0,
+    imageUrl: `${W}/c/c6/FO4_Park_Street_station_%281%29.jpg/revision/latest?cb=20171111234408`,
   },
 }
 
