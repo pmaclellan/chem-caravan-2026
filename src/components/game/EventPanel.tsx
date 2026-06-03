@@ -110,17 +110,15 @@ export default function EventPanel({ event, player }: Props) {
                 <tr className="text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border">
                   <th className="text-left py-1 pr-3">Chem</th>
                   <th className="text-right py-1 pr-3">{isFence ? 'Price' : 'Offering'}</th>
-                  <th className="text-right py-1 pr-3">vs. Base</th>
                   <th className="text-right py-1 pr-3">{isFence ? 'Stock' : 'Owned'}</th>
                   <th className="py-1 pl-1"></th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(prices).map(([chemId, price]) => {
-                  const chem    = CHEMS[chemId]
-                  const q       = merchantQty[chemId] ?? 1
-                  const pStyle  = chem ? priceColor(price, chem.basePrice, chem.priceVariance) : {}
-                  const pct     = chem ? Math.round(((price - chem.basePrice) / chem.basePrice) * 100) : 0
+                  const chem   = CHEMS[chemId]
+                  const q      = merchantQty[chemId] ?? 1
+                  const pStyle = chem ? priceColor(price, chem.basePrice, chem.priceVariance) : {}
 
                   if (isFence) {
                     const inStock = payload.stock?.[chemId] ?? 0
@@ -129,7 +127,6 @@ export default function EventPanel({ event, player }: Props) {
                       <tr key={chemId} className="border-b border-pip-border-dim">
                         <td className="py-1.5 pr-3 font-display text-pip-green">{chem?.name ?? chemId}</td>
                         <td className="py-1.5 pr-3 text-right font-display" style={pStyle}>{price} ¤</td>
-                        <td className="py-1.5 pr-3 text-right text-xs" style={pStyle}>{pct > 0 ? `+${pct}%` : `${pct}%`}</td>
                         <td className="py-1.5 pr-3 text-right text-pip-green-dim">{inStock}</td>
                         <td className="py-1.5 pl-1">
                           <div className="flex items-center gap-1">
@@ -146,7 +143,6 @@ export default function EventPanel({ event, player }: Props) {
                       </tr>
                     )
                   } else {
-                    // Buyer: show sell UI
                     const remaining = payload.demand?.[chemId] ?? 0
                     const owned     = player.inventory[chemId]?.quantity ?? 0
                     const canSell   = owned >= q && remaining >= q
@@ -154,7 +150,6 @@ export default function EventPanel({ event, player }: Props) {
                       <tr key={chemId} className="border-b border-pip-border-dim">
                         <td className="py-1.5 pr-3 font-display text-pip-green">{chem?.name ?? chemId}</td>
                         <td className="py-1.5 pr-3 text-right font-display" style={pStyle}>{price} ¤</td>
-                        <td className="py-1.5 pr-3 text-right text-xs" style={pStyle}>{pct > 0 ? `+${pct}%` : `${pct}%`}</td>
                         <td className="py-1.5 pr-3 text-right text-pip-green-dim">
                           {owned > 0 ? `${owned} owned` : '—'}
                         </td>
