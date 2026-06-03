@@ -146,10 +146,24 @@ export default function Game() {
             </div>
           )}
 
-          {/* Main panel — overflow-hidden + flex when showing map so SVG fills height */}
-          <div className={`pip-panel flex-1 min-h-0 relative ${tab === 'travel' && !isActionBlocked ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
-            {mainContent()}
-          </div>
+          {/* Main panel
+               - Travel map + combat + transit splash: fill remaining height so content has room
+               - Market + services: size to content so settlement image shows below */}
+          {(() => {
+            const fillHeight =
+              (tab === 'travel' && !isActionBlocked) ||
+              phase === 'combat' ||
+              phase === 'traveling'
+            return (
+              <div className={`pip-panel relative ${
+                fillHeight
+                  ? 'flex-1 min-h-0 overflow-hidden flex flex-col'
+                  : 'overflow-y-auto'
+              }`}>
+                {mainContent()}
+              </div>
+            )
+          })()}
         </div>
 
         {/* Right: Inventory + Log */}

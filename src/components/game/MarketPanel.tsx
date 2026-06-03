@@ -20,12 +20,12 @@ export default function MarketPanel({ player, market }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="text-pip-green-dim text-xs mb-1 flex-shrink-0">
+    <div className="flex flex-col">
+      <div className="text-pip-green-dim text-xs mb-1">
         {available.length} chems · space: {space} units
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div>
         <table className="w-full text-sm border-collapse">
           <thead className="sticky top-0 bg-pip-bg-light z-10">
             <tr className="text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border">
