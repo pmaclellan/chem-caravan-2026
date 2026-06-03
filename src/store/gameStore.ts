@@ -31,7 +31,21 @@ import {
 } from '../engine/economy'
 import { GUNS } from '../data/guns'
 import { SETTLEMENTS } from '../data/settlements'
-import type { SettlementMarket } from '../types/game'
+import type { SettlementMarket, WorldState } from '../types/game'
+
+function updateSettlementStock(world: WorldState, loc: string, chemId: string, delta: number): WorldState {
+  const prev = world.settlements[loc]?.stock[chemId] ?? 0
+  return {
+    ...world,
+    settlements: {
+      ...world.settlements,
+      [loc]: {
+        ...world.settlements[loc],
+        stock: { ...world.settlements[loc].stock, [chemId]: Math.max(0, prev + delta) },
+      },
+    },
+  }
+}
 
 interface GameStore {
   gameId: string | null
@@ -59,6 +73,7 @@ interface GameStore {
   // Market
   buy: (chemId: string, quantity: number) => void
   sell: (chemId: string, quantity: number) => void
+  buyFromMerchant: (chemId: string, quantity: number) => void
 
   // Services
   heal: () => void
@@ -265,16 +280,15 @@ export const useGameStore = create<GameStore>((set, get) => {
       mutate(state => {
         const market = currentMarket(state)
         const { player, error } = buyChems(state.player, market, chemId, quantity)
-        if (error) {
-          set({ toast: error })
-          return state
-        }
+        if (error) { set({ toast: error }); return state }
+        const loc = state.player.location
+        const world = updateSettlementStock(state.world, loc, chemId, -quantity)
         const log = [...state.log, {
           turn: state.world.turn,
           message: `Bought ${quantity} ${chemId} for ${market.prices[chemId] * quantity} caps.`,
           type: 'info' as const,
         }]
-        return { ...state, player, log }
+        return { ...state, player, world, log }
       })
     },
 
@@ -282,17 +296,45 @@ export const useGameStore = create<GameStore>((set, get) => {
       mutate(state => {
         const market = currentMarket(state)
         const { player, profit, error } = sellChems(state.player, market, chemId, quantity)
-        if (error) {
-          set({ toast: error })
-          return state
-        }
+        if (error) { set({ toast: error }); return state }
+        const loc = state.player.location
+        const world = updateSettlementStock(state.world, loc, chemId, +quantity)
         const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
         const log = [...state.log, {
           turn: state.world.turn,
           message: `Sold ${quantity} ${chemId} for ${market.prices[chemId] * quantity} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
-        return { ...state, player, log }
+        return { ...state, player, world, log }
+      })
+    },
+
+    buyFromMerchant: (chemId, quantity) => {
+      mutate(state => {
+        if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
+        const payload = state.pendingEvent.payload as { prices: Record<string,number>; stock: Record<string,number> }
+        const price = payload.prices[chemId]
+        const inStock = payload.stock[chemId] ?? 0
+        if (!price || inStock < quantity) { set({ toast: 'Not enough stock.' }); return state }
+        // Reuse buyChems with a synthetic market (merchant doesn't deduct from settlement stock)
+        const syntheticMarket = { prices: payload.prices, stock: payload.stock, lastRefreshed: 0 }
+        const { player, error } = buyChems(state.player, syntheticMarket, chemId, quantity)
+        if (error) { set({ toast: error }); return state }
+        const newPayload = {
+          ...payload,
+          stock: { ...payload.stock, [chemId]: inStock - quantity },
+        }
+        const log = [...state.log, {
+          turn: state.world.turn,
+          message: `Bought ${quantity} ${chemId} from merchant for ${price * quantity} caps.`,
+          type: 'info' as const,
+        }]
+        return {
+          ...state,
+          player,
+          pendingEvent: { ...state.pendingEvent, payload: newPayload },
+          log,
+        }
       })
     },
 
