@@ -59,23 +59,36 @@ function buildEventPayload(
       return { type, title, description, payload: { toll: BROTHERHOOD_TOLL } }
     case 'wandering_merchant': {
       const chemIds = [...STASH_CHEMS].sort(() => rng() - 0.5).slice(0, 3)
-      // 35% chance the merchant is fencing stolen goods at knockdown prices
       const isFence = rng() < 0.35
-      const prices: Record<string, number> = {}
-      chemIds.forEach(id => {
-        prices[id] = isFence
-          ? Math.round((CHEMS[id].basePrice * (0.45 + rng() * 0.30)) / 5) * 5  // 45-75% of base
-          : Math.round((CHEMS[id].basePrice * (1.10 + rng() * 0.40)) / 5) * 5  // 110-150% of base
-      })
-      const stock: Record<string, number> = {}
-      chemIds.forEach(id => { stock[id] = rngInt(1, 5) })
-      const fenceTitle = 'SUSPICIOUS PEDDLER'
-      const fenceDesc  = "A nervous figure waves you down from the shadows. 'Real cheap. Don't ask where it came from.'"
-      return {
-        type,
-        title:       isFence ? fenceTitle : title,
-        description: isFence ? fenceDesc  : description,
-        payload: { prices, stock, isFence },
+
+      if (isFence) {
+        // SELLER: fence moving stolen goods cheap — player buys
+        const prices: Record<string, number> = {}
+        const stock:  Record<string, number> = {}
+        chemIds.forEach(id => {
+          prices[id] = Math.round((CHEMS[id].basePrice * (0.45 + rng() * 0.30)) / 5) * 5
+          stock[id]  = rngInt(1, 5)
+        })
+        return {
+          type,
+          title:       'SUSPICIOUS PEDDLER',
+          description: "A nervous figure waves you down from the shadows. 'Real cheap. Don't ask where it came from.'",
+          payload: { prices, stock, isFence: true },
+        }
+      } else {
+        // BUYER: strung-out traveler / addict with caps, paying premium — player sells
+        const prices:  Record<string, number> = {}
+        const demand:  Record<string, number> = {}
+        chemIds.forEach(id => {
+          prices[id] = Math.round((CHEMS[id].basePrice * (1.15 + rng() * 0.40)) / 5) * 5
+          demand[id] = rngInt(1, 6)
+        })
+        return {
+          type,
+          title:       'DESPERATE BUYER',
+          description: "A strung-out traveler stumbles toward your caravan, caps in hand. They need a fix — badly — and they're not haggling.",
+          payload: { prices, demand, isFence: false },
+        }
       }
     }
     default:

@@ -73,7 +73,8 @@ interface GameStore {
   // Market
   buy: (chemId: string, quantity: number) => void
   sell: (chemId: string, quantity: number) => void
-  buyFromMerchant: (chemId: string, quantity: number) => void
+  buyFromMerchant:  (chemId: string, quantity: number) => void
+  sellToMerchant:   (chemId: string, quantity: number) => void
 
   // Services
   heal: () => void
@@ -316,25 +317,43 @@ export const useGameStore = create<GameStore>((set, get) => {
         const price = payload.prices[chemId]
         const inStock = payload.stock[chemId] ?? 0
         if (!price || inStock < quantity) { set({ toast: 'Not enough stock.' }); return state }
-        // Reuse buyChems with a synthetic market (merchant doesn't deduct from settlement stock)
         const syntheticMarket = { prices: payload.prices, stock: payload.stock, lastRefreshed: 0 }
         const { player, error } = buyChems(state.player, syntheticMarket, chemId, quantity)
         if (error) { set({ toast: error }); return state }
-        const newPayload = {
-          ...payload,
-          stock: { ...payload.stock, [chemId]: inStock - quantity },
-        }
+        const newPayload = { ...payload, stock: { ...payload.stock, [chemId]: inStock - quantity } }
         const log = [...state.log, {
           turn: state.world.turn,
-          message: `Bought ${quantity} ${chemId} from merchant for ${price * quantity} caps.`,
+          message: `Bought ${quantity} ${chemId} from fence for ${price * quantity} caps.`,
           type: 'info' as const,
         }]
-        return {
-          ...state,
-          player,
-          pendingEvent: { ...state.pendingEvent, payload: newPayload },
-          log,
-        }
+        return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
+      })
+    },
+
+    sellToMerchant: (chemId, quantity) => {
+      mutate(state => {
+        if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
+        const payload = state.pendingEvent.payload as { prices: Record<string,number>; demand: Record<string,number> }
+        const price = payload.prices[chemId]
+        const remaining = payload.demand[chemId] ?? 0
+        if (!price || remaining < quantity) { set({ toast: "They don't want that many." }); return state }
+        const existing = state.player.inventory[chemId]
+        if (!existing || existing.quantity < quantity) { set({ toast: 'Not enough in inventory.' }); return state }
+        const revenue = price * quantity
+        const profit  = revenue - existing.pricePaid * quantity
+        const newQty  = existing.quantity - quantity
+        const inventory = { ...state.player.inventory }
+        if (newQty === 0) delete inventory[chemId]
+        else inventory[chemId] = { ...existing, quantity: newQty }
+        const player = { ...state.player, caps: state.player.caps + revenue, inventory }
+        const newPayload = { ...payload, demand: { ...payload.demand, [chemId]: remaining - quantity } }
+        const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
+        const log = [...state.log, {
+          turn: state.world.turn,
+          message: `Sold ${quantity} ${chemId} to buyer for ${revenue} caps. ${profitMsg}`,
+          type: profit >= 0 ? 'profit' as const : 'danger' as const,
+        }]
+        return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
     },
 
