@@ -49,6 +49,11 @@ export interface CombatState {
   raiderCount: number
   raiderHealth: number   // total health pool across all raiders
   raiderCaps: number     // total caps on them
+  raidersStartCount: number
+  totalDamageDealt: number
+  totalDamageTaken: number
+  raiderChems: Record<string, number>  // chems found on raiders (awarded on victory)
+  capsLooted: number                   // caps looted on victory (raiderCaps is zeroed after)
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
 }
@@ -81,6 +86,7 @@ export type GamePhase =
   | 'traveling'
   | 'event'
   | 'combat'
+  | 'combat_summary'
   | 'merchant'
   | 'game_over'
 

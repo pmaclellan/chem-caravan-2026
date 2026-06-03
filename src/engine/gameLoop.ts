@@ -342,10 +342,16 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
         }
       }
     }
-    return completeTravel(resolvedState, dest)
+    // Show summary screen before completing travel
+    return { ...resolvedState, phase: 'combat_summary' }
   }
 
   return resolvedState
+}
+
+export function dismissCombatSummary(state: GameState): GameState {
+  const dest = state.pendingDestination
+  return completeTravel({ ...state, phase: 'combat' }, dest ?? state.player.location)
 }
 
 export function endGame(state: GameState): GameState {
