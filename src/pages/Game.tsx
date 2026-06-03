@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
 import { SETTLEMENTS } from '../data/settlements'
 import { applyMarketEvents } from '../engine/market'
+import { useIsMobile } from '../hooks/useIsMobile'
 import PlayerStats from '../components/game/PlayerStats'
 import MarketPanel from '../components/game/MarketPanel'
 import MapPanel from '../components/game/MapPanel'
@@ -13,6 +14,7 @@ import ServicesPanel from '../components/game/ServicesPanel'
 import InventoryPanel from '../components/game/InventoryPanel'
 import GameLog from '../components/game/GameLog'
 import TravelSplash from '../components/game/TravelSplash'
+import MobileGame from '../components/game/MobileGame'
 
 type ActiveTab = 'market' | 'travel' | 'services'
 
@@ -21,6 +23,7 @@ export default function Game() {
   const { user } = useAuthStore()
   const { gameState, loadActiveGame, toast, _setToast } = useGameStore()
   const [tab, setTab] = useState<ActiveTab>('market')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (user && !gameState) loadActiveGame(user.id)
@@ -51,6 +54,8 @@ export default function Game() {
   const settlement = SETTLEMENTS[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
+
+  if (isMobile) return <MobileGame />
 
   if (phase === 'game_over') {
     return <GameOverScreen gameState={gameState} onHome={() => navigate('/')} />
