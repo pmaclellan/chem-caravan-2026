@@ -410,42 +410,39 @@ export default function MobileGame() {
                 <span className="font-display text-base" style={pStyle}>{price} ¤</span>
               </div>
 
-              {/* Line 2: stock info + stepper + buy/sell */}
-              <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
-                <div className="text-xs text-pip-green-dim flex gap-2">
-                  <span>Stk {stock}</span>
-                  {owned > 0 && (
-                    <span>
-                      Own {owned}
-                      {pnlPerUnit !== null && (
-                        <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
-                          {' '}({pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit})
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
+              {/* Line 2: stock / ownership info */}
+              <div className="px-3 pb-1 text-xs text-pip-green-dim flex gap-2">
+                <span>Stk {stock}</span>
+                {owned > 0 && (
+                  <span>
+                    Own {owned}
+                    {pnlPerUnit !== null && (
+                      <span className={pnlPerUnit >= 0 ? 'text-pip-amber' : 'text-pip-red'}>
+                        {' '}({pnlPerUnit >= 0 ? '+' : ''}{pnlPerUnit})
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
 
-                <div className="flex items-center gap-0.5 ml-auto">
-                  <button
-                    className="pip-btn text-xs px-2 py-1 leading-none"
-                    onClick={() => setMarketQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}
-                    tabIndex={-1}
-                  >−</button>
-                  <span className="text-pip-green font-display text-sm w-6 text-center select-none">{q}</span>
-                  <button
-                    className="pip-btn text-xs px-2 py-1 leading-none"
-                    onClick={() => setMarketQty(p => ({ ...p, [chemId]: q + 1 }))}
-                    tabIndex={-1}
-                  >+</button>
-                </div>
-
-                <div className="flex gap-1">
-                  <button className="pip-btn-amber text-xs px-3 py-1" disabled={!canBuy} onClick={() => buy(chemId, q)}>BUY</button>
-                  <button className="pip-btn text-xs px-2 py-1" disabled={maxQty <= 0} onClick={() => buy(chemId, maxQty)}>MAX</button>
-                  <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
-                  <button className="pip-btn text-xs px-2 py-1" disabled={owned === 0} onClick={() => sell(chemId, owned)}>ALL</button>
-                </div>
+              {/* Line 3: stepper + action buttons, always right-aligned */}
+              <div className="flex justify-end items-center gap-1 px-3 pb-3">
+                <button
+                  className="pip-btn text-xs px-2 py-1 leading-none"
+                  onClick={() => setMarketQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}
+                  tabIndex={-1}
+                >−</button>
+                <span className="text-pip-green font-display text-sm w-6 text-center select-none">{q}</span>
+                <button
+                  className="pip-btn text-xs px-2 py-1 leading-none"
+                  onClick={() => setMarketQty(p => ({ ...p, [chemId]: q + 1 }))}
+                  tabIndex={-1}
+                >+</button>
+                <div className="w-px h-4 bg-pip-border-dim mx-0.5" />
+                <button className="pip-btn-amber text-xs px-3 py-1" disabled={!canBuy} onClick={() => buy(chemId, q)}>BUY</button>
+                <button className="pip-btn text-xs px-2 py-1" disabled={maxQty <= 0} onClick={() => buy(chemId, maxQty)}>MAX</button>
+                <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
+                <button className="pip-btn text-xs px-2 py-1" disabled={owned === 0} onClick={() => sell(chemId, owned)}>ALL</button>
               </div>
             </div>
           )
