@@ -123,6 +123,17 @@ export function continueTravel(state: GameState): GameState {
   if (enforcement.action === 'beat') {
     player = { ...player, health: Math.max(0, player.health - enforcement.damage) }
     log.push(makeLog(state.world.turn, enforcement.message, 'danger'))
+    if (player.health <= 0) {
+      log.push(makeLog(state.world.turn, "You don't survive the beating.", 'danger'))
+      return {
+        ...state,
+        player,
+        phase: 'game_over',
+        gameOverReason: 'debt',
+        pendingQuote: null,
+        log,
+      }
+    }
     if (player.debt > 0) {
       log.push(makeLog(state.world.turn, `Outstanding debt: ${player.debt} caps. Interest: ${Math.round(player.debt * CONFIG.INTEREST_RATE)} caps/turn.`, 'danger'))
     }
@@ -270,8 +281,7 @@ export function resolveDebtCollector(state: GameState): GameState {
     }
   }
 
-  if (dest) return completeTravel({ ...state, player, log }, dest)
-  return { ...state, player, phase: 'settlement', pendingEvent: null, pendingDestination: null, log }
+  return completeTravel({ ...state, player, log }, dest ?? state.player.location)
 }
 
 export function startCombat(state: GameState): GameState {
