@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import type { TravelEvent, PlayerState } from '../../types/game'
 import { CHEMS } from '../../data/chems'
 import { useGameStore } from '../../store/gameStore'
+import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
 
 interface Props { event: TravelEvent; player: PlayerState }
 
 export default function EventPanel({ event, player }: Props) {
-  const resolveEvent = useGameStore(s => s.resolveEvent)
+  const resolveEvent   = useGameStore(s => s.resolveEvent)
+  const buyFromMerchant = useGameStore(s => s.buyFromMerchant)
+  const [merchantQty, setMerchantQty] = useState<Record<string, number>>({})
 
   const runChance = Math.round(
     Math.min(0.9, Math.max(0.1, 0.40 + player.guards * 0.10 - player.brahmin * 0.05)) * 100
@@ -82,17 +86,60 @@ export default function EventPanel({ event, player }: Props) {
       })()}
 
       {event.type === 'wandering_merchant' && (() => {
-        const { prices } = event.payload as { prices: Record<string, number>; stock: Record<string, number> }
+        const { prices, stock } = event.payload as { prices: Record<string, number>; stock: Record<string, number> }
+        const space = calculateCapacity(player.brahmin) - totalInventoryItems(player.inventory)
         return (
-          <div className="flex flex-col gap-2">
-            <div className="text-pip-green-dim text-sm">The merchant has a few things for sale at premium prices.</div>
-            {Object.entries(prices).map(([chemId, price]) => (
-              <div key={chemId} className="flex justify-between text-sm">
-                <span>{CHEMS[chemId]?.name ?? chemId}</span>
-                <span className="text-pip-amber">{price} ¤</span>
-              </div>
-            ))}
-            <button className="pip-btn" onClick={() => resolveEvent('continue')}>PASS MERCHANT</button>
+          <div className="flex flex-col gap-3">
+            <div className="text-pip-green-dim text-xs">
+              Prices are above base market rate — but inventory is scarce on the road.
+            </div>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border">
+                  <th className="text-left py-1 pr-3">Chem</th>
+                  <th className="text-right py-1 pr-3">Price</th>
+                  <th className="text-right py-1 pr-3">vs. Base</th>
+                  <th className="text-right py-1 pr-3">Stock</th>
+                  <th className="py-1 pl-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(prices).map(([chemId, price]) => {
+                  const chem = CHEMS[chemId]
+                  const inStock = stock[chemId] ?? 0
+                  const q = merchantQty[chemId] ?? 1
+                  const pctAbove = chem ? Math.round(((price - chem.basePrice) / chem.basePrice) * 100) : 0
+                  const canBuy = player.caps >= price * q && inStock >= q && space >= q
+                  return (
+                    <tr key={chemId} className="border-b border-pip-border-dim">
+                      <td className="py-1.5 pr-3 font-display text-pip-green">{chem?.name ?? chemId}</td>
+                      <td className="py-1.5 pr-3 text-right text-pip-amber font-display">{price} ¤</td>
+                      <td className="py-1.5 pr-3 text-right text-pip-red text-xs">
+                        {pctAbove > 0 ? `+${pctAbove}%` : `${pctAbove}%`}
+                      </td>
+                      <td className="py-1.5 pr-3 text-right text-pip-green-dim">{inStock}</td>
+                      <td className="py-1.5 pl-1">
+                        <div className="flex items-center gap-1">
+                          <button className="pip-btn text-xs px-1 py-0 leading-4" tabIndex={-1}
+                            onClick={() => setMerchantQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}>−</button>
+                          <span className="text-pip-green font-display text-sm w-5 text-center select-none">{q}</span>
+                          <button className="pip-btn text-xs px-1 py-0 leading-4" tabIndex={-1}
+                            onClick={() => setMerchantQty(p => ({ ...p, [chemId]: q + 1 }))}>+</button>
+                          <button className="pip-btn-amber text-xs px-2 py-0.5 ml-1"
+                            disabled={!canBuy}
+                            onClick={() => buyFromMerchant(chemId, q)}>
+                            BUY
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <button className="pip-btn self-start" onClick={() => resolveEvent('continue')}>
+              PASS MERCHANT
+            </button>
           </div>
         )
       })()}
