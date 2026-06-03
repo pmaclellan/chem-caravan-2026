@@ -3,33 +3,35 @@ import { getAdjacentRoads, getRoadDestination } from '../../engine/travel'
 import { useGameStore } from '../../store/gameStore'
 import type { PlayerState } from '../../types/game'
 
-// Full-resolution URL — thumbnail paths return 404 from cross-origin Referers
-const MAP_URL =
-  'https://static.wikia.nocookie.net/fallout/images/2/2d/Commonwealth-local.jpg' +
-  '/revision/latest?cb=20210413232104'
-
 type Anchor = 'middle' | 'start' | 'end'
 
-// Positions on a 1000×1000 viewBox matching the square Commonwealth map.
-// Geography: NW = Sanctuary Hills (Concord), Center = Diamond City (Fenway),
-// SE = The Castle (Fort Independence). Adjust x/y if the overlay drifts.
+// MBTA-style transit layout. Grid unit = 130px, origin at (95, 95).
+// Clean geometry: most roads are horizontal, vertical, or 45° diagonal.
+//   SH ── GG
+//    │      ╲ 45°
+//   V81    BH ── GN ── PSS
+//    │      │     ╲ 45°
+//    ╲     DC ────(GN-DC)
+//     ╲    │
+//      ╲  JP
+//       ╲  │
+//        TC╯  (JP-TC horiz; V81-TC = Quincy Ruins Road, deliberately long/shallow)
 const POSITIONS: Record<string, {
   x: number; y: number
   labelAnchor: Anchor; labelDx: number; labelDy: number
 }> = {
-  sanctuary_hills:     { x: 178, y: 122, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-  graygarden:          { x: 352, y: 248, labelAnchor: 'middle', labelDx:   0, labelDy: -13 },
-  bunker_hill:         { x: 618, y: 295, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-  goodneighbor:        { x: 715, y: 445, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-  park_street_station: { x: 640, y: 495, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-  diamond_city:        { x: 518, y: 558, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
-  jamaica_plain:       { x: 385, y: 722, labelAnchor: 'middle', labelDx:   0, labelDy: -13 },
-  the_castle:          { x: 790, y: 798, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-  vault_81:            { x: 240, y: 628, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
+  sanctuary_hills:     { x:  95, y:  95, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
+  graygarden:          { x: 225, y:  95, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
+  bunker_hill:         { x: 355, y: 225, labelAnchor: 'start',  labelDx:  13, labelDy:  -5 },
+  goodneighbor:        { x: 485, y: 225, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
+  park_street_station: { x: 485, y: 355, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
+  diamond_city:        { x: 355, y: 355, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
+  vault_81:            { x:  95, y: 355, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
+  jamaica_plain:       { x: 225, y: 485, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
+  the_castle:          { x: 485, y: 485, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
 }
 
-function roadColor(danger: number, isAdjacent: boolean): string {
-  if (!isAdjacent) return 'rgba(80, 50, 18, 0.30)'
+function dangerColor(danger: number): string {
   if (danger >= 0.65) return '#8c1c1c'
   if (danger >= 0.45) return '#c47810'
   return '#4a6a20'
@@ -48,7 +50,7 @@ export default function MapPanel({ player }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-pip-green-dim text-xs mb-1 flex-shrink-0 flex flex-wrap gap-x-4 gap-y-0.5">
+      <div className="text-pip-green-dim text-xs mb-1 flex-shrink-0 flex flex-wrap gap-x-4">
         <span>Click a connected settlement to travel.</span>
         <span className="flex gap-2">
           <span style={{ color: '#4a6a20' }}>■ safe</span>
@@ -59,25 +61,38 @@ export default function MapPanel({ player }: Props) {
 
       <div className="flex-1 relative min-h-0">
         <svg
-          viewBox="0 0 1000 1000"
+          viewBox="0 0 600 548"
           preserveAspectRatio="xMidYMin meet"
           className="absolute inset-0 w-full h-full"
         >
-          {/* Sandy fallback visible until image loads */}
-          <rect width="1000" height="1000" fill="#c8a850" />
+          <defs>
+            {/* Paper grain — generated, no external image */}
+            <filter id="map-grain" x="0%" y="0%" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.72"
+                numOctaves="4" stitchTiles="stitch" />
+              <feColorMatrix type="saturate" values="0" />
+            </filter>
+            {/* Warm vignette */}
+            <radialGradient id="map-vignette" cx="50%" cy="50%" r="72%">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="100%" stopColor="rgba(90, 52, 14, 0.28)" />
+            </radialGradient>
+          </defs>
 
-          {/* Commonwealth terrain — no SVG filter to avoid cross-origin CORS block */}
-          <image
-            href={MAP_URL}
-            x="0" y="0" width="1000" height="1000"
-            preserveAspectRatio="xMidYMid meet"
-            opacity="0.82"
-          />
+          {/* ── Background: aged parchment ── */}
+          <rect width="600" height="548" fill="#d8bf88" rx="2" />
+          <rect width="600" height="548" filter="url(#map-grain)" opacity="0.07" />
+          <rect width="600" height="548" fill="url(#map-vignette)" />
 
-          {/* Warm amber wash converts grayscale terrain to parchment feel */}
-          <rect width="1000" height="1000" fill="rgba(155, 95, 28, 0.42)" />
+          {/* Map title */}
+          <text x="300" y="32" textAnchor="middle" fontSize="9.5"
+            fontFamily='"Special Elite", serif'
+            fill="rgba(80, 50, 18, 0.50)"
+            letterSpacing="0.14em">
+            COMMONWEALTH WASTELAND
+          </text>
 
-          {/* ── Roads: non-adjacent first so adjacent render on top ── */}
+          {/* ── Roads: non-adjacent (dim dashed) first, then adjacent (bold) ── */}
           {ROADS.filter(r => !isAdjRoad(r)).map(road => {
             const from = POSITIONS[road.from]
             const to   = POSITIONS[road.to]
@@ -85,8 +100,8 @@ export default function MapPanel({ player }: Props) {
             return (
               <line key={road.id}
                 x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                stroke={roadColor(road.dangerLevel, false)}
-                strokeWidth={1} strokeDasharray="5 5"
+                stroke="rgba(105, 68, 24, 0.28)"
+                strokeWidth={3} strokeDasharray="6 5" strokeLinecap="round"
               />
             )
           })}
@@ -95,11 +110,12 @@ export default function MapPanel({ player }: Props) {
             const from = POSITIONS[road.from]
             const to   = POSITIONS[road.to]
             if (!from || !to) return null
+            const color = dangerColor(road.dangerLevel)
+            const w = road.dangerLevel >= 0.65 ? 5 : 3.5
             return (
               <line key={road.id}
                 x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                stroke={roadColor(road.dangerLevel, true)}
-                strokeWidth={2.5} strokeLinecap="round"
+                stroke={color} strokeWidth={w} strokeLinecap="round"
               />
             )
           })}
@@ -111,58 +127,53 @@ export default function MapPanel({ player }: Props) {
             const name      = (SETTLEMENTS[id]?.name ?? id.replace(/_/g, ' ')).toUpperCase()
             const { labelAnchor, labelDx, labelDy } = pos
 
-            const nodeR      = isCurrent ? 11 : isAdj ? 8 : 5
-            const nodeFill   = isCurrent ? '#c4501a'
-                             : isAdj     ? 'rgba(200, 148, 50, 0.90)'
-                             :             'rgba(80, 50, 18, 0.22)'
-            const nodeStroke = isCurrent ? '#e8a050'
-                             : isAdj     ? '#8a6020'
-                             :             'rgba(80, 50, 18, 0.40)'
-            const textFill   = isCurrent ? '#fdf0d0'
-                             : isAdj     ? '#ecddb0'
-                             :             'rgba(50, 30, 8, 0.50)'
-            const textSize   = isCurrent ? 11.5 : isAdj ? 9.5 : 7.5
-            const strokeW    = isCurrent ? 4 : isAdj ? 3 : 2
+            const nodeR       = isCurrent ? 13  : isAdj ? 9.5 : 6.5
+            const nodeFill    = isCurrent ? '#c4501a'
+                              : isAdj     ? '#d8bf88'   // matches bg — white "hole" look
+                              :             'rgba(162, 128, 60, 0.35)'
+            const nodeStroke  = isCurrent ? '#e8a050'
+                              : isAdj     ? '#6a4818'
+                              :             'rgba(120, 80, 28, 0.42)'
+            const nodeStrokeW = isCurrent ? 3   : isAdj ? 2   : 1.5
+            const textFill    = isCurrent ? '#200e04'
+                              : isAdj     ? '#200e04'
+                              :             'rgba(80, 50, 18, 0.50)'
+            const fontSize    = isCurrent ? 9.5 : isAdj ? 8.5 : 7.5
+            const textStrokeW = isCurrent ? 3.5 : isAdj ? 3   : 2
 
             return (
               <g key={id}
                 onClick={() => isAdj && travelTo(id)}
                 style={{ cursor: isAdj ? 'pointer' : 'default' }}
               >
-                {/* Pulsing outer ring — current location only */}
+                {/* Pulsing outer ring for current location */}
                 {isCurrent && (
-                  <circle cx={pos.x} cy={pos.y} r={19}
-                    fill="none" stroke="#e8a050" strokeWidth="1.5"
+                  <circle cx={pos.x} cy={pos.y} r={21}
+                    fill="none" stroke="#c4501a" strokeWidth="1.5"
                     style={{ animation: 'map-ring-pulse 2.2s ease-in-out infinite' }}
                   />
                 )}
 
-                {/* Larger invisible hit area for adjacent nodes */}
-                {isAdj && <circle cx={pos.x} cy={pos.y} r={20} fill="transparent" />}
+                {/* Enlarged hit area for adjacent */}
+                {isAdj && <circle cx={pos.x} cy={pos.y} r={22} fill="transparent" />}
 
-                {/* Main node circle */}
+                {/* Node */}
                 <circle cx={pos.x} cy={pos.y} r={nodeR}
-                  fill={nodeFill} stroke={nodeStroke}
-                  strokeWidth={isCurrent ? 2.5 : 1.5}
+                  fill={nodeFill} stroke={nodeStroke} strokeWidth={nodeStrokeW}
                 />
 
-                {/* Center pip for current location */}
-                {isCurrent && (
-                  <circle cx={pos.x} cy={pos.y} r={3.5} fill="#fdf0d0" />
-                )}
+                {/* Inner pip for current location */}
+                {isCurrent && <circle cx={pos.x} cy={pos.y} r={4} fill="#fdf0d0" />}
 
-                {/* Settlement name — dark stroke creates legible halo on any terrain */}
+                {/* Label — parchment stroke creates legible halo */}
                 <text
-                  x={pos.x + labelDx}
-                  y={pos.y + labelDy}
+                  x={pos.x + labelDx} y={pos.y + labelDy}
                   textAnchor={labelAnchor}
-                  fontSize={textSize}
+                  fontSize={fontSize}
                   fontFamily='"Special Elite", serif'
                   fontWeight={isCurrent ? 'bold' : 'normal'}
                   fill={textFill}
-                  stroke="rgba(15, 8, 0, 0.88)"
-                  strokeWidth={strokeW}
-                  paintOrder="stroke"
+                  stroke="#d8bf88" strokeWidth={textStrokeW} paintOrder="stroke"
                   style={{ userSelect: 'none' }}
                 >
                   {name}
@@ -170,6 +181,15 @@ export default function MapPanel({ player }: Props) {
               </g>
             )
           })}
+
+          {/* Compass: top-right */}
+          <text x="572" y="52" textAnchor="middle" fontSize="9"
+            fontFamily='"Special Elite", serif'
+            fill="rgba(80, 50, 18, 0.45)">
+            N
+          </text>
+          <line x1="572" y1="54" x2="572" y2="64"
+            stroke="rgba(80, 50, 18, 0.35)" strokeWidth="1" markerEnd="url(#arrow)" />
         </svg>
       </div>
     </div>
