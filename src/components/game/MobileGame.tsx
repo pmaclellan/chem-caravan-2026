@@ -425,10 +425,10 @@ export default function MobileGame() {
                 )}
               </div>
 
-              {/* Line 3: MAX BUY [−][qty][+] SELL ALL — always right-aligned */}
+              {/* Line 3: ALL SELL [−][qty][+] BUY MAX — always right-aligned */}
               <div className="flex justify-end items-center gap-1 px-3 pb-3">
-                <button className="pip-btn text-xs px-2 py-1" disabled={maxQty <= 0} onClick={() => buy(chemId, maxQty)}>MAX</button>
-                <button className="pip-btn-amber text-xs px-3 py-1" disabled={!canBuy} onClick={() => buy(chemId, q)}>BUY</button>
+                <button className="pip-btn text-xs px-2 py-1" disabled={owned === 0} onClick={() => sell(chemId, owned)}>ALL</button>
+                <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
                 <button
                   className="pip-btn text-xs px-2 py-1 leading-none"
                   onClick={() => setMarketQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}
@@ -440,8 +440,8 @@ export default function MobileGame() {
                   onClick={() => setMarketQty(p => ({ ...p, [chemId]: q + 1 }))}
                   tabIndex={-1}
                 >+</button>
-                <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
-                <button className="pip-btn text-xs px-2 py-1" disabled={owned === 0} onClick={() => sell(chemId, owned)}>ALL</button>
+                <button className="pip-btn-amber text-xs px-3 py-1" disabled={!canBuy} onClick={() => buy(chemId, q)}>BUY</button>
+                <button className="pip-btn text-xs px-2 py-1" disabled={maxQty <= 0} onClick={() => buy(chemId, maxQty)}>MAX</button>
               </div>
             </div>
           )

@@ -82,22 +82,22 @@ export default function MarketPanel({ player, market }: Props) {
                     ) : <span className="text-pip-green-dim">—</span>}
                   </td>
 
-                  {/* MAX  BUY  [−][qty][+]  SELL  ALL */}
+                  {/* ALL  SELL  [−][qty][+]  BUY  MAX */}
                   <td className="py-1 pl-1" colSpan={2}>
                     <div className="flex items-center gap-1 flex-nowrap">
                       <button
                         className="pip-btn text-xs px-1.5 py-0.5"
-                        disabled={!canBuyMax}
-                        onClick={() => buy(chemId, maxQty)}
+                        disabled={owned === 0}
+                        onClick={() => sell(chemId, owned)}
                       >
-                        MAX
+                        ALL
                       </button>
                       <button
-                        className="pip-btn-amber text-xs px-2 py-0.5"
-                        disabled={!canBuy}
-                        onClick={() => buy(chemId, q)}
+                        className="pip-btn text-xs px-2 py-0.5"
+                        disabled={owned < q}
+                        onClick={() => sell(chemId, q)}
                       >
-                        BUY
+                        SELL
                       </button>
                       <button
                         className="pip-btn text-xs px-1.5 py-0 leading-4"
@@ -111,18 +111,18 @@ export default function MarketPanel({ player, market }: Props) {
                         tabIndex={-1}
                       >+</button>
                       <button
-                        className="pip-btn text-xs px-2 py-0.5"
-                        disabled={owned < q}
-                        onClick={() => sell(chemId, q)}
+                        className="pip-btn-amber text-xs px-2 py-0.5"
+                        disabled={!canBuy}
+                        onClick={() => buy(chemId, q)}
                       >
-                        SELL
+                        BUY
                       </button>
                       <button
                         className="pip-btn text-xs px-1.5 py-0.5"
-                        disabled={owned === 0}
-                        onClick={() => sell(chemId, owned)}
+                        disabled={!canBuyMax}
+                        onClick={() => buy(chemId, maxQty)}
                       >
-                        ALL
+                        MAX
                       </button>
                     </div>
                   </td>
