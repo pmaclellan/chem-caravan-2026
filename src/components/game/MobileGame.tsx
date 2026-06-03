@@ -13,6 +13,7 @@ import { useMapFlash } from '../../hooks/useMapFlash'
 import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import CombatPanel from './CombatPanel'
+import CombatSummaryPanel from './CombatSummaryPanel'
 import EventPanel from './EventPanel'
 import TravelSplash from './TravelSplash'
 
@@ -81,7 +82,7 @@ export default function MobileGame() {
     ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location)
     : { prices: {}, stock: {}, lastRefreshed: 0 }
 
-  const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'traveling'
+  const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'combat_summary' || phase === 'traveling'
 
   const capacity = calculateCapacity(player.brahmin)
   const used = totalInventoryItems(player.inventory)
@@ -647,6 +648,9 @@ export default function MobileGame() {
               )}
               {phase === 'combat' && combat && (
                 <CombatPanel player={player} combat={combat} />
+              )}
+              {phase === 'combat_summary' && combat && (
+                <CombatSummaryPanel combat={combat} />
               )}
               {phase === 'event' && pendingEvent && (
                 <EventPanel event={pendingEvent} player={player} />

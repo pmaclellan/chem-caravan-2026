@@ -9,6 +9,7 @@ import PlayerStats from '../components/game/PlayerStats'
 import MarketPanel from '../components/game/MarketPanel'
 import MapPanel from '../components/game/MapPanel'
 import CombatPanel from '../components/game/CombatPanel'
+import CombatSummaryPanel from '../components/game/CombatSummaryPanel'
 import EventPanel from '../components/game/EventPanel'
 import ServicesPanel from '../components/game/ServicesPanel'
 import InventoryPanel from '../components/game/InventoryPanel'
@@ -55,18 +56,19 @@ export default function Game() {
   const rawMarket = world.settlements[player.location]
   const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
 
-  if (isMobile) return <MobileGame />
-
   if (phase === 'game_over') {
     return <GameOverScreen gameState={gameState} onHome={() => navigate('/')} />
   }
 
-  const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'traveling'
+  if (isMobile) return <MobileGame />
+
+  const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'combat_summary' || phase === 'traveling'
   const mainContent = () => {
     if (phase === 'traveling' && pendingQuote && pendingDestination) {
       return <TravelSplash quote={pendingQuote} destination={pendingDestination} />
     }
     if (phase === 'combat' && combat) return <CombatPanel player={player} combat={combat} />
+    if (phase === 'combat_summary' && combat) return <CombatSummaryPanel combat={combat} />
     if (phase === 'event' && pendingEvent) return <EventPanel event={pendingEvent} player={player} />
     switch (tab) {
       case 'market':   return <MarketPanel player={player} market={market} />
@@ -158,6 +160,7 @@ export default function Game() {
             const fillHeight =
               (tab === 'travel' && !isActionBlocked) ||
               phase === 'combat' ||
+              phase === 'combat_summary' ||
               phase === 'traveling'
             return (
               <div className={`pip-panel relative ${

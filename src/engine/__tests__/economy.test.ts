@@ -40,17 +40,17 @@ function makeMarket(overrides: Partial<SettlementMarket> = {}): SettlementMarket
 }
 
 describe('applyTurnInterest', () => {
-  it('increases debt by 10%', () => {
+  it('increases debt by 6.5%', () => {
     const player = makePlayer({ debt: 1000, ageOfDebt: 0 })
     const result = applyTurnInterest(player)
-    expect(result.debt).toBe(1100)
+    expect(result.debt).toBe(1065) // ceil(1000 * 1.065) = 1065
     expect(result.ageOfDebt).toBe(1)
   })
 
   it('rounds up fractional caps', () => {
     const player = makePlayer({ debt: 101, ageOfDebt: 0 })
     const result = applyTurnInterest(player)
-    expect(result.debt).toBe(112) // ceil(101 * 1.10) = 112
+    expect(result.debt).toBe(108) // ceil(101 * 1.065) = ceil(107.565) = 108
   })
 
   it('does nothing if debt is 0', () => {

@@ -11,6 +11,7 @@ import {
   resolveDebtCollector,
   startCombat,
   afterCombat,
+  dismissCombatSummary,
 } from '../engine/gameLoop'
 import { resolveFight, resolveRun } from '../engine/combat'
 import { rng } from '../engine/rng'
@@ -69,6 +70,7 @@ interface GameStore {
   // Combat
   fight: () => void
   run: () => void
+  dismissCombatSummary: () => void
 
   // Market
   buy: (chemId: string, quantity: number) => void
@@ -275,6 +277,10 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!state?.combat) return
       const result = resolveRun(state.player, state.combat)
       mutate(s => afterCombat(s, result))
+    },
+
+    dismissCombatSummary: () => {
+      mutate(state => dismissCombatSummary(state))
     },
 
     buy: (chemId, quantity) => {
