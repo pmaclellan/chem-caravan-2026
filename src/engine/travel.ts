@@ -59,13 +59,24 @@ function buildEventPayload(
       return { type, title, description, payload: { toll: BROTHERHOOD_TOLL } }
     case 'wandering_merchant': {
       const chemIds = [...STASH_CHEMS].sort(() => rng() - 0.5).slice(0, 3)
+      // 35% chance the merchant is fencing stolen goods at knockdown prices
+      const isFence = rng() < 0.35
       const prices: Record<string, number> = {}
       chemIds.forEach(id => {
-        prices[id] = Math.round((CHEMS[id].basePrice * (1 + rng() * 0.5)) / 5) * 5
+        prices[id] = isFence
+          ? Math.round((CHEMS[id].basePrice * (0.45 + rng() * 0.30)) / 5) * 5  // 45-75% of base
+          : Math.round((CHEMS[id].basePrice * (1.10 + rng() * 0.40)) / 5) * 5  // 110-150% of base
       })
       const stock: Record<string, number> = {}
       chemIds.forEach(id => { stock[id] = rngInt(1, 5) })
-      return { type, title, description, payload: { prices, stock } }
+      const fenceTitle = 'SUSPICIOUS PEDDLER'
+      const fenceDesc  = "A nervous figure waves you down from the shadows. 'Real cheap. Don't ask where it came from.'"
+      return {
+        type,
+        title:       isFence ? fenceTitle : title,
+        description: isFence ? fenceDesc  : description,
+        payload: { prices, stock, isFence },
+      }
     }
     default:
       return { type, title, description }

@@ -3,6 +3,7 @@ import type { TravelEvent, PlayerState } from '../../types/game'
 import { CHEMS } from '../../data/chems'
 import { useGameStore } from '../../store/gameStore'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
+import { priceColor } from '../../utils/priceColor'
 
 interface Props { event: TravelEvent; player: PlayerState }
 
@@ -86,12 +87,16 @@ export default function EventPanel({ event, player }: Props) {
       })()}
 
       {event.type === 'wandering_merchant' && (() => {
-        const { prices, stock } = event.payload as { prices: Record<string, number>; stock: Record<string, number> }
+        const { prices, stock, isFence } = event.payload as {
+          prices: Record<string, number>; stock: Record<string, number>; isFence?: boolean
+        }
         const space = calculateCapacity(player.brahmin) - totalInventoryItems(player.inventory)
         return (
           <div className="flex flex-col gap-3">
             <div className="text-pip-green-dim text-xs">
-              Prices are above base market rate — but inventory is scarce on the road.
+              {isFence
+                ? "Prices are suspiciously low. No receipt. No questions asked."
+                : "Prices are above base market rate — but inventory is scarce on the road."}
             </div>
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -108,14 +113,15 @@ export default function EventPanel({ event, player }: Props) {
                   const chem = CHEMS[chemId]
                   const inStock = stock[chemId] ?? 0
                   const q = merchantQty[chemId] ?? 1
-                  const pctAbove = chem ? Math.round(((price - chem.basePrice) / chem.basePrice) * 100) : 0
+                  const pctVsBase = chem ? Math.round(((price - chem.basePrice) / chem.basePrice) * 100) : 0
                   const canBuy = player.caps >= price * q && inStock >= q && space >= q
+                  const pStyle = chem ? priceColor(price, chem.basePrice, chem.priceVariance) : {}
                   return (
                     <tr key={chemId} className="border-b border-pip-border-dim">
                       <td className="py-1.5 pr-3 font-display text-pip-green">{chem?.name ?? chemId}</td>
-                      <td className="py-1.5 pr-3 text-right text-pip-amber font-display">{price} ¤</td>
-                      <td className="py-1.5 pr-3 text-right text-pip-red text-xs">
-                        {pctAbove > 0 ? `+${pctAbove}%` : `${pctAbove}%`}
+                      <td className="py-1.5 pr-3 text-right font-display" style={pStyle}>{price} ¤</td>
+                      <td className="py-1.5 pr-3 text-right text-xs" style={pStyle}>
+                        {pctVsBase > 0 ? `+${pctVsBase}%` : `${pctVsBase}%`}
                       </td>
                       <td className="py-1.5 pr-3 text-right text-pip-green-dim">{inStock}</td>
                       <td className="py-1.5 pl-1">
