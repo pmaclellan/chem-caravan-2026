@@ -12,6 +12,7 @@ import EventPanel from '../components/game/EventPanel'
 import ServicesPanel from '../components/game/ServicesPanel'
 import InventoryPanel from '../components/game/InventoryPanel'
 import GameLog from '../components/game/GameLog'
+import TravelSplash from '../components/game/TravelSplash'
 
 type ActiveTab = 'market' | 'travel' | 'services'
 
@@ -46,7 +47,7 @@ export default function Game() {
     )
   }
 
-  const { player, world, pendingEvent, combat, log } = gameState
+  const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log } = gameState
   const settlement = SETTLEMENTS[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
@@ -57,8 +58,11 @@ export default function Game() {
 
   const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'traveling'
   const mainContent = () => {
+    if (phase === 'traveling' && pendingQuote && pendingDestination) {
+      return <TravelSplash quote={pendingQuote} destination={pendingDestination} />
+    }
     if (phase === 'combat' && combat) return <CombatPanel player={player} combat={combat} />
-    if ((phase === 'event' || phase === 'traveling') && pendingEvent) return <EventPanel event={pendingEvent} player={player} />
+    if (phase === 'event' && pendingEvent) return <EventPanel event={pendingEvent} player={player} />
     switch (tab) {
       case 'market':   return <MarketPanel player={player} market={market} />
       case 'travel':   return <MapPanel player={player} />
@@ -96,10 +100,27 @@ export default function Game() {
         </div>
 
         {/* Center: Main action */}
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
+        <div className="flex-1 flex flex-col gap-2 min-w-0 relative">
+          {/* Settlement background image — behind all panels */}
+          {!isActionBlocked && settlement.imageUrl && (
+            <>
+              <img
+                src={settlement.imageUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none rounded"
+                style={{ opacity: 0.32 }}
+              />
+              {/* Gradient darkens the bottom so parchment panels stay readable */}
+              <div
+                className="absolute inset-0 pointer-events-none rounded"
+                style={{ background: 'linear-gradient(to bottom, rgba(192,168,90,0.15) 0%, rgba(192,168,90,0.70) 55%, rgba(192,168,90,0.92) 100%)' }}
+              />
+            </>
+          )}
+
           {/* Settlement header */}
           {!isActionBlocked && (
-            <div className="pip-panel py-2 px-3">
+            <div className="pip-panel py-2 px-3 relative">
               <div className="flex justify-between items-center">
                 <div>
                   <span className="font-display text-pip-green text-xl">{settlement.name}</span>
@@ -112,11 +133,11 @@ export default function Game() {
 
           {/* Tab bar (only when at settlement) */}
           {!isActionBlocked && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 relative">
               {(['market', 'travel', 'services'] as ActiveTab[]).map(t => (
                 <button
                   key={t}
-                  className={tab === t ? 'pip-btn bg-pip-green text-pip-bg' : 'pip-btn'}
+                  className={tab === t ? 'pip-btn bg-pip-green text-pip-bg-light' : 'pip-btn'}
                   onClick={() => setTab(t)}
                 >
                   {t.toUpperCase()}
@@ -126,7 +147,7 @@ export default function Game() {
           )}
 
           {/* Main panel — overflow-hidden + flex when showing map so SVG fills height */}
-          <div className={`pip-panel flex-1 min-h-0 ${tab === 'travel' && !isActionBlocked ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
+          <div className={`pip-panel flex-1 min-h-0 relative ${tab === 'travel' && !isActionBlocked ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
             {mainContent()}
           </div>
         </div>
