@@ -108,7 +108,7 @@ export default function Game() {
                 src={settlement.imageUrl}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover pointer-events-none rounded"
-                style={{ opacity: 0.32 }}
+                style={{ opacity: 0.52 }}
               />
               {/* Gradient darkens the bottom so parchment panels stay readable */}
               <div
@@ -166,12 +166,14 @@ export default function Game() {
           })()}
         </div>
 
-        {/* Right: Inventory + Log */}
-        <div className="w-64 flex-shrink-0 flex flex-col gap-2 min-h-0">
-          <div className="flex-1 overflow-y-auto" style={{ maxHeight: '45%' }}>
+        {/* Right: Inventory + Log — explicit height pins the column so log growth
+            doesn't push the layout; log gets remaining space with overflow scroll */}
+        <div className="w-64 flex-shrink-0 flex flex-col gap-2 overflow-hidden"
+          style={{ height: 'calc(100vh - 80px)' }}>
+          <div className="overflow-y-auto flex-shrink-0" style={{ maxHeight: '42%' }}>
             <InventoryPanel player={player} market={market} />
           </div>
-          <div className="flex-1 overflow-y-auto" style={{ maxHeight: '55%' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <GameLog log={log} />
           </div>
         </div>

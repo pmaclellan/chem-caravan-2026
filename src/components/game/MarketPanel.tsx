@@ -15,14 +15,46 @@ export default function MarketPanel({ player, market }: Props) {
   const space = capacity - used
   const available = CHEM_IDS.filter(id => market.prices[id])
 
+  // Buy the current qty of every available chem (sequential — each sees updated state)
+  const handleBuyAll = () => {
+    for (const chemId of available) {
+      const q = qty[chemId] ?? 1
+      buy(chemId, q)
+    }
+  }
+
+  // Sell everything currently in inventory
+  const handleSellAll = () => {
+    for (const chemId of Object.keys(player.inventory)) {
+      const owned = player.inventory[chemId]?.quantity ?? 0
+      if (owned > 0 && market.prices[chemId]) sell(chemId, owned)
+    }
+  }
+
+  const hasInventory = Object.values(player.inventory).some(e => e.quantity > 0 && market.prices)
+
   if (available.length === 0) {
     return <div className="text-pip-green-dim text-xs">No chems available here right now.</div>
   }
 
   return (
     <div className="flex flex-col">
-      <div className="text-pip-green-dim text-xs mb-1">
-        {available.length} chems · space: {space} units
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-pip-green-dim text-xs">
+          {available.length} chems · space: {space} units
+        </span>
+        <div className="flex gap-1">
+          <button className="pip-btn-amber text-xs px-2 py-0.5" onClick={handleBuyAll}>
+            BUY ALL
+          </button>
+          <button
+            className="pip-btn text-xs px-2 py-0.5"
+            onClick={handleSellAll}
+            disabled={!hasInventory}
+          >
+            SELL ALL
+          </button>
+        </div>
       </div>
 
       <div>
