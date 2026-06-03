@@ -244,7 +244,7 @@ export default function MobileGame() {
 
             {serviceOpen === 'loanshark' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-3">
-                <div className="pip-label">Loanshark — 10% interest/turn</div>
+                <div className="pip-label">Loanshark — 5% interest/turn</div>
                 <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
