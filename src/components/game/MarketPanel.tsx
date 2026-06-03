@@ -15,46 +15,14 @@ export default function MarketPanel({ player, market }: Props) {
   const space = capacity - used
   const available = CHEM_IDS.filter(id => market.prices[id])
 
-  // Buy the current qty of every available chem (sequential — each sees updated state)
-  const handleBuyAll = () => {
-    for (const chemId of available) {
-      const q = qty[chemId] ?? 1
-      buy(chemId, q)
-    }
-  }
-
-  // Sell everything currently in inventory
-  const handleSellAll = () => {
-    for (const chemId of Object.keys(player.inventory)) {
-      const owned = player.inventory[chemId]?.quantity ?? 0
-      if (owned > 0 && market.prices[chemId]) sell(chemId, owned)
-    }
-  }
-
-  const hasInventory = Object.values(player.inventory).some(e => e.quantity > 0 && market.prices)
-
   if (available.length === 0) {
     return <div className="text-pip-green-dim text-xs">No chems available here right now.</div>
   }
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-pip-green-dim text-xs">
-          {available.length} chems · space: {space} units
-        </span>
-        <div className="flex gap-1">
-          <button className="pip-btn-amber text-xs px-2 py-0.5" onClick={handleBuyAll}>
-            BUY ALL
-          </button>
-          <button
-            className="pip-btn text-xs px-2 py-0.5"
-            onClick={handleSellAll}
-            disabled={!hasInventory}
-          >
-            SELL ALL
-          </button>
-        </div>
+      <div className="text-pip-green-dim text-xs mb-1">
+        {available.length} chems · space: {space} units
       </div>
 
       <div>
@@ -81,7 +49,14 @@ export default function MarketPanel({ player, market }: Props) {
               const pnlPerUnit = owned > 0 ? price - paidPrice : null
               const q = qty[chemId] ?? 1
               const canBuy = player.caps >= price * q && stock >= q && space >= q
-              const canSell = owned >= q
+
+              // Max buyable: limited by caps, stock remaining, and inventory space
+              const maxQty = Math.min(
+                Math.floor(player.caps / price),
+                stock,
+                space,
+              )
+              const canBuyMax = maxQty > 0
 
               return (
                 <tr key={chemId} className="border-b border-pip-border-dim hover:bg-pip-border-dim transition-colors">
@@ -105,6 +80,7 @@ export default function MarketPanel({ player, market }: Props) {
                       </span>
                     ) : <span className="text-pip-green-dim">—</span>}
                   </td>
+
                   {/* [−] qty [+] stepper */}
                   <td className="py-1 pr-1">
                     <div className="flex items-center gap-0.5">
@@ -121,8 +97,11 @@ export default function MarketPanel({ player, market }: Props) {
                       >+</button>
                     </div>
                   </td>
+
+                  {/* Buy/sell actions */}
                   <td className="py-1 pl-1">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-nowrap">
+                      {/* BUY: buys qty amount */}
                       <button
                         className="pip-btn-amber text-xs px-2 py-0.5"
                         disabled={!canBuy}
@@ -130,11 +109,20 @@ export default function MarketPanel({ player, market }: Props) {
                       >
                         BUY
                       </button>
+                      {/* MAX: buys as many as caps/stock/space allow */}
+                      <button
+                        className="pip-btn text-xs px-1.5 py-0.5"
+                        disabled={!canBuyMax}
+                        onClick={() => buy(chemId, maxQty)}
+                        title={`Buy all ${maxQty} affordable`}
+                      >
+                        MAX
+                      </button>
+                      {/* SELL ALL: dumps entire holding of this chem */}
                       {owned > 0 && (
                         <button
                           className="pip-btn text-xs px-2 py-0.5"
-                          disabled={!canSell}
-                          onClick={() => sell(chemId, q)}
+                          onClick={() => sell(chemId, owned)}
                         >
                           SELL
                         </button>
