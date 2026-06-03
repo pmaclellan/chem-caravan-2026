@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../store/gameStore'
 import { SETTLEMENTS, SETTLEMENT_IDS } from '../../data/settlements'
@@ -57,6 +57,11 @@ export default function MobileGame() {
     Object.entries(gameState?.player.inventory ?? {}).map(([id, e]) => [id, e.quantity])
   )
   const inventoryFlashes = useMapFlash(inventoryQuantities)
+
+  // Mirror Game.tsx: switch to market whenever we arrive at a settlement
+  useEffect(() => {
+    if (gameState?.phase === 'settlement') setTab('market')
+  }, [gameState?.phase, gameState?.player.location])
 
   if (!gameState) return null
 
@@ -435,15 +440,11 @@ export default function MobileGame() {
                   >+</button>
                 </div>
 
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-1">
                   <button className="pip-btn-amber text-xs px-3 py-1" disabled={!canBuy} onClick={() => buy(chemId, q)}>BUY</button>
                   <button className="pip-btn text-xs px-2 py-1" disabled={maxQty <= 0} onClick={() => buy(chemId, maxQty)}>MAX</button>
-                  {owned > 0 && (
-                    <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
-                  )}
-                  {owned > 0 && (
-                    <button className="pip-btn text-xs px-2 py-1" onClick={() => sell(chemId, owned)}>ALL</button>
-                  )}
+                  <button className="pip-btn text-xs px-3 py-1" disabled={owned < q} onClick={() => sell(chemId, q)}>SELL</button>
+                  <button className="pip-btn text-xs px-2 py-1" disabled={owned === 0} onClick={() => sell(chemId, owned)}>ALL</button>
                 </div>
               </div>
             </div>
@@ -465,7 +466,6 @@ export default function MobileGame() {
         {roads.map(road => {
           const destId = getRoadDestination(road, player.location)
           const dest = SETTLEMENTS[destId]
-          const canAfford = player.caps >= road.travelCost
           const services = [
             dest.hasDoctor && 'Doctor',
             dest.hasBank && 'Bank',
@@ -482,10 +482,7 @@ export default function MobileGame() {
                     <div className="font-display text-pip-green text-xl">{dest.name}</div>
                     <div className="text-xs text-pip-green-dim">via {road.name}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-display text-pip-amber">{road.travelCost} ¤</div>
-                    <DangerBars level={road.dangerLevel} />
-                  </div>
+                  <DangerBars level={road.dangerLevel} />
                 </div>
                 <div className="text-xs text-pip-green-dim mt-1">{road.description}</div>
                 {services && (
@@ -494,10 +491,9 @@ export default function MobileGame() {
               </div>
               <button
                 className="w-full pip-btn rounded-none border-0 border-t border-pip-border py-2.5 text-sm"
-                disabled={!canAfford}
                 onClick={() => travelTo(destId)}
               >
-                {canAfford ? `TRAVEL (${road.travelCost} ¤)` : 'CANNOT AFFORD'}
+                TRAVEL
               </button>
             </div>
           )
