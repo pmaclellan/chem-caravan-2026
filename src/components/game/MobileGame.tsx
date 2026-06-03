@@ -50,6 +50,10 @@ export default function MobileGame() {
   const store = useGameStore()
   const { gameState, buy, sell, travelTo, toast } = store
 
+  // Derive stable primitives before effects so deps are never undefined
+  const phase    = gameState?.phase ?? null
+  const location = gameState?.player.location ?? null
+
   // All hooks must be called unconditionally at the top level
   // These are used in the tab render functions below via closure
   const { flashKey: capsFlash, direction: capsDir } = useValueFlash(gameState?.player.caps ?? 0)
@@ -58,15 +62,19 @@ export default function MobileGame() {
   )
   const inventoryFlashes = useMapFlash(inventoryQuantities)
 
-  // Mirror Game.tsx: switch to market whenever we arrive at a settlement
+  // Switch to market whenever we arrive at a new settlement
   useEffect(() => {
-    if (gameState?.phase === 'settlement') setTab('market')
-  }, [gameState?.phase, gameState?.player.location])
+    if (phase === 'settlement') setTab('market')
+  }, [phase, location])
+
+  // Reset any open service panel when we move to a different settlement
+  useEffect(() => {
+    setServiceOpen(null)
+  }, [location])
 
   if (!gameState) return null
 
   const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log } = gameState
-  const phase = gameState.phase
   const settlement = SETTLEMENTS[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket
