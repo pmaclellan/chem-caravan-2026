@@ -36,8 +36,7 @@ export default function MarketPanel({ player, market }: Props) {
               <th className="text-right py-1 pr-2">Stock</th>
               <th className="text-right py-1 pr-2">Own</th>
               <th className="text-right py-1 pr-2">P/L</th>
-              <th className="text-right py-1 pr-2">Qty</th>
-              <th className="py-1 pl-1"></th>
+              <th className="py-1 pl-1" colSpan={2}></th>
             </tr>
           </thead>
           <tbody>
@@ -83,9 +82,23 @@ export default function MarketPanel({ player, market }: Props) {
                     ) : <span className="text-pip-green-dim">—</span>}
                   </td>
 
-                  {/* [−] qty [+] stepper */}
-                  <td className="py-1 pr-1">
-                    <div className="flex items-center gap-0.5">
+                  {/* MAX  BUY  [−][qty][+]  SELL  ALL */}
+                  <td className="py-1 pl-1" colSpan={2}>
+                    <div className="flex items-center gap-1 flex-nowrap">
+                      <button
+                        className="pip-btn text-xs px-1.5 py-0.5"
+                        disabled={!canBuyMax}
+                        onClick={() => buy(chemId, maxQty)}
+                      >
+                        MAX
+                      </button>
+                      <button
+                        className="pip-btn-amber text-xs px-2 py-0.5"
+                        disabled={!canBuy}
+                        onClick={() => buy(chemId, q)}
+                      >
+                        BUY
+                      </button>
                       <button
                         className="pip-btn text-xs px-1.5 py-0 leading-4"
                         onClick={() => setQty(prev => ({ ...prev, [chemId]: Math.max(1, q - 1) }))}
@@ -97,47 +110,20 @@ export default function MarketPanel({ player, market }: Props) {
                         onClick={() => setQty(prev => ({ ...prev, [chemId]: q + 1 }))}
                         tabIndex={-1}
                       >+</button>
-                    </div>
-                  </td>
-
-                  {/* Buy/sell actions */}
-                  <td className="py-1 pl-1">
-                    <div className="flex gap-1 flex-nowrap">
-                      {/* BUY: buys qty amount */}
                       <button
-                        className="pip-btn-amber text-xs px-2 py-0.5"
-                        disabled={!canBuy}
-                        onClick={() => buy(chemId, q)}
+                        className="pip-btn text-xs px-2 py-0.5"
+                        disabled={owned < q}
+                        onClick={() => sell(chemId, q)}
                       >
-                        BUY
+                        SELL
                       </button>
-                      {/* BUY MAX: buys as many as caps/stock/space allow */}
                       <button
                         className="pip-btn text-xs px-1.5 py-0.5"
-                        disabled={!canBuyMax}
-                        onClick={() => buy(chemId, maxQty)}
+                        disabled={owned === 0}
+                        onClick={() => sell(chemId, owned)}
                       >
-                        BUY MAX
+                        ALL
                       </button>
-                      {/* SELL: sells qty-stepper amount */}
-                      {owned > 0 && (
-                        <button
-                          className="pip-btn text-xs px-2 py-0.5"
-                          disabled={owned < q}
-                          onClick={() => sell(chemId, q)}
-                        >
-                          SELL
-                        </button>
-                      )}
-                      {/* SELL ALL: dumps entire holding */}
-                      {owned > 0 && (
-                        <button
-                          className="pip-btn text-xs px-1.5 py-0.5"
-                          onClick={() => sell(chemId, owned)}
-                        >
-                          SELL ALL
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
