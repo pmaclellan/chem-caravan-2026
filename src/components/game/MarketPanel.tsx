@@ -3,6 +3,7 @@ import type { PlayerState, SettlementMarket } from '../../types/game'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
 import { useGameStore } from '../../store/gameStore'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
+import { priceColor } from '../../utils/priceColor'
 
 interface Props { player: PlayerState; market: SettlementMarket }
 
@@ -70,7 +71,8 @@ export default function MarketPanel({ player, market }: Props) {
                   <td className="py-1 pr-2">
                     <span className="text-pip-green font-display text-base">{chem.name}</span>
                   </td>
-                  <td className="py-1 pr-2 text-right text-pip-amber font-display">{price}</td>
+                  <td className="py-1 pr-2 text-right font-display"
+                    style={priceColor(price, chem.basePrice, chem.priceVariance)}>{price}</td>
                   <td className="py-1 pr-2 text-right text-pip-green-dim">{stock}</td>
                   <td className="py-1 pr-2 text-right text-pip-green-dim">{owned > 0 ? owned : '—'}</td>
                   <td className="py-1 pr-2 text-right">
