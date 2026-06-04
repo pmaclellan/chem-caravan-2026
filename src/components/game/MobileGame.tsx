@@ -615,13 +615,13 @@ export default function MobileGame() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
-      {/* Background settlement image */}
-      {settlement.imageUrl && (
+      {/* Background settlement image — hidden during travel/combat/events */}
+      {!isActionBlocked && settlement.imageUrl && (
         <img
           src={settlement.imageUrl}
           alt=""
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: isActionBlocked ? 0.18 : 0.48 }}
+          style={{ opacity: 0.48 }}
         />
       )}
 
