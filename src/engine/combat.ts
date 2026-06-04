@@ -86,7 +86,7 @@ export function resolveFight(
   // Check outcome
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer = { ...player, health, guards, gun }
+  let updatedPlayer: PlayerState = { ...player, health, guards, gun }
   if (raiderHealth <= 0) {
     phase = 'won'
     wonCaps = raiderCaps
