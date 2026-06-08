@@ -47,6 +47,7 @@ export function generateMarketEvent(turn: number, modeConfig: GameModeConfig): M
   const isShortage = rng() < 0.5
   const duration = rngInt(modeConfig.marketEventDurationMin, modeConfig.marketEventDurationMax)
 
+  const overrides = chem.msgOverrides?.[modeConfig.id]
   if (isShortage) {
     const multiplier = rngBetween(modeConfig.shortageMultiplierMin, modeConfig.shortageMultiplierMax)
     return {
@@ -56,7 +57,7 @@ export function generateMarketEvent(turn: number, modeConfig: GameModeConfig): M
       settlementId: null,
       multiplier,
       turnsRemaining: duration,
-      message: chem.highPriceMsg,
+      message: overrides?.high ?? chem.highPriceMsg,
     }
   } else {
     const multiplier = rngBetween(modeConfig.surplusMultiplierMin, modeConfig.surplusMultiplierMax)
@@ -67,7 +68,7 @@ export function generateMarketEvent(turn: number, modeConfig: GameModeConfig): M
       settlementId: null,
       multiplier,
       turnsRemaining: duration,
-      message: chem.lowPriceMsg,
+      message: overrides?.low ?? chem.lowPriceMsg,
     }
   }
 }

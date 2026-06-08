@@ -5,8 +5,9 @@ export interface ChemDefinition {
   priceVariance: number    // fraction ±, e.g. 0.35 = ±35%
   availability: number     // 0-1 probability of being stocked per settlement per turn
   maxStock: number         // max units available when stocked
-  highPriceMsg: string     // shown in log when price is above average
-  lowPriceMsg: string      // shown in log when price is below average
+  highPriceMsg: string     // shown in log when price is above average (default/Commonwealth)
+  lowPriceMsg: string      // shown in log when price is below average (default/Commonwealth)
+  msgOverrides?: Partial<Record<string, { high?: string; low?: string }>>  // per-mode message overrides
   description: string
   imageUrl: string | null  // Fallout wiki item icon (null = no image available)
 }
@@ -48,6 +49,10 @@ export const CHEMS: Record<string, ChemDefinition> = {
     maxStock: 8,
     highPriceMsg: "The Institute's been buying Med-X in bulk.",
     lowPriceMsg: "Caravan brought in a shipment — Med-X is on sale.",
+    msgOverrides: {
+      capital_wasteland: { high: "Brotherhood medics have been buying Med-X in bulk." },
+      mojave_wasteland:  { high: "NCR field hospitals have been buying Med-X in bulk." },
+    },
     description: "Morphine derivative. Treats pain, creates dependency.",
     imageUrl: `${W}/c/cb/Fo4_Med-X.png`,
   },
@@ -72,6 +77,10 @@ export const CHEMS: Record<string, ChemDefinition> = {
     maxStock: 10,
     highPriceMsg: "Diamond City traders buying Mentats hand over fist.",
     lowPriceMsg: "Mentats recipe leaked — prices dropped hard.",
+    msgOverrides: {
+      capital_wasteland: { high: "Rivet City merchants buying Mentats hand over fist." },
+      mojave_wasteland:  { high: "The Strip merchants buying Mentats hand over fist." },
+    },
     description: "Cognitive enhancers. Beloved by merchants and hackers.",
     imageUrl: `${W}/3/37/Fallout4_Mentats.png`,
   },
@@ -84,6 +93,10 @@ export const CHEMS: Record<string, ChemDefinition> = {
     maxStock: 20,
     highPriceMsg: "Glowing Sea explorers cleaned out all the Rad-X.",
     lowPriceMsg: "Rad-X flowing cheap after a Vault-Tec cache was cracked open.",
+    msgOverrides: {
+      capital_wasteland: { high: "Radiation zone wanderers cleaned out all the Rad-X." },
+      mojave_wasteland:  { high: "Bright Brotherhood pilgrims cleaned out all the Rad-X." },
+    },
     description: "Radiation resistance pill. Ubiquitous in the wasteland.",
     imageUrl: `${W}/1/19/Fallout4_Rad-X.png`,
   },
@@ -96,6 +109,10 @@ export const CHEMS: Record<string, ChemDefinition> = {
     maxStock: 15,
     highPriceMsg: "Radiation spike sent RadAway prices sky-high.",
     lowPriceMsg: "Synth scavengers flooded the market with RadAway.",
+    msgOverrides: {
+      capital_wasteland: { low: "Scavengers hit a buried cache — RadAway flooding the market." },
+      mojave_wasteland:  { low: "Chem caravans dumped surplus RadAway on the Mojave market." },
+    },
     description: "Radiation flush solution. Essential for survivors.",
     imageUrl: `${W}/2/2b/Fallout4_RadAway.png`,
   },
@@ -108,6 +125,10 @@ export const CHEMS: Record<string, ChemDefinition> = {
     maxStock: 6,
     highPriceMsg: "Railroad and BoS are buying every Stimpak in sight.",
     lowPriceMsg: "A factory found intact — Stimpaks are rock bottom.",
+    msgOverrides: {
+      capital_wasteland: { high: "Enclave and Brotherhood are hoarding every Stimpak they can find." },
+      mojave_wasteland:  { high: "NCR and Legion forces are buying every Stimpak in sight." },
+    },
     description: "Healing nanomachine injection. The most valuable chem.",
     imageUrl: `${W}/e/e7/Fallout4_Stimpak.png`,
   },
