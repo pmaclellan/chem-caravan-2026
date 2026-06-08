@@ -32,6 +32,7 @@ import {
   resolveGameStatus,
 } from '../engine/economy'
 import type { SettlementMarket, WorldState } from '../types/game'
+import { applyMarketEvents } from '../engine/market'
 
 function updateSettlementStock(world: WorldState, loc: string, chemId: string, delta: number): WorldState {
   const prev = world.settlements[loc]?.stock[chemId] ?? 0
@@ -154,9 +155,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     scheduleSave(next)
   }
 
-  // --- Current market for the player's location ---
+  // --- Current market for the player's location, with active events applied ---
   function currentMarket(state: GameState): SettlementMarket {
-    return state.world.settlements[state.player.location]
+    const raw = state.world.settlements[state.player.location]
+    return applyMarketEvents(raw, state.world.activeMarketEvents, state.player.location)
   }
 
   return {
