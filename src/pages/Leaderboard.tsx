@@ -14,6 +14,7 @@ interface LeaderboardRow {
   mode: GameModeId | null
   turns_reached: number | null
   created_at: string
+  state?: { endReason?: string | null }
 }
 
 
@@ -38,7 +39,7 @@ export default function Leaderboard() {
 
       let query = supabase
         .from('games')
-        .select('id, character_name, final_score, status, mode, turns_reached, created_at')
+        .select('id, character_name, final_score, status, mode, turns_reached, created_at, state')
         .in('status', ['won', 'dead'])
         .not('final_score', 'is', null)
         .order('final_score', { ascending: false })
@@ -112,9 +113,12 @@ export default function Leaderboard() {
             </div>
 
             {displayed.map((row, idx) => {
-              const rank  = idx + 1
-              const score = row.final_score ?? 0
+              const rank     = idx + 1
+              const score    = row.final_score ?? 0
               const modeName = row.mode ? GAME_MODES[row.mode]?.name.split(' ')[0] : '—'
+              const outcome  = row.state?.endReason ?? (
+                row.status === 'won' ? 'Turn limit reached' : 'Unknown'
+              )
 
               return (
                 <div
@@ -126,8 +130,9 @@ export default function Leaderboard() {
                   }`}>
                     {rank}
                   </div>
-                  <div className="col-span-2 text-pip-green font-mono truncate">
-                    {row.character_name}
+                  <div className="col-span-2 min-w-0">
+                    <div className="text-pip-green font-mono truncate">{row.character_name}</div>
+                    <div className="text-pip-green-dim text-xs italic truncate">{outcome}</div>
                   </div>
                   <div className={`font-display text-lg ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
                     {score.toLocaleString()} ¤

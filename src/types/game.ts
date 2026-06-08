@@ -132,6 +132,7 @@ export interface GameState {
   pendingQuote: TransitQuote | null  // shown on the transit splash while phase === 'traveling'
   combat: CombatState | null
   gameOverReason: GameOverReason | null
+  endReason: string | null    // human-readable end reason for death screen + leaderboard
   log: LogEntry[]
 }
 

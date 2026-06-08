@@ -11,15 +11,18 @@ export function initiateCombat(
   dangerLevel: number,
   modeConfig: GameModeConfig,
   roadEnemyWeights?: Partial<Record<string, number>>,
+  forcedEnemyTypeId?: string,
 ): CombatState {
   const count = Math.max(1, Math.round(dangerLevel * 5))
 
-  // Pick one enemy type for the entire encounter (weighted by road or equal weight)
+  // Pick one enemy type — use pre-selected type from event panel if provided
   const weightedPool = modeConfig.enemies.map(e => ({
     ...e,
     weight: roadEnemyWeights?.[e.id] ?? 1,
   }))
-  const enemyType = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
+  const enemyType = forcedEnemyTypeId
+    ? (modeConfig.enemies.find(e => e.id === forcedEnemyTypeId) ?? rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
+    : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 
   const enemies: EnemyUnit[] = []
