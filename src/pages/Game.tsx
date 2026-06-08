@@ -197,7 +197,7 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
   const isWin = gameOverReason === 'turns'
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-pip-bg" data-mode={gameState.mode}>
       <div className="pip-panel max-w-md w-full text-center space-y-4">
         <div className={`font-display text-5xl ${isWin ? 'text-pip-amber' : 'text-pip-red'}`}>
           {isWin ? 'GAME OVER' : 'YOU DIED'}
