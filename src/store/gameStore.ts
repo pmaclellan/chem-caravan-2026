@@ -95,6 +95,14 @@ interface GameStore {
   _setToast: (msg: string | null) => void
 }
 
+const VALID_MODES = new Set<GameModeId>(['commonwealth', 'capital_wasteland', 'mojave_wasteland'])
+
+// Old v1.0 saves have no mode field. Coerce to 'commonwealth' so GAME_MODES[mode] is never undefined.
+function normalizeState(state: GameState): GameState {
+  if (VALID_MODES.has(state.mode)) return state
+  return { ...state, mode: 'commonwealth' }
+}
+
 function resolveEndStatus(state: GameState): 'won' | 'dead' | 'bankrupt' {
   if (!state.gameOverReason) return 'won'
   return resolveGameStatus(state.player, state.gameOverReason)
@@ -218,7 +226,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       }
 
       const row = data as GameRow
-      set({ gameId: row.id, gameState: row.state })
+      set({ gameId: row.id, gameState: normalizeState(row.state) })
     },
 
     loadActiveGames: async (userId) => {
@@ -267,7 +275,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       }
 
       const row = data as GameRow
-      set({ gameId: row.id, gameState: row.state })
+      set({ gameId: row.id, gameState: normalizeState(row.state) })
     },
 
     clearGame: () => set({ gameId: null, gameState: null }),
