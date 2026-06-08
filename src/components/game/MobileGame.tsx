@@ -18,7 +18,7 @@ import SettlementMap from './SettlementMap'
 
 type MobileTab = 'stats' | 'market' | 'travel' | 'pack' | 'log'
 
-const PANEL_STYLE = { backgroundColor: 'rgba(226, 207, 160, 0.93)' }
+const PANEL_STYLE = { backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 93%, transparent)' }
 
 function DangerBars({ level }: { level: number }) {
   const bars = Math.round(level * 5)
@@ -502,7 +502,7 @@ export default function MobileGame() {
                 className="w-full pip-btn rounded-none border-0 border-t border-pip-border py-2.5 text-sm"
                 onClick={() => travelTo(destId)}
               >
-                TRAVEL ({road.travelCost} ¤)
+                TRAVEL
               </button>
             </div>
           )
@@ -614,7 +614,7 @@ export default function MobileGame() {
       {/* Bottom gradient */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, rgba(184,154,82,0.35) 0%, rgba(184,154,82,0.05) 30%, rgba(184,154,82,0.05) 70%, rgba(184,154,82,0.70) 100%)' }}
+        style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--pip-bg) 35%, transparent) 0%, color-mix(in srgb, var(--pip-bg) 5%, transparent) 30%, color-mix(in srgb, var(--pip-bg) 5%, transparent) 70%, color-mix(in srgb, var(--pip-bg) 70%, transparent) 100%)' }}
       />
 
       {/* Toast */}
@@ -652,7 +652,7 @@ export default function MobileGame() {
           {/* Settlement header strip */}
           <div
             className="relative flex-shrink-0 px-4 py-2.5 border-b border-pip-border flex items-center justify-between"
-            style={{ backgroundColor: 'rgba(226, 207, 160, 0.92)' }}
+            style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 92%, transparent)' }}
           >
             <div>
               <span className="font-display text-pip-green text-lg leading-tight">{settlement.name}</span>
@@ -678,7 +678,7 @@ export default function MobileGame() {
           {/* Bottom tab bar */}
           <div
             className="absolute bottom-0 left-0 right-0 flex border-t border-pip-border"
-            style={{ height: '56px', backgroundColor: 'rgba(184, 154, 82, 0.97)' }}
+            style={{ height: '56px', backgroundColor: 'color-mix(in srgb, var(--pip-bg) 97%, transparent)' }}
           >
             {TABS.map(t => (
               <button
