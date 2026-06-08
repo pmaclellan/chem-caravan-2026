@@ -600,7 +600,7 @@ export default function MobileGame() {
   ]
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden" data-mode={gameState.mode}>
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-pip-bg" data-mode={gameState.mode}>
       {/* Background settlement image — hidden during travel/combat/events */}
       {!isActionBlocked && settlement.imageUrl && (
         <img
@@ -689,11 +689,11 @@ export default function MobileGame() {
               >
                 <div
                   className="absolute top-0 left-2 right-2 h-0.5 transition-all duration-150"
-                  style={{ backgroundColor: tab === t.id ? '#c4501a' : 'transparent' }}
+                  style={{ backgroundColor: tab === t.id ? 'var(--pip-amber)' : 'transparent' }}
                 />
                 <span
                   className="font-display text-xs tracking-widest transition-colors duration-100"
-                  style={{ color: tab === t.id ? '#c4501a' : '#6a5828' }}
+                  style={{ color: tab === t.id ? 'var(--pip-bg-light)' : 'color-mix(in srgb, var(--pip-bg-light) 55%, transparent)' }}
                 >
                   {t.label}
                 </span>
