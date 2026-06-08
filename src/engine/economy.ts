@@ -9,6 +9,7 @@ export function applyTurnInterest(player: PlayerState, interestRate: number): Pl
     ...player,
     debt: Math.ceil(player.debt * (1 + interestRate)),
     ageOfDebt: player.ageOfDebt + 1,
+    debtPaidThisCycle: 0,   // reset — caller saves the pre-tick value for enforcement check
   }
 }
 
@@ -124,6 +125,8 @@ export function repayDebt(player: PlayerState, amount: number): { player: Player
       caps: player.caps - payment,
       debt: newDebt,
       ageOfDebt: newDebt === 0 ? 0 : player.ageOfDebt,
+      debtPaidThisCycle: (player.debtPaidThisCycle ?? 0) + payment,
+      debtWarnings: newDebt === 0 ? 0 : (player.debtWarnings ?? 0),  // clear warnings on full payoff
     },
   }
 }

@@ -25,11 +25,27 @@ export function selectTravelEvent(
   road: Road,
   player: PlayerState,
   modeConfig: GameModeConfig,
+  debtPaidThisCycle = 0,
 ): TravelEvent | null {
-  // Force debt collector if debt is old enough
-  if (player.ageOfDebt >= modeConfig.debtCollectorMinAge && rng() < modeConfig.debtCollectorProb) {
-    const def = modeConfig.travelEvents.find(e => e.type === 'debt_collector')!
-    return { type: def.type, title: def.title, description: def.description }
+  // Debt collector — grace period + payment check
+  if (player.debt > 0 && player.ageOfDebt >= modeConfig.debtGracePeriod) {
+    const minPayment = Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
+    const hasPaid    = debtPaidThisCycle >= minPayment
+    if (!hasPaid && rng() < modeConfig.debtCollectorProb) {
+      const def      = modeConfig.travelEvents.find(e => e.type === 'debt_collector')!
+      const warnings = player.debtWarnings ?? 0
+      const description =
+        warnings === 0 ? def.description
+        : warnings === 1
+          ? "They're back — just like they said they would be. You had your warning."
+          : "\"Last visit,\" the lead enforcer says. They mean it."
+      return {
+        type: def.type,
+        title: def.title,
+        description,
+        payload: { minPayment, warnings },
+      }
+    }
   }
 
   const eventProb = modeConfig.eventBaseProb + road.dangerLevel * modeConfig.eventDangerScale

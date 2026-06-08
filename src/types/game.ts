@@ -43,6 +43,8 @@ export interface PlayerState {
   ageOfDebt: number  // turns elapsed since debt was first taken
   inventory: Record<string, InventoryEntry>
   gun: GunState | null
+  debtPaidThisCycle?: number   // caps paid toward debt since last turn tick; resets each tick
+  debtWarnings?: number        // times enforcement has triggered; drives damage escalation
 }
 
 export interface SettlementMarket {

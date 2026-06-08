@@ -3,7 +3,7 @@ import type { GameModeId } from '../types/game'
 import type { GameState, LogEntry, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
-import { applyTurnInterest, checkDebtEnforcement, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
+import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
 import { initiateCombat } from './combat'
 import { rng } from './rng'
 
@@ -27,6 +27,8 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
     ageOfDebt: 0,
     inventory: {},
     gun: null,
+    debtPaidThisCycle: 0,
+    debtWarnings: 0,
   }
 
   const settlements: WorldState['settlements'] = {}
@@ -112,44 +114,14 @@ export function continueTravel(state: GameState): GameState {
   let player = { ...state.player }
   const log = [...state.log]
 
-  // Apply interest and check debt enforcement
+  // Snapshot payment before the tick resets it — used for enforcement check below
+  const debtPaidThisCycle = player.debtPaidThisCycle ?? 0
+
+  // Apply travel cost and interest tick
   player = applyTurnInterest(player, mc.interestRate)
-  const enforcement = checkDebtEnforcement(player, mc.debtEnforcement)
 
-  if (enforcement.action === 'kill') {
-    log.push(makeLog(state.world.turn, enforcement.message, 'danger'))
-    return {
-      ...state,
-      player: { ...player, health: 0 },
-      phase: 'game_over',
-      gameOverReason: 'debt',
-      pendingQuote: null,
-      log,
-    }
-  }
-
-  if (enforcement.action === 'beat') {
-    player = { ...player, health: Math.max(0, player.health - enforcement.damage) }
-    log.push(makeLog(state.world.turn, enforcement.message, 'danger'))
-    if (player.health <= 0) {
-      log.push(makeLog(state.world.turn, "You don't survive the beating.", 'danger'))
-      return {
-        ...state,
-        player,
-        phase: 'game_over',
-        gameOverReason: 'debt',
-        pendingQuote: null,
-        log,
-      }
-    }
-    if (player.debt > 0) {
-      const interestPerTurn = Math.round(player.debt * mc.interestRate)
-      log.push(makeLog(state.world.turn, `Outstanding debt: ${player.debt} caps. Interest: ${interestPerTurn} caps/turn.`, 'danger'))
-    }
-  }
-
-  // Select a travel event, if any
-  const event = selectTravelEvent(road, player, mc)
+  // Select a travel event (debt collector check uses pre-tick payment)
+  const event = selectTravelEvent(road, player, mc, debtPaidThisCycle)
   if (event) {
     return {
       ...state,
@@ -272,18 +244,38 @@ export function resolveBrotherhoodToll(state: GameState, pay: boolean): GameStat
 export function resolveDebtCollector(state: GameState): GameState {
   const dest = state.pendingDestination
   const turn = state.world.turn
+  const mc   = GAME_MODES[state.mode]
   let player = { ...state.player }
-  const log = [...state.log]
+  const log  = [...state.log]
 
-  const damage = 20
-  player = { ...player, health: Math.max(0, player.health - damage) }
+  const warnings = player.debtWarnings ?? 0
 
-  const mc = GAME_MODES[state.mode]
-  const enforcerName = mc.debtEnforcement[0]?.message.split(' ')[0] ?? 'Collectors'
-  log.push(makeLog(turn, `${enforcerName} rough you up for ${damage} damage. "Pay your debts, friend."`, 'danger'))
+  // Pick the enforcement entry matching the warning level (clamp to last entry)
+  const idx        = Math.min(warnings, mc.debtEnforcement.length - 1)
+  const enforcement = mc.debtEnforcement[idx]
+  const isKill     = enforcement.damage >= 999
+
+  log.push(makeLog(turn, enforcement.message, 'danger'))
+
+  if (isKill) {
+    return {
+      ...state,
+      player: { ...player, health: 0 },
+      phase: 'game_over',
+      gameOverReason: 'debt',
+      pendingEvent: null,
+      pendingDestination: null,
+      log,
+    }
+  }
+
+  player = {
+    ...player,
+    health: Math.max(0, player.health - enforcement.damage),
+    debtWarnings: warnings + 1,
+  }
 
   if (player.health <= 0) {
-    log.push(makeLog(turn, "You don't survive the beating.", 'danger'))
     return {
       ...state,
       player,

@@ -60,8 +60,9 @@ export interface GameModeConfig {
   // events
   eventBaseProb: number
   eventDangerScale: number
-  debtCollectorMinAge: number
-  debtCollectorProb: number
+  debtGracePeriod: number        // turns before any enforcement begins
+  debtMinPaymentRate: number     // fraction of current debt required per turn to stay safe
+  debtCollectorProb: number      // per-turn chance of being found when grace is over and payment missed
   // market
   marketEventProbPerTurn: number
   marketEventDurationMin: number
@@ -116,8 +117,9 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   doctorCostCheap: 100,
   eventBaseProb: 0.10,
   eventDangerScale: 0.60,
-  debtCollectorMinAge: 5,
-  debtCollectorProb: 0.30,
+  debtGracePeriod: 10,
+  debtMinPaymentRate: 0.05,   // pay 5%/turn = match interest; debt freezes if you keep up
+  debtCollectorProb: 0.45,
   marketEventProbPerTurn: 0.15,
   marketEventDurationMin: 1,
   marketEventDurationMax: 2,
@@ -162,6 +164,8 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
   name: 'Capital Wasteland',
   subtitle: 'Fallout 3',
   interestRate: 0.065,
+  debtGracePeriod: 8,
+  debtMinPaymentRate: 0.065,  // match the 6.5% interest rate
   debtEnforcement: [
     { age: 5,  damage: 30,  message: "Talon Company mercs intercept you on the road. They beat you as a warning." },
     { age: 10, damage: 55,  message: "They're back, meaner. Two broken ribs and a missing tooth." },
@@ -206,6 +210,8 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
   name: 'Mojave Wasteland',
   subtitle: 'Fallout: New Vegas',
   interestRate: 0.08,
+  debtGracePeriod: 5,
+  debtMinPaymentRate: 0.08,   // match the 8% interest rate
   debtEnforcement: [
     { age: 5,  damage: 35,  message: "Legion Assassins catch you on the road. They beat you and leave a coin." },
     { age: 10, damage: 60,  message: "They return. One crucifixion attempt. You narrowly escape." },
