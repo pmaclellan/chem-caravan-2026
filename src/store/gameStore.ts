@@ -15,6 +15,7 @@ import {
   dismissCombatSummary,
 } from '../engine/gameLoop'
 import { resolveFight, resolveRun } from '../engine/combat'
+import { loseBrahmin } from '../engine/travel'
 import { rng } from '../engine/rng'
 import {
   buyChems,
@@ -323,9 +324,9 @@ export const useGameStore = create<GameStore>((set, get) => {
             return resolveDebtCollector(state)
 
           case 'brahmin_lost': {
-            // Handled directly in startCombat resolution; here just continue
+            const player = loseBrahmin(state.player)
             const dest = state.pendingDestination ?? state.player.location
-            return completeTravel({ ...state, pendingEvent: null, pendingDestination: null }, dest)
+            return completeTravel({ ...state, player, pendingEvent: null, pendingDestination: null }, dest)
           }
 
           case 'wandering_merchant':

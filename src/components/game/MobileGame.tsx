@@ -384,7 +384,7 @@ export default function MobileGame() {
 
     return (
       <div className="px-3 py-3 space-y-2 pb-6">
-        <div className="text-pip-green-dim text-xs px-1">
+        <div className="text-pip-bg-light text-xs px-1 opacity-75">
           {availableChems.length} chems · pack space: {space}/{capacity}
         </div>
 
@@ -518,7 +518,7 @@ export default function MobileGame() {
 
     return (
       <div className="px-3 py-3 space-y-2 pb-6">
-        <div className="text-pip-green-dim text-xs px-1">
+        <div className="text-pip-bg-light text-xs px-1 opacity-75">
           Pack: {used}/{capacity} units
         </div>
 
