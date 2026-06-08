@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { TravelEvent, PlayerState } from '../../types/game'
 import { CHEMS } from '../../data/chems'
+
 import { useGameStore } from '../../store/gameStore'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
@@ -11,7 +12,13 @@ export default function EventPanel({ event, player }: Props) {
   const resolveEvent    = useGameStore(s => s.resolveEvent)
   const buyFromMerchant = useGameStore(s => s.buyFromMerchant)
   const sellToMerchant  = useGameStore(s => s.sellToMerchant)
+  const mode            = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const [merchantQty, setMerchantQty] = useState<Record<string, number>>({})
+
+  const collectorFaction =
+    mode === 'capital_wasteland' ? 'Talon Company' :
+    mode === 'mojave_wasteland'  ? 'Legion Assassins' :
+    'Triggermen'
 
   const runChance = Math.round(
     Math.min(0.9, Math.max(0.1, 0.40 + player.guards * 0.10 - player.brahmin * 0.05)) * 100
@@ -59,7 +66,7 @@ export default function EventPanel({ event, player }: Props) {
 
       {event.type === 'debt_collector' && (
         <div className="flex flex-col gap-2">
-          <div className="text-pip-red text-sm">The Triggermen are collecting. There's no reasoning with them.</div>
+          <div className="text-pip-red text-sm">The {collectorFaction} are collecting. There's no reasoning with them.</div>
           <button className="pip-btn-danger" onClick={() => resolveEvent('endure')}>TAKE THE BEATING</button>
         </div>
       )}
