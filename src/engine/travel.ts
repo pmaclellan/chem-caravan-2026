@@ -57,7 +57,17 @@ export function selectTravelEvent(
   const chosen = rngWeightedPick(eligible)
   if (!chosen) return null
 
-  return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig)
+  return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig, road)
+}
+
+// Enemy-specific ambush lines — used when a raider_ambush is generated
+const AMBUSH_LINES: Record<string, string> = {
+  raider:       "Raiders emerge from cover. They want your caps.",
+  super_mutant: "Super Mutants block the road ahead, weapons raised.",
+  great_khan:   "Great Khans ride out of the dust, armed and looking for trouble.",
+  legionnaire:  "Legion Assassins step out of the shadows. Blades drawn.",
+  deathclaw:    "A Deathclaw rounds the bend. You might want to run.",
+  fiend:        "Fiends pour out of a wrecked vehicle, wild-eyed and armed.",
 }
 
 function buildEventPayload(
@@ -65,6 +75,7 @@ function buildEventPayload(
   title: string,
   description: string,
   modeConfig: GameModeConfig,
+  road?: Road,
 ): TravelEvent {
   const stashChemsDef = modeConfig.travelEvents.find(e => e.type === 'chem_stash')
   const stashChems = stashChemsDef ? getStashChems(modeConfig) : ['jet', 'psycho']
@@ -75,6 +86,16 @@ function buildEventPayload(
       const chemId = rngPick(stashChems)
       const qty = rngInt(1, 4)
       return { type, title, description, payload: { chemId, qty } }
+    }
+    case 'raider_ambush': {
+      // Pre-select enemy type so the player can make an informed fight/run decision
+      const weightedPool = modeConfig.enemies.map(e => ({
+        ...e,
+        weight: road?.enemyWeights?.[e.id] ?? 1,
+      }))
+      const picked = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
+      const ambushDesc = AMBUSH_LINES[picked.id] ?? description
+      return { type, title, description: ambushDesc, payload: { enemyTypeId: picked.id } }
     }
     case 'brotherhood_checkpoint':
       return { type, title, description, payload: { toll: brotherhoodToll } }

@@ -192,9 +192,16 @@ export default function Game() {
 }
 
 function GameOverScreen({ gameState, onHome }: { gameState: import('../types/game').GameState; onHome: () => void }) {
-  const { player, gameOverReason } = gameState
+  const { player, gameOverReason, endReason } = gameState
   const score = player.caps + player.bank - player.debt
   const isWin = gameOverReason === 'turns'
+
+  const subtitle = endReason ?? (
+    gameOverReason === 'turns'   ? 'Time ran out on your caravan run.' :
+    gameOverReason === 'combat'  ? 'You were killed on the road.' :
+    gameOverReason === 'debt'    ? 'Your debtors finally caught up with you.' :
+    'Game ended.'
+  )
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-pip-bg" data-mode={gameState.mode}>
@@ -202,12 +209,7 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
         <div className={`font-display text-5xl ${isWin ? 'text-pip-amber' : 'text-pip-red'}`}>
           {isWin ? 'GAME OVER' : 'YOU DIED'}
         </div>
-        <div className="text-pip-green-dim text-sm">
-          {gameOverReason === 'turns' && "Time ran out on your caravan run."}
-          {gameOverReason === 'combat' && "You were killed by Raiders on the road."}
-          {gameOverReason === 'debt' && "Your debtors finally caught up with you."}
-          {gameOverReason === 'bankrupt' && "Game ended."}
-        </div>
+        <div className="text-pip-green-dim text-sm">{subtitle}</div>
 
         <div className="border border-pip-border rounded p-4 space-y-2 text-left">
           <div className="flex justify-between">

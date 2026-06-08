@@ -72,6 +72,7 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
     pendingQuote: null,
     combat: null,
     gameOverReason: null,
+    endReason: null,
     log,
   }
 }
@@ -175,6 +176,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
       world,
       phase: 'game_over',
       gameOverReason: 'turns',
+      endReason: 'Turn limit reached',
       pendingEvent: null,
       pendingDestination: null,
       combat: null,
@@ -249,11 +251,16 @@ export function resolveDebtCollector(state: GameState): GameState {
   const log  = [...state.log]
 
   const warnings = player.debtWarnings ?? 0
+  const collectorName =
+    mc.id === 'capital_wasteland' ? 'Talon Company' :
+    mc.id === 'mojave_wasteland'  ? 'Legion Assassins' :
+    'Triggermen'
 
   // Pick the enforcement entry matching the warning level (clamp to last entry)
   const idx        = Math.min(warnings, mc.debtEnforcement.length - 1)
   const enforcement = mc.debtEnforcement[idx]
   const isKill     = enforcement.damage >= 999
+  const debtEndReason = `Killed by ${collectorName} (debt)`
 
   log.push(makeLog(turn, enforcement.message, 'danger'))
 
@@ -263,6 +270,7 @@ export function resolveDebtCollector(state: GameState): GameState {
       player: { ...player, health: 0 },
       phase: 'game_over',
       gameOverReason: 'debt',
+      endReason: debtEndReason,
       pendingEvent: null,
       pendingDestination: null,
       log,
@@ -281,6 +289,7 @@ export function resolveDebtCollector(state: GameState): GameState {
       player,
       phase: 'game_over',
       gameOverReason: 'debt',
+      endReason: debtEndReason,
       pendingEvent: null,
       pendingDestination: null,
       log,
@@ -300,7 +309,8 @@ export function startCombat(state: GameState): GameState {
       )
     : null
 
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights)
+  const forcedTypeId = (state.pendingEvent?.payload as { enemyTypeId?: string } | undefined)?.enemyTypeId
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId)
   return {
     ...state,
     phase: 'combat',
@@ -319,12 +329,17 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
   const newLogs = combat.log.slice(state.combat?.log.length ?? 0).map(m => makeLog(turn, m, 'danger'))
 
   if (combat.phase === 'lost') {
+    const mc = GAME_MODES[state.mode]
+    const killerTypeId = combat.enemies[0]?.typeId
+    const killerType = mc.enemies.find(e => e.id === killerTypeId)
+    const killerName = killerType?.name ?? 'enemies'
     return {
       ...state,
       player,
       combat,
       phase: 'game_over',
       gameOverReason: 'combat',
+      endReason: `Killed by ${killerName}s on the road`,
       log: [...state.log, ...newLogs],
     }
   }
