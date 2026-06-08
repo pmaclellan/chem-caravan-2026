@@ -62,7 +62,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4" data-mode={selectedMode}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-pip-bg transition-colors duration-300" data-mode={selectedMode}>
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 

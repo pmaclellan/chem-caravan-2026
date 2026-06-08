@@ -14,20 +14,19 @@ export function initiateCombat(
 ): CombatState {
   const count = Math.max(1, Math.round(dangerLevel * 5))
 
-  // Build weighted pool from mode enemy types + optional road-specific weights
+  // Pick one enemy type for the entire encounter (weighted by road or equal weight)
   const weightedPool = modeConfig.enemies.map(e => ({
     ...e,
     weight: roadEnemyWeights?.[e.id] ?? 1,
   }))
+  const enemyType = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
+  const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 
   const enemies: EnemyUnit[] = []
   let capsPool = 0
 
   for (let i = 0; i < count; i++) {
-    const enemyType = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
-    const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
     const label = count > 1 ? `${enemyType.name} ${i + 1}` : enemyType.name
-
     enemies.push({
       id: `enemy_${i}`,
       typeId: enemyType.id,
@@ -36,29 +35,18 @@ export function initiateCombat(
       maxHealth: stats.health,
       dead: false,
     })
-
     capsPool += rngInt(enemyType.caps[0], enemyType.caps[1])
   }
 
-  // Collect loot pool from the enemy types present in this encounter
-  const encounteredTypeIds = [...new Set(enemies.map(e => e.typeId))]
-  const encounteredTypes = encounteredTypeIds.map(id => modeConfig.enemies.find(e => e.id === id)!)
-  const possibleChems = [...new Set(encounteredTypes.flatMap(e => e.lootChems))]
-
+  // Loot from this enemy type only
   const enemyLoot: Record<string, number> = {}
-  for (const chemId of possibleChems) {
+  for (const chemId of enemyType.lootChems) {
     if (rng() < 0.30) {
       enemyLoot[chemId] = rngInt(1, Math.max(2, Math.ceil(count / 2)))
     }
   }
 
-  // Build description from enemy type breakdown
-  const typeCounts = encounteredTypeIds.map(typeId => {
-    const n = enemies.filter(e => e.typeId === typeId).length
-    const typeName = modeConfig.enemies.find(e => e.id === typeId)!.name
-    return `${n} ${typeName}${n > 1 ? 's' : ''}`
-  })
-  const description = typeCounts.join(', ') + ' block the road ahead.'
+  const description = `${count} ${enemyType.name}${count > 1 ? 's' : ''} block the road ahead.`
 
   return {
     enemies,
