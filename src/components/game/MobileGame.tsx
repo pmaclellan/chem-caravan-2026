@@ -88,7 +88,6 @@ export default function MobileGame() {
   const space = capacity - used
   const availableChems = CHEM_IDS.filter(id => market.prices[id])
   const roads = getAdjacentRoads(mc, player.location)
-  const adjRoadMap = new Map(roads.map(r => [getRoadDestination(r, player.location), r]))
 
   // ── Stats render function ──────────────────────────────────────────────
 

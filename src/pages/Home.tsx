@@ -5,7 +5,7 @@ import { useGameStore } from '../store/gameStore'
 import { GAME_MODES } from '../data/modes'
 import type { GameModeId } from '../types/game'
 import AuthModal from '../components/auth/AuthModal'
-import { HowToPlay, shouldShowTutorial } from '../components/ui/HowToPlay'
+import { HowToPlay } from '../components/ui/HowToPlay'
 
 const MODE_IDS: GameModeId[] = ['commonwealth', 'capital_wasteland', 'mojave_wasteland']
 const DIFFICULTY_LABEL: Record<GameModeId, string> = {

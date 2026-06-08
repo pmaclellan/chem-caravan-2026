@@ -5,7 +5,8 @@ import type { PlayerState } from '../../types/game'
 import type { GameModeConfig } from '../../data/modes'
 
 // Minimal mode config used in all tests — matches Commonwealth values
-const testMode: GameModeConfig = {
+// Cast to avoid listing world-data fields (settlements, roads, etc.) irrelevant to combat tests
+const testMode = {
   id: 'commonwealth',
   name: 'Commonwealth',
   subtitle: 'Fallout 4',
@@ -43,10 +44,10 @@ const testMode: GameModeConfig = {
     raider: { health: 40, damage: [10, 30] },
   },
   availableChemIds: ['jet', 'psycho', 'stimpak'],
-}
+} as unknown as GameModeConfig
 
 // Mode with multiple enemy types for weighted spawn tests
-const multiEnemyMode: GameModeConfig = {
+const multiEnemyMode = {
   ...testMode,
   enemies: [
     { id: 'raider',       name: 'Raider',       caps: [20, 150], lootChems: ['jet'] },
@@ -57,7 +58,7 @@ const multiEnemyMode: GameModeConfig = {
     super_mutant: { health: 70, damage: [15, 35] },
   },
   availableChemIds: ['jet', 'psycho', 'stimpak'],
-}
+} as unknown as GameModeConfig
 
 function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {

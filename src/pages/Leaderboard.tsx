@@ -16,9 +16,6 @@ interface LeaderboardRow {
   created_at: string
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })
-}
 
 const TABS: { id: LbTab; label: string }[] = [
   { id: 'commonwealth',      label: 'Commonwealth'  },
