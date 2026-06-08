@@ -117,16 +117,17 @@ export const useGameStore = create<GameStore>((set, get) => {
     if (!gameId) return
 
     const isGameOver = state.phase === 'game_over'
+    // mode + turns_reached are extracted columns added by migration 003.
+    // Omit them here — mode lives in state JSONB; turns_reached is backfillable
+    // from state.world.turn once the migration is applied.
     const payload = {
       state,
       current_location: state.player.location,
       is_traveling: state.phase === 'traveling' || state.phase === 'event',
-      mode: state.mode,
       ...(isGameOver
         ? {
-            status: resolveEndStatus(state),
+            status:      resolveEndStatus(state),
             final_score: calculateFinalScore(state.player),
-            turns_reached: state.world.turn,
           }
         : {}),
     }
@@ -168,23 +169,26 @@ export const useGameStore = create<GameStore>((set, get) => {
     toast: null,
 
     startNewGame: async (characterName, userId, modeId = 'commonwealth') => {
-      // Archive only the existing active game for this specific mode (per-mode save slots)
-      const { data: existing } = await supabase
+      // Archive active games for this mode. Read mode from state JSONB so this
+      // works before migration 003 adds the extracted mode column.
+      const { data: allActive } = await supabase
         .from('games')
-        .select('id')
+        .select('id, state')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .eq('mode', modeId)
 
-      if (existing && existing.length > 0) {
-        await supabase
-          .from('games')
-          .update({ status: 'bankrupt' })
-          .in('id', existing.map(r => r.id))
+      const toArchive = (allActive ?? [])
+        .filter(r => (r.state as GameState)?.mode === modeId)
+        .map(r => r.id as string)
+
+      if (toArchive.length > 0) {
+        await supabase.from('games').update({ status: 'bankrupt' }).in('id', toArchive)
       }
 
       const newState = initializeGame(characterName, modeId)
 
+      // Do not include mode/turns_reached columns — they require migration 003.
+      // mode is persisted inside the state JSONB.
       const { data, error } = await supabase
         .from('games')
         .insert({
@@ -192,7 +196,6 @@ export const useGameStore = create<GameStore>((set, get) => {
           character_name: characterName,
           state: newState,
           status: 'active',
-          mode: modeId,
           current_location: newState.player.location,
           is_traveling: false,
         })
@@ -208,17 +211,18 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     loadActiveGame: async (userId, modeId) => {
-      let query = supabase
+      // modeId filtering uses state JSONB (mode column requires migration 003)
+      const { data: rows, error } = await supabase
         .from('games')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(1)
+        .limit(20)
 
-      if (modeId) query = query.eq('mode', modeId)
-
-      const { data, error } = await query.single()
+      const data = modeId
+        ? (rows ?? []).find(r => (r.state as GameState)?.mode === modeId) ?? null
+        : (rows ?? [])[0] ?? null
 
       if (error || !data) {
         set({ gameId: null, gameState: null })
@@ -232,7 +236,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     loadActiveGames: async (userId) => {
       const { data, error } = await supabase
         .from('games')
-        .select('id, character_name, state, mode')
+        .select('id, character_name, state')
         .eq('user_id', userId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
