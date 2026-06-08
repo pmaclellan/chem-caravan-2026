@@ -7,16 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Wasteland palette — sandy earth + worn parchment + rusty accents
-        'pip-bg':          '#b89a52',   // sandy wasteland ground (body)
-        'pip-bg-light':    '#e2cfa0',   // aged parchment (panels)
-        'pip-green':       '#2c4a10',   // dark olive — primary text, HP bar high
-        'pip-green-dim':   '#6a5828',   // warm earthy brown — secondary/dim text
-        'pip-green-mid':   '#4a7018',   // mid olive — mid-positive states
-        'pip-amber':       '#c4501a',   // burnt sienna — caps, profit
-        'pip-red':         '#8c1c1c',   // blood rust — danger
-        'pip-border':      '#8a6020',   // worn earth — main borders
-        'pip-border-dim':  '#cdb070',   // sand — row separators, subtle borders
+        // CSS variable references — values set per [data-mode] in index.css
+        'pip-bg':          'var(--pip-bg)',
+        'pip-bg-light':    'var(--pip-bg-light)',
+        'pip-green':       'var(--pip-green)',
+        'pip-green-dim':   'var(--pip-green-dim)',
+        'pip-green-mid':   'var(--pip-green-mid)',
+        'pip-amber':       'var(--pip-amber)',
+        'pip-red':         'var(--pip-red)',
+        'pip-border':      'var(--pip-border)',
+        'pip-border-dim':  'var(--pip-border-dim)',
       },
       fontFamily: {
         'mono':    ['"Courier Prime"', 'Courier New', 'monospace'],

@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore'
 import Home from './pages/Home'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
+import HowToPlayPage from './pages/HowToPlay'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore()
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/game', element: <ProtectedRoute><Game /></ProtectedRoute> },
   { path: '/leaderboard', element: <Leaderboard /> },
+  { path: '/how-to-play', element: <HowToPlayPage /> },
 ])
 
 export default function App() {

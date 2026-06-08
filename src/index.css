@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Per-mode CSS custom properties ──────────────────────────────────── */
+
+:root,
+[data-mode="commonwealth"] {
+  --pip-bg:          #b89a52;
+  --pip-bg-light:    #e2cfa0;
+  --pip-green:       #2c4a10;
+  --pip-green-dim:   #6a5828;
+  --pip-green-mid:   #4a7018;
+  --pip-amber:       #c4501a;
+  --pip-red:         #8c1c1c;
+  --pip-border:      #8a6020;
+  --pip-border-dim:  #cdb070;
+}
+
+[data-mode="capital_wasteland"] {
+  --pip-bg:          #3d4f30;
+  --pip-bg-light:    #c8d4b4;
+  --pip-green:       #1a3010;
+  --pip-green-dim:   #4a6035;
+  --pip-green-mid:   #2e5020;
+  --pip-amber:       #8a7040;
+  --pip-red:         #7a2010;
+  --pip-border:      #506040;
+  --pip-border-dim:  #90a870;
+}
+
+[data-mode="mojave_wasteland"] {
+  --pip-bg:          #c8723a;
+  --pip-bg-light:    #f0d8a8;
+  --pip-green:       #5c2a08;
+  --pip-green-dim:   #8c5828;
+  --pip-green-mid:   #7a4015;
+  --pip-amber:       #9c3090;
+  --pip-red:         #8c1c10;
+  --pip-border:      #a05020;
+  --pip-border-dim:  #d4a060;
+}
+
 @layer base {
   body {
     @apply bg-pip-bg text-pip-green font-mono;

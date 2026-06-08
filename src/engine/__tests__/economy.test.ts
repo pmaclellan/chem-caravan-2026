@@ -10,7 +10,14 @@ import {
   withdrawFromBank,
   repayDebt,
 } from '../economy'
+import type { DebtEnforcementEntry } from '../../data/modes'
 import type { PlayerState, SettlementMarket } from '../../types/game'
+
+const TEST_DEBT_ENFORCEMENT: DebtEnforcementEntry[] = [
+  { age: 5,  damage: 30,  message: "Thugs find you." },
+  { age: 10, damage: 50,  message: "They're back." },
+  { age: 12, damage: 999, message: "You're dead." },
+]
 
 function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
@@ -40,22 +47,28 @@ function makeMarket(overrides: Partial<SettlementMarket> = {}): SettlementMarket
 }
 
 describe('applyTurnInterest', () => {
-  it('increases debt by 6.5%', () => {
+  it('increases debt by the given interest rate', () => {
     const player = makePlayer({ debt: 1000, ageOfDebt: 0 })
-    const result = applyTurnInterest(player)
+    const result = applyTurnInterest(player, 0.065)
     expect(result.debt).toBe(1065) // ceil(1000 * 1.065) = 1065
     expect(result.ageOfDebt).toBe(1)
   })
 
   it('rounds up fractional caps', () => {
     const player = makePlayer({ debt: 101, ageOfDebt: 0 })
-    const result = applyTurnInterest(player)
+    const result = applyTurnInterest(player, 0.065)
     expect(result.debt).toBe(108) // ceil(101 * 1.065) = ceil(107.565) = 108
+  })
+
+  it('applies mode-specific rates — 5% vs 8%', () => {
+    const player = makePlayer({ debt: 2000, ageOfDebt: 0 })
+    expect(applyTurnInterest(player, 0.05).debt).toBe(2100)
+    expect(applyTurnInterest(player, 0.08).debt).toBe(2160)
   })
 
   it('does nothing if debt is 0', () => {
     const player = makePlayer({ debt: 0, ageOfDebt: 3 })
-    const result = applyTurnInterest(player)
+    const result = applyTurnInterest(player, 0.065)
     expect(result.debt).toBe(0)
     expect(result.ageOfDebt).toBe(3) // unchanged
   })
@@ -63,27 +76,35 @@ describe('applyTurnInterest', () => {
 
 describe('checkDebtEnforcement', () => {
   it('returns none when no debt', () => {
-    expect(checkDebtEnforcement(makePlayer({ debt: 0 }))).toEqual({ action: 'none' })
+    expect(checkDebtEnforcement(makePlayer({ debt: 0 }), TEST_DEBT_ENFORCEMENT)).toEqual({ action: 'none' })
   })
 
   it('returns beat at age 5', () => {
-    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 5 }))
+    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 5 }), TEST_DEBT_ENFORCEMENT)
     expect(result.action).toBe('beat')
   })
 
   it('returns beat at age 10', () => {
-    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 10 }))
+    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 10 }), TEST_DEBT_ENFORCEMENT)
     expect(result.action).toBe('beat')
   })
 
   it('returns kill at age 12', () => {
-    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 12 }))
+    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 12 }), TEST_DEBT_ENFORCEMENT)
     expect(result.action).toBe('kill')
   })
 
   it('returns none at non-enforcement ages', () => {
-    expect(checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 3 }))).toEqual({ action: 'none' })
-    expect(checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 7 }))).toEqual({ action: 'none' })
+    expect(checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 3 }), TEST_DEBT_ENFORCEMENT)).toEqual({ action: 'none' })
+    expect(checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 7 }), TEST_DEBT_ENFORCEMENT)).toEqual({ action: 'none' })
+  })
+
+  it('uses mode-specific enforcement schedule', () => {
+    const mojaveLike: DebtEnforcementEntry[] = [
+      { age: 3, damage: 40, message: 'Legion hits you harder, earlier.' },
+    ]
+    const result = checkDebtEnforcement(makePlayer({ debt: 100, ageOfDebt: 3 }), mojaveLike)
+    expect(result.action).toBe('beat')
   })
 })
 
@@ -174,15 +195,22 @@ describe('calculateFinalScore', () => {
 describe('hireGuards', () => {
   it('deducts caps and adds guards', () => {
     const player = makePlayer({ caps: 500, guards: 1 })
-    const { player: result, error } = hireGuards(player, 2)
+    const { player: result, error } = hireGuards(player, 2, 150)
     expect(error).toBeUndefined()
     expect(result.caps).toBe(500 - 300) // 2 * 150
     expect(result.guards).toBe(3)
   })
 
   it('rejects when not enough caps', () => {
-    const { error } = hireGuards(makePlayer({ caps: 100 }), 1)
+    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 150)
     expect(error).toBeTruthy()
+  })
+
+  it('uses mode-specific guard cost', () => {
+    const player = makePlayer({ caps: 500 })
+    // Mode with guard cost 200 — hiring 2 costs 400
+    const { player: result } = hireGuards(player, 2, 200)
+    expect(result.caps).toBe(100)
   })
 })
 

@@ -1,13 +1,13 @@
-import { GUNS, AMMO_WITH_PURCHASE, AMMO_PRICE, type GunDefinition } from '../data/guns'
-import { CONFIG } from '../data/config'
+import type { GunDefinition } from '../data/guns'
+import type { DebtEnforcementEntry } from '../data/modes'
 import type { InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
-export function applyTurnInterest(player: PlayerState): PlayerState {
+export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
   if (player.debt <= 0) return player
   return {
     ...player,
-    debt: Math.ceil(player.debt * (1 + CONFIG.INTEREST_RATE)),
+    debt: Math.ceil(player.debt * (1 + interestRate)),
     ageOfDebt: player.ageOfDebt + 1,
   }
 }
@@ -17,9 +17,12 @@ export type DebtEnforcementResult =
   | { action: 'beat'; damage: number; message: string }
   | { action: 'kill'; message: string }
 
-export function checkDebtEnforcement(player: PlayerState): DebtEnforcementResult {
+export function checkDebtEnforcement(
+  player: PlayerState,
+  debtEnforcement: DebtEnforcementEntry[],
+): DebtEnforcementResult {
   if (player.debt <= 0) return { action: 'none' }
-  const enforcement = CONFIG.DEBT_ENFORCEMENT.find(e => e.age === player.ageOfDebt)
+  const enforcement = debtEnforcement.find(e => e.age === player.ageOfDebt)
   if (!enforcement) return { action: 'none' }
   if (enforcement.damage >= 999) return { action: 'kill', message: enforcement.message }
   return { action: 'beat', damage: enforcement.damage, message: enforcement.message }
@@ -125,14 +128,14 @@ export function repayDebt(player: PlayerState, amount: number): { player: Player
   }
 }
 
-export function hireGuards(player: PlayerState, count: number): { player: PlayerState; error?: string } {
-  const cost = count * CONFIG.GUARD_COST
+export function hireGuards(player: PlayerState, count: number, guardCost: number): { player: PlayerState; error?: string } {
+  const cost = count * guardCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
   return { player: { ...player, caps: player.caps - cost, guards: player.guards + count } }
 }
 
-export function buyBrahmin(player: PlayerState, count: number): { player: PlayerState; error?: string } {
-  const cost = count * CONFIG.BRAHMIN_COST
+export function buyBrahmin(player: PlayerState, count: number, brahminCost: number): { player: PlayerState; error?: string } {
+  const cost = count * brahminCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
   return { player: { ...player, caps: player.caps - cost, brahmin: player.brahmin + count } }
 }
@@ -140,6 +143,7 @@ export function buyBrahmin(player: PlayerState, count: number): { player: Player
 export function buyGun(
   player: PlayerState,
   gunDef: GunDefinition,
+  ammoWithPurchase = 20,
 ): { player: PlayerState; error?: string } {
   const totalCost = gunDef.price
   if (player.caps < totalCost) return { player, error: "Not enough caps." }
@@ -152,7 +156,7 @@ export function buyGun(
         name: gunDef.name,
         accuracy: gunDef.accuracy,
         damage: gunDef.damage,
-        ammo: AMMO_WITH_PURCHASE,
+        ammo: ammoWithPurchase,
         ammoPerShot: gunDef.ammoPerShot,
       },
     },
@@ -162,9 +166,10 @@ export function buyGun(
 export function buyAmmo(
   player: PlayerState,
   rounds: number,
+  ammoPrice = 5,
 ): { player: PlayerState; error?: string } {
   if (!player.gun) return { player, error: "You don't have a gun." }
-  const cost = rounds * AMMO_PRICE
+  const cost = rounds * ammoPrice
   if (player.caps < cost) return { player, error: "Not enough caps." }
   return {
     player: { ...player, caps: player.caps - cost, gun: { ...player.gun, ammo: player.gun.ammo + rounds } },
@@ -207,5 +212,4 @@ export function addChemStash(
   }
 }
 
-export { GUNS }
 export type { GunDefinition }

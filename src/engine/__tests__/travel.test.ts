@@ -7,7 +7,10 @@ import {
   dropExcessInventory,
   loseBrahmin,
 } from '../travel'
+import { GAME_MODES } from '../../data/modes'
 import type { PlayerState } from '../../types/game'
+
+const cwMode = GAME_MODES['commonwealth']
 
 function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
@@ -29,7 +32,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
 
 describe('getAdjacentRoads', () => {
   it('returns roads from diamond_city', () => {
-    const roads = getAdjacentRoads('diamond_city')
+    const roads = getAdjacentRoads(cwMode, 'diamond_city')
     const dests = roads.map(r => getRoadDestination(r, 'diamond_city'))
     expect(dests).toContain('goodneighbor')
     expect(dests).toContain('bunker_hill')
@@ -38,7 +41,7 @@ describe('getAdjacentRoads', () => {
   })
 
   it('returns roads from graygarden (a spoke node)', () => {
-    const roads = getAdjacentRoads('graygarden')
+    const roads = getAdjacentRoads(cwMode, 'graygarden')
     expect(roads.length).toBe(2) // bunker_hill and sanctuary_hills
   })
 
@@ -48,8 +51,16 @@ describe('getAdjacentRoads', () => {
       'vault_81', 'sanctuary_hills', 'graygarden', 'jamaica_plain', 'park_street_station',
     ]
     for (const s of settlements) {
-      expect(getAdjacentRoads(s).length).toBeGreaterThan(0)
+      expect(getAdjacentRoads(cwMode, s).length).toBeGreaterThan(0)
     }
+  })
+
+  it('mojave mode has its own separate roads', () => {
+    const mojMode = GAME_MODES['mojave_wasteland']
+    const roads = getAdjacentRoads(mojMode, 'the_strip')
+    const dests = roads.map(r => getRoadDestination(r, 'the_strip'))
+    expect(dests).toContain('freeside')
+    expect(dests).toContain('camp_mccarran')
   })
 })
 

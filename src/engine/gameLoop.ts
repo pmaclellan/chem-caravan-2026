@@ -1,57 +1,57 @@
-import { SETTLEMENT_IDS, SETTLEMENTS } from '../data/settlements'
-import { CONFIG } from '../data/config'
+import { GAME_MODES } from '../data/modes'
+import type { GameModeId } from '../types/game'
 import type { GameState, LogEntry, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, checkDebtEnforcement, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
 import { initiateCombat } from './combat'
 import { rng } from './rng'
-import { pickQuote } from '../data/quotes'
-import { ROADS } from '../data/settlements'
 
 function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntry {
   return { turn, message, type }
 }
 
-export function initializeGame(characterName: string): GameState {
+export function initializeGame(characterName: string, modeId: GameModeId = 'commonwealth'): GameState {
+  const mc = GAME_MODES[modeId]
+
   const player: PlayerState = {
     name: characterName,
-    caps: CONFIG.STARTING_CAPS,
+    caps: mc.startingCaps,
     bank: 0,
-    debt: CONFIG.STARTING_DEBT,
-    health: CONFIG.STARTING_HEALTH,
-    maxHealth: CONFIG.STARTING_HEALTH,
+    debt: mc.startingDebt,
+    health: mc.startingHealth,
+    maxHealth: mc.startingHealth,
     guards: 0,
-    brahmin: CONFIG.STARTING_BRAHMIN,
-    location: 'diamond_city',
+    brahmin: mc.startingBrahmin,
+    location: mc.startingLocation,
     ageOfDebt: 0,
     inventory: {},
     gun: null,
   }
 
   const settlements: WorldState['settlements'] = {}
-  for (const id of SETTLEMENT_IDS) {
-    settlements[id] = initializeMarket(1)
+  for (const id of mc.settlementIds) {
+    settlements[id] = initializeMarket(1, mc.availableChemIds)
   }
 
   // Seed 2 market events on turn 1 as advance intelligence for the player
   const events = []
   for (let i = 0; i < 2; i++) {
-    const e = generateMarketEvent(1)
+    const e = generateMarketEvent(1, mc)
     if (e) events.push(e)
   }
 
   const world: WorldState = {
     turn: 1,
-    maxTurns: CONFIG.MAX_TURNS,
+    maxTurns: mc.maxTurns,
     settlements,
     activeMarketEvents: events,
   }
 
   const log: LogEntry[] = [
-    makeLog(1, `Welcome to the Commonwealth, ${characterName}.`, 'system'),
-    makeLog(1, `You start in Diamond City with ${CONFIG.STARTING_CAPS} caps and a ${CONFIG.STARTING_DEBT} cap debt.`, 'system'),
-    makeLog(1, `You have ${CONFIG.MAX_TURNS} turns to pay it off and make your fortune.`, 'system'),
+    makeLog(1, `Welcome to the ${mc.name}, ${characterName}.`, 'system'),
+    makeLog(1, `You start with ${mc.startingCaps} caps and a ${mc.startingDebt} cap debt.`, 'system'),
+    makeLog(1, `You have ${mc.maxTurns} turns to pay it off and make your fortune.`, 'system'),
   ]
 
   if (events.length > 0) {
@@ -61,6 +61,7 @@ export function initializeGame(characterName: string): GameState {
   }
 
   return {
+    mode: modeId,
     player,
     world,
     phase: 'settlement',
@@ -76,18 +77,22 @@ export function initializeGame(characterName: string): GameState {
 // Phase 1: show the transit splash with an overheard quote.
 // Debt and event resolution happen in continueTravel when the player clicks Continue.
 export function startTravel(state: GameState, destinationId: string): GameState {
-  const roads = getAdjacentRoads(state.player.location)
+  const mc = GAME_MODES[state.mode]
+  const roads = getAdjacentRoads(mc, state.player.location)
   const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
   if (!road) return state
 
-  const log = [...state.log, makeLog(state.world.turn, `Heading to ${SETTLEMENTS[destinationId].name} via ${road.name}...`, 'info')]
+  const destName = mc.settlements[destinationId]?.name ?? destinationId
+  const log = [...state.log, makeLog(state.world.turn, `Heading to ${destName} via ${road.name}...`, 'info')]
+
+  const q = mc.transitQuotes[Math.floor(Math.random() * mc.transitQuotes.length)]
 
   return {
     ...state,
     phase: 'traveling',
     pendingDestination: destinationId,
     pendingEvent: null,
-    pendingQuote: pickQuote(),
+    pendingQuote: q ?? null,
     log,
   }
 }
@@ -97,7 +102,8 @@ export function continueTravel(state: GameState): GameState {
   const destinationId = state.pendingDestination
   if (!destinationId) return state
 
-  const roads = getAdjacentRoads(state.player.location)
+  const mc = GAME_MODES[state.mode]
+  const roads = getAdjacentRoads(mc, state.player.location)
   const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
   if (!road) return state
 
@@ -105,8 +111,8 @@ export function continueTravel(state: GameState): GameState {
   const log = [...state.log]
 
   // Apply interest and check debt enforcement
-  player = applyTurnInterest(player)
-  const enforcement = checkDebtEnforcement(player)
+  player = applyTurnInterest(player, mc.interestRate)
+  const enforcement = checkDebtEnforcement(player, mc.debtEnforcement)
 
   if (enforcement.action === 'kill') {
     log.push(makeLog(state.world.turn, enforcement.message, 'danger'))
@@ -135,12 +141,13 @@ export function continueTravel(state: GameState): GameState {
       }
     }
     if (player.debt > 0) {
-      log.push(makeLog(state.world.turn, `Outstanding debt: ${player.debt} caps. Interest: ${Math.round(player.debt * CONFIG.INTEREST_RATE)} caps/turn.`, 'danger'))
+      const interestPerTurn = Math.round(player.debt * mc.interestRate)
+      log.push(makeLog(state.world.turn, `Outstanding debt: ${player.debt} caps. Interest: ${interestPerTurn} caps/turn.`, 'danger'))
     }
   }
 
   // Select a travel event, if any
-  const event = selectTravelEvent(road, player)
+  const event = selectTravelEvent(road, player, mc)
   if (event) {
     return {
       ...state,
@@ -157,25 +164,27 @@ export function continueTravel(state: GameState): GameState {
 }
 
 export function completeTravel(state: GameState, destinationId: string): GameState {
+  const mc = GAME_MODES[state.mode]
   let player = { ...state.player, location: destinationId }
   const turn = state.world.turn + 1
 
   // Refresh destination market
   let world = { ...state.world, turn }
-  world = updateWorldMarkets(world)
+  world = updateWorldMarkets(world, mc)
   world = {
     ...world,
     settlements: {
       ...world.settlements,
       [destinationId]: applyMarketEvents(
-        refreshMarket(world.settlements[destinationId], turn),
+        refreshMarket(world.settlements[destinationId], turn, mc.availableChemIds),
         world.activeMarketEvents,
         destinationId,
       ),
     },
   }
 
-  const log = [...state.log, makeLog(turn, `Arrived at ${SETTLEMENTS[destinationId].name}.`, 'info')]
+  const destName = mc.settlements[destinationId]?.name ?? destinationId
+  const log = [...state.log, makeLog(turn, `Arrived at ${destName}.`, 'info')]
 
   // Announce any active market events
   for (const e of world.activeMarketEvents) {
@@ -234,7 +243,7 @@ export function resolveBrotherhoodToll(state: GameState, pay: boolean): GameStat
   if (pay) {
     const { player, paid } = payBrotherhoodToll(state.player, toll)
     if (!paid) {
-      log.push(makeLog(state.world.turn, "You can't pay the toll. The Paladins turn you back.", 'danger'))
+      log.push(makeLog(state.world.turn, "You can't pay the toll. The checkpoint turns you back.", 'danger'))
       return {
         ...state,
         player,
@@ -244,10 +253,10 @@ export function resolveBrotherhoodToll(state: GameState, pay: boolean): GameStat
         log,
       }
     }
-    log.push(makeLog(state.world.turn, `You pay the ${toll} cap Brotherhood toll and pass through.`, 'info'))
+    log.push(makeLog(state.world.turn, `You pay the ${toll} cap checkpoint toll and pass through.`, 'info'))
     return completeTravel({ ...state, player, log }, dest)
   } else {
-    log.push(makeLog(state.world.turn, "You refuse to pay. The Brotherhood turns you back at gunpoint.", 'danger'))
+    log.push(makeLog(state.world.turn, "You refuse to pay. They turn you back at gunpoint.", 'danger'))
     return {
       ...state,
       phase: 'settlement',
@@ -266,7 +275,10 @@ export function resolveDebtCollector(state: GameState): GameState {
 
   const damage = 20
   player = { ...player, health: Math.max(0, player.health - damage) }
-  log.push(makeLog(turn, `The Triggermen rough you up for ${damage} damage. "Pay your debts, friend."`, 'danger'))
+
+  const mc = GAME_MODES[state.mode]
+  const enforcerName = mc.debtEnforcement[0]?.message.split(' ')[0] ?? 'Collectors'
+  log.push(makeLog(turn, `${enforcerName} rough you up for ${damage} damage. "Pay your debts, friend."`, 'danger'))
 
   if (player.health <= 0) {
     log.push(makeLog(turn, "You don't survive the beating.", 'danger'))
@@ -286,14 +298,15 @@ export function resolveDebtCollector(state: GameState): GameState {
 
 export function startCombat(state: GameState): GameState {
   const dest = state.pendingDestination
+  const mc = GAME_MODES[state.mode]
   const road = dest
-    ? ROADS.find(r =>
+    ? mc.roads.find(r =>
         (r.from === state.player.location && r.to === dest) ||
         (r.to === state.player.location && r.from === dest)
       )
     : null
 
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5)
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights)
   return {
     ...state,
     phase: 'combat',
@@ -302,8 +315,7 @@ export function startCombat(state: GameState): GameState {
   }
 }
 
-// Danger threshold above which a second raider wave can spawn.
-// Probability = dangerLevel - 0.40 (25% at 0.65, 30% at 0.70, 35% at 0.75).
+// Danger threshold above which a second enemy wave can spawn.
 const SECOND_WAVE_MIN_DANGER = 0.65
 
 export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
@@ -326,22 +338,21 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
 
   if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
-    // On dangerous roads, roll for a second raider wave.
-    // Only on the first encounter (payload flag prevents a third).
+    const mc = GAME_MODES[state.mode]
     const isFirstEncounter = !state.pendingEvent?.payload?.['isSecondEncounter']
     if (isFirstEncounter) {
-      const road = ROADS.find(r =>
+      const road = mc.roads.find(r =>
         (r.from === player.location && r.to === dest) ||
         (r.to   === player.location && r.from === dest)
       )
       if (road && road.dangerLevel >= SECOND_WAVE_MIN_DANGER && rng() < road.dangerLevel - 0.40) {
         const warningMsg = combat.phase === 'won'
-          ? 'You push forward — only to find another raider pack closing in.'
+          ? 'You push forward — only to find another pack closing in.'
           : 'Still running — and you sprint right into a second ambush.'
         const secondWave: TravelEvent = {
           type: 'raider_ambush',
           title: 'SECOND WAVE!',
-          description: 'More Raiders emerge from cover. This road earns its reputation.',
+          description: 'More enemies emerge from cover. This road earns its reputation.',
           payload: { isSecondEncounter: true },
         }
         return {
@@ -352,7 +363,6 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
         }
       }
     }
-    // Show summary screen before completing travel
     return { ...resolvedState, phase: 'combat_summary' }
   }
 

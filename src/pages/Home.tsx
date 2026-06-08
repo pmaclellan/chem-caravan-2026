@@ -2,101 +2,220 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
+import { GAME_MODES } from '../data/modes'
+import type { GameModeId } from '../types/game'
 import AuthModal from '../components/auth/AuthModal'
+import { HowToPlay, shouldShowTutorial } from '../components/ui/HowToPlay'
+
+const MODE_IDS: GameModeId[] = ['commonwealth', 'capital_wasteland', 'mojave_wasteland']
+const DIFFICULTY_LABEL: Record<GameModeId, string> = {
+  commonwealth:      'EASY',
+  capital_wasteland: 'MEDIUM',
+  mojave_wasteland:  'HARD',
+}
+const DIFFICULTY_COLOR: Record<GameModeId, string> = {
+  commonwealth:      'text-pip-green',
+  capital_wasteland: 'text-pip-amber',
+  mojave_wasteland:  'text-pip-red',
+}
 
 export default function Home() {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const { user, signOut } = useAuthStore()
-  const { gameState, loadActiveGame, startNewGame, clearGame } = useGameStore()
-  const [showAuth, setShowAuth] = useState(false)
-  const [charName, setCharName] = useState('')
-  const [showNewGame, setShowNewGame] = useState(false)
-  const [starting, setStarting] = useState(false)
+  const store     = useGameStore()
+  const { activeGameSummaries, loadActiveGames, startNewGame, loadGameById, clearGame } = store
+
+  const [showAuth,     setShowAuth]     = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [selectedMode, setSelectedMode] = useState<GameModeId>('commonwealth')
+  const [charName,     setCharName]     = useState('')
+  const [showNewGame,  setShowNewGame]  = useState(false)
+  const [confirmAbandon, setConfirmAbandon] = useState(false)
+  const [starting,     setStarting]     = useState(false)
 
   useEffect(() => {
-    if (user) loadActiveGame(user.id)
-  }, [user, loadActiveGame])
+    if (user) loadActiveGames(user.id)
+  }, [user, loadActiveGames])
 
-  async function handleNewGame() {
+  async function handleContinue(gameId: string) {
+    await loadGameById(gameId)
+    navigate('/game')
+  }
+
+  async function handleStartNew() {
     if (!user || !charName.trim()) return
     setStarting(true)
-    await startNewGame(charName.trim(), user.id)
+    clearGame()
+    await startNewGame(charName.trim(), user.id, selectedMode)
     navigate('/game')
+  }
+
+  function requestNewGame(modeId: GameModeId) {
+    setSelectedMode(modeId)
+    const existing = activeGameSummaries?.[modeId]
+    if (existing) {
+      setConfirmAbandon(true)
+    } else {
+      setShowNewGame(true)
+    }
+    setCharName('')
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
-      <div className="max-w-lg w-full pip-panel text-center">
-        <h1 className="font-display text-6xl text-pip-green mb-2 tracking-widest">
-          CHEM CARAVAN
-        </h1>
-        <div className="text-pip-green-dim text-sm mb-6 font-mono">
-          COMMONWEALTH TRADING SIMULATION v1.0
-        </div>
-
-        <div className="border-t border-pip-border pt-4 mb-6 text-xs text-pip-green-dim font-mono leading-relaxed">
-          You have 31 turns to trade chems across the Commonwealth, repay your debt,
-          and walk away richer than you started. Or die trying.
+      <div className="max-w-2xl w-full pip-panel">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="font-display text-6xl text-pip-green tracking-widest mb-1">
+            CHEM CARAVAN
+          </h1>
+          <div className="text-pip-green-dim text-xs font-mono">
+            WASTELAND TRADING SIMULATION v2.0
+          </div>
         </div>
 
         {!user ? (
+          /* ── Logged out ─────────────────────────────────────────────────── */
           <div className="space-y-3">
             <button className="pip-btn w-full text-xl" onClick={() => setShowAuth(true)}>
               ENTER THE WASTELAND
             </button>
-            <button className="pip-btn w-full" onClick={() => navigate('/leaderboard')}>
-              LEADERBOARD
-            </button>
+            <div className="flex gap-2">
+              <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>
+                LEADERBOARD
+              </button>
+              <button className="pip-btn flex-1" onClick={() => navigate('/how-to-play')}>
+                HOW TO PLAY
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {gameState && gameState.phase !== 'game_over' ? (
-              <button className="pip-btn w-full text-xl" onClick={() => navigate('/game')}>
-                CONTINUE GAME (Turn {gameState.world.turn}/{gameState.world.maxTurns})
-              </button>
-            ) : null}
+          /* ── Logged in ──────────────────────────────────────────────────── */
+          <div className="space-y-5">
 
-            {!showNewGame ? (
-              <button
-                className="pip-btn w-full"
-                onClick={() => { setShowNewGame(true); clearGame() }}
-              >
-                {gameState ? 'ABANDON & NEW GAME' : 'NEW GAME'}
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <label className="pip-label block mb-1">Character Name</label>
-                  <input
-                    type="text"
-                    maxLength={30}
-                    value={charName}
-                    onChange={e => setCharName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleNewGame()}
-                    className="pip-input w-full"
-                    placeholder="Enter your name, Wanderer"
-                    autoFocus
-                  />
-                </div>
+            {/* Mode cards */}
+            <div>
+              <div className="pip-label mb-3">Select Region</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {MODE_IDS.map(modeId => {
+                  const mc       = GAME_MODES[modeId]
+                  const summary  = activeGameSummaries?.[modeId]
+                  const isActive = selectedMode === modeId
+
+                  return (
+                    <div
+                      key={modeId}
+                      onClick={() => setSelectedMode(modeId)}
+                      className={`border rounded p-3 cursor-pointer transition-colors duration-100 ${
+                        isActive
+                          ? 'border-pip-amber bg-pip-bg'
+                          : 'border-pip-border hover:border-pip-green'
+                      }`}
+                    >
+                      <div className="font-display text-pip-green text-lg leading-tight">{mc.name}</div>
+                      <div className="text-pip-green-dim text-xs mb-2">{mc.subtitle}</div>
+                      <div className={`font-display text-xs tracking-widest ${DIFFICULTY_COLOR[modeId]}`}>
+                        {DIFFICULTY_LABEL[modeId]}
+                      </div>
+
+                      {summary ? (
+                        <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs">
+                          <div className="text-pip-green font-display">{summary.characterName}</div>
+                          <div className="text-pip-green-dim">Turn {summary.turn}/30</div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs text-pip-green-dim">
+                          No active run
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Action buttons for selected mode */}
+            <div className="space-y-2">
+              {activeGameSummaries?.[selectedMode] && !showNewGame && !confirmAbandon && (
                 <button
                   className="pip-btn w-full text-xl"
-                  disabled={!charName.trim() || starting}
-                  onClick={handleNewGame}
+                  onClick={() => handleContinue(activeGameSummaries[selectedMode]!.id)}
                 >
-                  {starting ? 'LOADING...' : 'START CARAVAN'}
+                  CONTINUE — {GAME_MODES[selectedMode].name} (T{activeGameSummaries[selectedMode]!.turn})
                 </button>
-                <button className="pip-btn w-full text-sm" onClick={() => setShowNewGame(false)}>CANCEL</button>
-              </div>
-            )}
+              )}
 
-            <button className="pip-btn w-full" onClick={() => navigate('/leaderboard')}>
-              LEADERBOARD
-            </button>
-            <button className="pip-btn w-full text-sm text-pip-green-dim" onClick={() => signOut()}>
-              SIGN OUT ({user.email})
-            </button>
+              {confirmAbandon && (
+                <div className="border border-pip-red rounded p-3 space-y-2">
+                  <div className="text-pip-red text-sm font-display">
+                    ABANDON active run as {activeGameSummaries?.[selectedMode]?.characterName}?
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="pip-btn-danger flex-1"
+                      onClick={() => { setConfirmAbandon(false); setShowNewGame(true) }}
+                    >
+                      ABANDON & START NEW
+                    </button>
+                    <button className="pip-btn flex-1" onClick={() => setConfirmAbandon(false)}>
+                      CANCEL
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showNewGame ? (
+                <div className="space-y-2">
+                  <div>
+                    <label className="pip-label block mb-1">
+                      Character Name — {GAME_MODES[selectedMode].name}
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={30}
+                      value={charName}
+                      onChange={e => setCharName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleStartNew()}
+                      className="pip-input w-full"
+                      placeholder="Enter your name, Wanderer"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    className="pip-btn w-full text-xl"
+                    disabled={!charName.trim() || starting}
+                    onClick={handleStartNew}
+                  >
+                    {starting ? 'LOADING...' : 'START CARAVAN'}
+                  </button>
+                  <button className="pip-btn w-full text-sm" onClick={() => setShowNewGame(false)}>
+                    CANCEL
+                  </button>
+                </div>
+              ) : !confirmAbandon && (
+                <button
+                  className="pip-btn w-full"
+                  onClick={() => requestNewGame(selectedMode)}
+                >
+                  {activeGameSummaries?.[selectedMode] ? 'ABANDON & NEW GAME' : 'NEW GAME'}
+                </button>
+              )}
+            </div>
+
+            {/* Footer links */}
+            <div className="flex gap-2 flex-wrap pt-1">
+              <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
+              <button className="pip-btn flex-1" onClick={() => setShowTutorial(true)}>HOW TO PLAY</button>
+              <button
+                className="pip-btn text-sm text-pip-green-dim px-3"
+                onClick={() => signOut()}
+              >
+                SIGN OUT
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import type { TransitQuote } from '../../types/game'
-import { SETTLEMENTS } from '../../data/settlements'
+import { GAME_MODES } from '../../data/modes'
 import { useGameStore } from '../../store/gameStore'
 
 interface Props {
@@ -9,7 +9,9 @@ interface Props {
 
 export default function TravelSplash({ quote, destination }: Props) {
   const continueTravel = useGameStore(s => s.continueTravel)
-  const destName = SETTLEMENTS[destination]?.name ?? destination.replace(/_/g, ' ')
+  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mc = GAME_MODES[mode]
+  const destName = mc.settlements[destination]?.name ?? destination.replace(/_/g, ' ')
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 py-6 gap-6">

@@ -1,13 +1,13 @@
-import { CHEMS, CHEM_IDS } from '../data/chems'
-import { CONFIG } from '../data/config'
+import { CHEMS } from '../data/chems'
+import type { GameModeConfig } from '../data/modes'
 import type { MarketEvent, SettlementMarket, WorldState } from '../types/game'
 import { rng, rngBetween, rngInt, rngPick } from './rng'
 
-export function initializeMarket(turn: number): SettlementMarket {
+export function initializeMarket(turn: number, availableChemIds: string[]): SettlementMarket {
   const prices: Record<string, number> = {}
   const stock: Record<string, number> = {}
 
-  for (const chemId of CHEM_IDS) {
+  for (const chemId of availableChemIds) {
     const chem = CHEMS[chemId]
     if (rng() < chem.availability) {
       const variance = (rng() - 0.5) * 2 * chem.priceVariance
@@ -19,8 +19,8 @@ export function initializeMarket(turn: number): SettlementMarket {
   return { prices, stock, lastRefreshed: turn }
 }
 
-export function refreshMarket(_existing: SettlementMarket, turn: number): SettlementMarket {
-  return initializeMarket(turn)
+export function refreshMarket(_existing: SettlementMarket, turn: number, availableChemIds: string[]): SettlementMarket {
+  return initializeMarket(turn, availableChemIds)
 }
 
 export function applyMarketEvents(
@@ -39,16 +39,16 @@ export function applyMarketEvents(
   return { ...market, prices }
 }
 
-export function generateMarketEvent(turn: number): MarketEvent | null {
-  if (rng() > CONFIG.MARKET_EVENT_PROB_PER_TURN) return null
+export function generateMarketEvent(turn: number, modeConfig: GameModeConfig): MarketEvent | null {
+  if (rng() > modeConfig.marketEventProbPerTurn) return null
 
-  const chemId = rngPick(CHEM_IDS)
+  const chemId = rngPick(modeConfig.availableChemIds)
   const chem = CHEMS[chemId]
   const isShortage = rng() < 0.5
-  const duration = rngInt(CONFIG.MARKET_EVENT_DURATION_MIN, CONFIG.MARKET_EVENT_DURATION_MAX)
+  const duration = rngInt(modeConfig.marketEventDurationMin, modeConfig.marketEventDurationMax)
 
   if (isShortage) {
-    const multiplier = rngBetween(CONFIG.SHORTAGE_MULTIPLIER_MIN, CONFIG.SHORTAGE_MULTIPLIER_MAX)
+    const multiplier = rngBetween(modeConfig.shortageMultiplierMin, modeConfig.shortageMultiplierMax)
     return {
       id: `evt_${turn}_${chemId}_shortage`,
       type: 'shortage',
@@ -59,7 +59,7 @@ export function generateMarketEvent(turn: number): MarketEvent | null {
       message: chem.highPriceMsg,
     }
   } else {
-    const multiplier = rngBetween(CONFIG.SURPLUS_MULTIPLIER_MIN, CONFIG.SURPLUS_MULTIPLIER_MAX)
+    const multiplier = rngBetween(modeConfig.surplusMultiplierMin, modeConfig.surplusMultiplierMax)
     return {
       id: `evt_${turn}_${chemId}_surplus`,
       type: 'surplus',
@@ -78,10 +78,9 @@ export function tickMarketEvents(events: MarketEvent[]): MarketEvent[] {
     .filter(e => e.turnsRemaining > 0)
 }
 
-export function updateWorldMarkets(world: WorldState): WorldState {
-  // Tick existing events and maybe add a new one
+export function updateWorldMarkets(world: WorldState, modeConfig: GameModeConfig): WorldState {
   let events = tickMarketEvents(world.activeMarketEvents)
-  const newEvent = generateMarketEvent(world.turn)
+  const newEvent = generateMarketEvent(world.turn, modeConfig)
   if (newEvent) events = [...events, newEvent]
 
   return { ...world, activeMarketEvents: events }

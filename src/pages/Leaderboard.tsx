@@ -1,67 +1,149 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import type { GameModeId } from '../types/game'
+import { GAME_MODES } from '../data/modes'
+
+type LbTab = GameModeId | 'global'
 
 interface LeaderboardRow {
+  id: string
   character_name: string
   final_score: number
   status: string
+  mode: GameModeId | null
+  turns_reached: number | null
   created_at: string
-  rank: number
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })
+}
+
+const TABS: { id: LbTab; label: string }[] = [
+  { id: 'commonwealth',      label: 'Commonwealth'  },
+  { id: 'capital_wasteland', label: 'Capital'       },
+  { id: 'mojave_wasteland',  label: 'Mojave'        },
+  { id: 'global',            label: 'GLOBAL'        },
+]
+
 export default function Leaderboard() {
-  const navigate = useNavigate()
-  const [rows, setRows] = useState<LeaderboardRow[]>([])
+  const navigate  = useNavigate()
+  const [tab,     setTab]     = useState<LbTab>('global')
+  const [rows,    setRows]    = useState<LeaderboardRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase.rpc('get_leaderboard')
-      if (error) setError(error.message)
-      else setRows((data as LeaderboardRow[]) ?? [])
+      setLoading(true)
+      setError(null)
+
+      let query = supabase
+        .from('games')
+        .select('id, character_name, final_score, status, mode, turns_reached, created_at')
+        .in('status', ['won', 'dead'])
+        .not('final_score', 'is', null)
+        .order('final_score', { ascending: false })
+        .limit(20)
+
+      if (tab !== 'global') {
+        query = query.eq('mode', tab)
+      }
+
+      const { data, error: qErr } = await query
+
+      if (qErr) {
+        setError(qErr.message)
+      } else {
+        setRows((data as LeaderboardRow[]) ?? [])
+      }
       setLoading(false)
     }
     load()
-  }, [])
+  }, [tab])
+
+  const displayed = rows.slice(0, 10)
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       <div className="max-w-2xl w-full">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <h1 className="font-display text-4xl text-pip-green tracking-widest">LEADERBOARD</h1>
           <button className="pip-btn" onClick={() => navigate('/')}>BACK</button>
         </div>
 
-        {loading && <div className="text-pip-green-dim">LOADING DATA...</div>}
-        {error && <div className="text-pip-red">Error: {error}</div>}
-        {!loading && !error && rows.length === 0 && (
-          <div className="text-pip-green-dim">No finished runs yet. Be the first!</div>
+        {/* Tab bar */}
+        <div className="flex gap-1 mb-4 flex-wrap">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              className={tab === t.id
+                ? 'pip-btn bg-pip-green text-pip-bg-light text-sm px-3 py-1'
+                : 'pip-btn text-sm px-3 py-1'}
+              onClick={() => setTab(t.id)}
+            >
+              {t.id !== 'global'
+                ? GAME_MODES[t.id as GameModeId].name.split(' ')[0].toUpperCase()
+                : t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mode subtitle */}
+        {tab !== 'global' && (
+          <div className="text-pip-green-dim text-xs mb-3 font-mono">
+            {GAME_MODES[tab as GameModeId].subtitle} · Top 10 runs
+          </div>
         )}
 
-        {rows.length > 0 && (
+        {loading && <div className="text-pip-green-dim font-mono">LOADING DATA...</div>}
+        {error   && <div className="text-pip-red font-mono">Error: {error}</div>}
+        {!loading && !error && rows.length === 0 && (
+          <div className="text-pip-green-dim font-mono">No finished runs yet. Be the first!</div>
+        )}
+
+        {!loading && displayed.length > 0 && (
           <div className="pip-panel">
-            <div className="grid grid-cols-5 gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2">
+            {/* Header */}
+            <div className={`grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2 ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <div>#</div>
               <div className="col-span-2">Name</div>
               <div>Score</div>
-              <div>Result</div>
+              {tab === 'global' && <div>Region</div>}
+              <div>Turns</div>
             </div>
-            {rows.map(row => (
-              <div key={`${row.rank}-${row.character_name}`} className="grid grid-cols-5 gap-2 text-sm py-1 border-b border-pip-border-dim">
-                <div className={`font-display text-lg ${row.rank === 1 ? 'text-pip-amber' : row.rank <= 3 ? 'text-pip-green-mid' : 'text-pip-green-dim'}`}>
-                  {row.rank}
+
+            {displayed.map((row, idx) => {
+              const rank  = idx + 1
+              const score = row.final_score ?? 0
+              const modeName = row.mode ? GAME_MODES[row.mode]?.name.split(' ')[0] : '—'
+
+              return (
+                <div
+                  key={row.id}
+                  className={`grid gap-2 text-sm py-1.5 border-b border-pip-border-dim ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}
+                >
+                  <div className={`font-display text-lg ${
+                    rank === 1 ? 'text-pip-amber' : rank <= 3 ? 'text-pip-green-mid' : 'text-pip-green-dim'
+                  }`}>
+                    {rank}
+                  </div>
+                  <div className="col-span-2 text-pip-green font-mono truncate">
+                    {row.character_name}
+                  </div>
+                  <div className={`font-display text-lg ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                    {score.toLocaleString()} ¤
+                  </div>
+                  {tab === 'global' && (
+                    <div className="text-xs text-pip-green-dim self-center">{modeName}</div>
+                  )}
+                  <div className="text-xs text-pip-green-dim self-center">
+                    {row.turns_reached != null ? `T${row.turns_reached}` : '—'}
+                  </div>
                 </div>
-                <div className="col-span-2 text-pip-green">{row.character_name}</div>
-                <div className={`font-display text-lg ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                  {row.final_score.toLocaleString()} ¤
-                </div>
-                <div className={`text-xs uppercase ${row.status === 'won' ? 'text-pip-green' : 'text-pip-red'}`}>
-                  {row.status}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

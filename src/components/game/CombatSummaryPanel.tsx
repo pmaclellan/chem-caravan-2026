@@ -7,10 +7,11 @@ interface Props { combat: CombatState }
 export default function CombatSummaryPanel({ combat }: Props) {
   const { dismissCombatSummary } = useGameStore()
 
-  const won = combat.phase === 'won'
-  const fled = combat.phase === 'fled'
-  const raidersKilled = combat.raidersStartCount - combat.raiderCount
-  const chemEntries = Object.entries(combat.raiderChems).filter(([, qty]) => qty > 0)
+  const won          = combat.phase === 'won'
+  const fled         = combat.phase === 'fled'
+  const totalCount   = combat.enemies.length
+  const killedCount  = combat.enemies.filter(e => e.dead).length
+  const chemEntries  = Object.entries(combat.enemyLoot).filter(([, qty]) => qty > 0)
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,9 +31,9 @@ export default function CombatSummaryPanel({ combat }: Props) {
           <div className="font-display text-2xl text-pip-red">{combat.totalDamageTaken}</div>
         </div>
         <div className="pip-panel p-3 space-y-1">
-          <div className="pip-label text-xs">RAIDERS KILLED</div>
+          <div className="pip-label text-xs">ENEMIES KILLED</div>
           <div className="font-display text-2xl text-pip-green">
-            {raidersKilled} / {combat.raidersStartCount}
+            {killedCount} / {totalCount}
           </div>
         </div>
         <div className="pip-panel p-3 space-y-1">
