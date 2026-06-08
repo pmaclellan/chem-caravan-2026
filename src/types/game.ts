@@ -1,3 +1,21 @@
+export type GameModeId = 'commonwealth' | 'capital_wasteland' | 'mojave_wasteland'
+
+export interface EnemyType {
+  id: string
+  name: string
+  caps: [number, number]     // [min, max] caps carried
+  lootChems: string[]        // possible drops on victory
+}
+
+export interface EnemyUnit {
+  id: string                 // "enemy_0", "enemy_1" …
+  typeId: string             // references EnemyType.id
+  name: string               // "Raider 1", "Super Mutant Brute" …
+  health: number
+  maxHealth: number
+  dead: boolean
+}
+
 export interface GunState {
   id: string
   name: string
@@ -46,14 +64,12 @@ export interface MarketEvent {
 }
 
 export interface CombatState {
-  raiderCount: number
-  raiderHealth: number   // total health pool across all raiders
-  raiderCaps: number     // total caps on them
-  raidersStartCount: number
+  enemies: EnemyUnit[]
+  capsPool: number                      // total caps all enemies carry
   totalDamageDealt: number
   totalDamageTaken: number
-  raiderChems: Record<string, number>  // chems found on raiders (awarded on victory)
-  capsLooted: number                   // caps looted on victory (raiderCaps is zeroed after)
+  enemyLoot: Record<string, number>     // chems found on enemies (awarded on victory)
+  capsLooted: number
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
 }
@@ -105,6 +121,7 @@ export interface TransitQuote {
 }
 
 export interface GameState {
+  mode: GameModeId
   player: PlayerState
   world: WorldState
   phase: GamePhase
@@ -126,6 +143,16 @@ export interface GameRow {
   final_score: number | null
   current_location: string | null
   is_traveling: boolean
+  mode: GameModeId | null        // null for pre-v2 rows (migration 003)
+  turns_reached: number | null   // set on game over
   created_at: string
   updated_at: string
+}
+
+// Summary shape used in Home screen save slots
+export interface ActiveGameSummary {
+  id: string
+  characterName: string
+  turn: number
+  modeId: GameModeId
 }

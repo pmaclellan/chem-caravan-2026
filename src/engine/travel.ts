@@ -1,20 +1,20 @@
-import { ROADS, SETTLEMENTS, type Road } from '../data/settlements'
-import { TRAVEL_EVENT_DEFS, STASH_CHEMS, STASH_QUANTITY_MIN, STASH_QUANTITY_MAX, BROTHERHOOD_TOLL } from '../data/events'
-import { CHEMS } from '../data/chems'
 import { CONFIG } from '../data/config'
+import type { GameModeConfig } from '../data/modes'
+import type { Road } from '../data/modes'
 import type { PlayerState, TravelEvent } from '../types/game'
+import { CHEMS } from '../data/chems'
 import { rng, rngInt, rngPick, rngWeightedPick } from './rng'
 
-export function getAdjacentRoads(settlementId: string): Road[] {
-  return ROADS.filter(r => r.from === settlementId || r.to === settlementId)
+export function getAdjacentRoads(mc: GameModeConfig, settlementId: string): Road[] {
+  return mc.roads.filter(r => r.from === settlementId || r.to === settlementId)
 }
 
 export function getRoadDestination(road: Road, currentLocation: string): string {
   return road.from === currentLocation ? road.to : road.from
 }
 
-export function calculateCapacity(brahmin: number): number {
-  return CONFIG.BASE_CAPACITY + brahmin * CONFIG.CAPACITY_PER_BRAHMIN
+export function calculateCapacity(brahmin: number, baseCapacity = CONFIG.BASE_CAPACITY, capacityPerBrahmin = CONFIG.CAPACITY_PER_BRAHMIN): number {
+  return baseCapacity + brahmin * capacityPerBrahmin
 }
 
 export function totalInventoryItems(inventory: PlayerState['inventory']): number {
@@ -24,45 +24,49 @@ export function totalInventoryItems(inventory: PlayerState['inventory']): number
 export function selectTravelEvent(
   road: Road,
   player: PlayerState,
+  modeConfig: GameModeConfig,
 ): TravelEvent | null {
   // Force debt collector if debt is old enough
-  if (player.ageOfDebt >= CONFIG.DEBT_COLLECTOR_MIN_AGE && rng() < CONFIG.DEBT_COLLECTOR_PROB) {
-    const def = TRAVEL_EVENT_DEFS.find(e => e.type === 'debt_collector')!
+  if (player.ageOfDebt >= modeConfig.debtCollectorMinAge && rng() < modeConfig.debtCollectorProb) {
+    const def = modeConfig.travelEvents.find(e => e.type === 'debt_collector')!
     return { type: def.type, title: def.title, description: def.description }
   }
 
-  const eventProb = CONFIG.EVENT_BASE_PROB + road.dangerLevel * CONFIG.EVENT_DANGER_SCALE
+  const eventProb = modeConfig.eventBaseProb + road.dangerLevel * modeConfig.eventDangerScale
   if (rng() > eventProb) return null
 
-  const eligible = TRAVEL_EVENT_DEFS.filter(
+  const eligible = modeConfig.travelEvents.filter(
     e => e.weight > 0 && road.dangerLevel >= e.minDangerToTrigger
   )
   const chosen = rngWeightedPick(eligible)
   if (!chosen) return null
 
-  return buildEventPayload(chosen.type, chosen.title, chosen.description, player)
+  return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig)
 }
 
 function buildEventPayload(
   type: TravelEvent['type'],
   title: string,
   description: string,
-  _player: PlayerState,
+  modeConfig: GameModeConfig,
 ): TravelEvent {
+  const stashChemsDef = modeConfig.travelEvents.find(e => e.type === 'chem_stash')
+  const stashChems = stashChemsDef ? getStashChems(modeConfig) : ['jet', 'psycho']
+  const brotherhoodToll = getBrotherhoodToll(modeConfig)
+
   switch (type) {
     case 'chem_stash': {
-      const chemId = rngPick(STASH_CHEMS)
-      const qty = rngInt(STASH_QUANTITY_MIN, STASH_QUANTITY_MAX)
+      const chemId = rngPick(stashChems)
+      const qty = rngInt(1, 4)
       return { type, title, description, payload: { chemId, qty } }
     }
     case 'brotherhood_checkpoint':
-      return { type, title, description, payload: { toll: BROTHERHOOD_TOLL } }
+      return { type, title, description, payload: { toll: brotherhoodToll } }
     case 'wandering_merchant': {
-      const chemIds = [...STASH_CHEMS].sort(() => rng() - 0.5).slice(0, 3)
+      const chemIds = [...stashChems].sort(() => rng() - 0.5).slice(0, 3)
       const isFence = rng() < 0.35
 
       if (isFence) {
-        // SELLER: fence moving stolen goods cheap — player buys
         const prices: Record<string, number> = {}
         const stock:  Record<string, number> = {}
         chemIds.forEach(id => {
@@ -76,7 +80,6 @@ function buildEventPayload(
           payload: { prices, stock, isFence: true },
         }
       } else {
-        // BUYER: strung-out traveler / addict with caps, paying premium — player sells
         const prices:  Record<string, number> = {}
         const demand:  Record<string, number> = {}
         chemIds.forEach(id => {
@@ -96,12 +99,25 @@ function buildEventPayload(
   }
 }
 
+// Pull stash chems and toll from the events module for the given mode.
+// These constants live in the events data files but aren't part of the type system —
+// we look them up by reading the module import. For now we fall back to defaults.
+function getStashChems(mc: GameModeConfig): string[] {
+  // Use available chem ids as stash pool, filtered to base chems (not premium ones)
+  const premiumChems = new Set(['ultrajet', 'daytripper', 'nuka_cola_quantum', 'turbo', 'rocket'])
+  const pool = mc.availableChemIds.filter(id => !premiumChems.has(id))
+  return pool.length > 0 ? pool : mc.availableChemIds
+}
+
+function getBrotherhoodToll(_mc: GameModeConfig): number {
+  return 100 // base toll; mode-specific events just flavor the name
+}
+
 export function dropExcessInventory(player: PlayerState): PlayerState {
   const capacity = calculateCapacity(player.brahmin)
   const current = totalInventoryItems(player.inventory)
   if (current <= capacity) return player
 
-  // Drop cheapest items first (by pricePaid per unit)
   const inventory = { ...player.inventory }
   const entries = Object.entries(inventory)
     .filter(([, v]) => v.quantity > 0)
@@ -126,6 +142,6 @@ export function loseBrahmin(player: PlayerState): PlayerState {
   return dropExcessInventory(updated)
 }
 
-export function getSettlementName(id: string): string {
-  return SETTLEMENTS[id]?.name ?? id
+export function getSettlementName(mc: GameModeConfig, id: string): string {
+  return mc.settlements[id]?.name ?? id
 }

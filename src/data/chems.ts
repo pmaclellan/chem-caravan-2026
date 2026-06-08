@@ -133,7 +133,45 @@ export const CHEMS: Record<string, ChemDefinition> = {
     highPriceMsg: "Goodneighbor pleasure-seekers drove up Daytripper prices.",
     lowPriceMsg: "Bad batch went around — sellers are dumping inventory.",
     description: "Euphoria chem. Popular in settlements with a nightlife.",
-    imageUrl: null, // no icon on Fallout wiki — TODO: source or create
+    imageUrl: null,
+  },
+  // Capital Wasteland exclusive
+  nuka_cola_quantum: {
+    id: 'nuka_cola_quantum',
+    name: 'Nuka-Cola Quantum',
+    basePrice: 250,
+    priceVariance: 0.45,
+    availability: 0.20,
+    maxStock: 3,
+    highPriceMsg: "Pre-war Quantum is drying up — prices shot through the roof.",
+    lowPriceMsg: "A Nuka-Cola warehouse cache just hit the market. Grab it while it lasts.",
+    description: "Radioactive soft drink. Rare, potent, and blue.",
+    imageUrl: null,
+  },
+  // Mojave Wasteland exclusives
+  turbo: {
+    id: 'turbo',
+    name: 'Turbo',
+    basePrice: 180,
+    priceVariance: 0.60,
+    availability: 0.30,
+    maxStock: 6,
+    highPriceMsg: "Turbo cooks can't keep up with demand — prices are spiking.",
+    lowPriceMsg: "Great Khans flooded the market with cut-rate Turbo.",
+    description: "Slows time. Fiend-made. The Mojave's specialty chem.",
+    imageUrl: null,
+  },
+  rocket: {
+    id: 'rocket',
+    name: 'Rocket',
+    basePrice: 220,
+    priceVariance: 0.55,
+    availability: 0.25,
+    maxStock: 5,
+    highPriceMsg: "Rocket supply dried up — someone torched the lab.",
+    lowPriceMsg: "Oversupply hit the Mojave. Rocket is moving cheap.",
+    description: "Combat stimulant. Extreme aggression boost. Do not take recreationally.",
+    imageUrl: null,
   },
 }
 

@@ -1,0 +1,44 @@
+import type { TransitQuote } from '../commonwealth/quotes'
+export type { TransitQuote }
+
+export const TRANSIT_QUOTES: TransitQuote[] = [
+  // Merchants & trade
+  { text: "The Strip takes a cut of everything. You accept it or you go home. Most people accept it.", speaker: "Veteran trader" },
+  { text: "Turbo is rare out here. Find it — hold it. The price only goes up.", speaker: "Chem runner" },
+  { text: "NCR runs the road but they don't run the prices. That's mine to run.", speaker: "Caravan boss" },
+  { text: "Bought low in Goodsprings, sold high at Camp McCarran. It's not complicated. It's just dangerous.", speaker: "Lucky merchant" },
+  { text: "The Mojave has better prices than the Commonwealth. The Mojave also has deathclaws at the quarry.", speaker: "Traveling merchant" },
+  { text: "House's robots keep The Strip safe. Everything outside The Strip is educational.", speaker: "Strip vendor" },
+  { text: "Legion doesn't buy. Legion takes. Bear that in mind near The Fort.", speaker: "Scarred trader" },
+
+  // Road conditions & danger
+  { text: "Quarry Junction. Don't. Just don't.", speaker: "Anyone who has been to Quarry Junction" },
+  { text: "Fiends own the west side now. Great Khans own everything else. NCR disagrees.", speaker: "Caravan guard" },
+  { text: "I've done the Boulder-Novac run forty times. I still pray each time.", speaker: "Veteran courier" },
+  { text: "Legion patrols are increasing east of the dam. Whatever they're planning, it's soon.", speaker: "NCR scout" },
+  { text: "Highway 95 is fine in daylight. At night it belongs to something else.", speaker: "Night traveler (surviving)" },
+  { text: "The Khans are predictable. That's both good and bad.", speaker: "Experienced caravan driver" },
+
+  // Settlement gossip
+  { text: "Freeside's rough but honest. That's more than I can say for The Strip.", speaker: "Freeside regular" },
+  { text: "Camp McCarran has a bar. A military base with a bar. The NCR understands morale.", speaker: "Soldier on leave" },
+  { text: "Jacobstown super mutants won't attack unprovoked. Emphasis on unprovoked.", speaker: "Cautious traveler" },
+  { text: "The Fort isn't a trading post. It's a demonstration of power. Same thing, different terms.", speaker: "Former Legion prisoner" },
+  { text: "Goodsprings has the best water in the Mojave. Nobody talks about it because then everyone would go there.", speaker: "Local resident" },
+  { text: "Novac is three hundred people watching each other's back. It works. Barely.", speaker: "Novac resident" },
+
+  // Chems & addiction
+  { text: "Turbo slows time. Costs a fortune. Worth every cap when the deathclaw is already running.", speaker: "Combat veteran" },
+  { text: "Rocket is what happens when someone asks 'what if Psycho was faster.' The answer is terrible.", speaker: "Medical courier" },
+  { text: "The Mojave runs on jet, mentats, and paranoia. Mostly paranoia.", speaker: "Weary trader" },
+
+  // Wasteland philosophy
+  { text: "War never changes. I've been saying that for thirty years. Still waiting to be wrong.", speaker: "Old NCR veteran" },
+  { text: "The house always wins. The question is which house you're betting on.", speaker: "Strip gambler" },
+  { text: "Out here, the line between smart and lucky is mostly luck.", speaker: "Goodsprings drifter" },
+  { text: "The Mojave will teach you respect or it will kill you. Either way, lesson learned.", speaker: "Desert hermit" },
+]
+
+export function pickQuote(): TransitQuote {
+  return TRANSIT_QUOTES[Math.floor(Math.random() * TRANSIT_QUOTES.length)]
+}

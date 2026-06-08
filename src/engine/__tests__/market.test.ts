@@ -6,27 +6,29 @@ import {
 } from '../market'
 import type { MarketEvent } from '../../types/game'
 
+const TEST_CHEMS = ['jet', 'psycho', 'stimpak']
+
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
 describe('initializeMarket', () => {
   it('returns a valid market structure', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     expect(market.lastRefreshed).toBe(1)
     expect(typeof market.prices).toBe('object')
     expect(typeof market.stock).toBe('object')
   })
 
   it('prices are multiples of 5', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     for (const price of Object.values(market.prices)) {
       expect(price % 5).toBe(0)
     }
   })
 
   it('stock is positive when a chem is available', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     for (const [chemId, qty] of Object.entries(market.stock)) {
       expect(qty).toBeGreaterThan(0)
       expect(market.prices[chemId]).toBeGreaterThan(0)
@@ -36,7 +38,7 @@ describe('initializeMarket', () => {
 
 describe('applyMarketEvents', () => {
   it('applies shortage multiplier to affected chems', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     if (!market.prices['jet']) market.prices['jet'] = 80
 
     const event: MarketEvent = {
@@ -55,7 +57,7 @@ describe('applyMarketEvents', () => {
   })
 
   it('skips events for a different settlement', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     if (!market.prices['jet']) market.prices['jet'] = 80
     const original = market.prices['jet']
 
@@ -74,7 +76,7 @@ describe('applyMarketEvents', () => {
   })
 
   it('does not mutate the original market', () => {
-    const market = initializeMarket(1)
+    const market = initializeMarket(1, TEST_CHEMS)
     if (!market.prices['jet']) market.prices['jet'] = 80
     const original = { ...market.prices }
 

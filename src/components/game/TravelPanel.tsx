@@ -1,5 +1,5 @@
 import type { PlayerState } from '../../types/game'
-import { SETTLEMENTS } from '../../data/settlements'
+import { GAME_MODES } from '../../data/modes'
 import { getAdjacentRoads, getRoadDestination } from '../../engine/travel'
 import { useGameStore } from '../../store/gameStore'
 
@@ -21,7 +21,9 @@ function DangerBars({ level }: { level: number }) {
 
 export default function TravelPanel({ player }: Props) {
   const travelTo = useGameStore(s => s.travelTo)
-  const roads = getAdjacentRoads(player.location)
+  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mc = GAME_MODES[mode]
+  const roads = getAdjacentRoads(mc, player.location)
 
   return (
     <div className="h-full overflow-y-auto space-y-3">
@@ -30,7 +32,7 @@ export default function TravelPanel({ player }: Props) {
       </div>
       {roads.map(road => {
         const destId = getRoadDestination(road, player.location)
-        const dest = SETTLEMENTS[destId]
+        const dest = mc.settlements[destId]
         const canAfford = player.caps >= road.travelCost
 
         const services = [

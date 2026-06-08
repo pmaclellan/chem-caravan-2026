@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../store/gameStore'
-import { SETTLEMENTS, SETTLEMENT_IDS } from '../../data/settlements'
+import { GAME_MODES } from '../../data/modes'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
-import { GUNS, GUN_IDS } from '../../data/guns'
-import { CONFIG } from '../../data/config'
 import { applyMarketEvents } from '../../engine/market'
 import { getAdjacentRoads, getRoadDestination, calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
@@ -16,8 +14,8 @@ import CombatPanel from './CombatPanel'
 import CombatSummaryPanel from './CombatSummaryPanel'
 import EventPanel from './EventPanel'
 import TravelSplash from './TravelSplash'
+import SettlementMap from './SettlementMap'
 
-const AMMO_PRICE = 5
 type MobileTab = 'stats' | 'market' | 'travel' | 'pack' | 'log'
 
 const PANEL_STYLE = { backgroundColor: 'rgba(226, 207, 160, 0.93)' }
@@ -75,8 +73,9 @@ export default function MobileGame() {
 
   if (!gameState) return null
 
+  const mc = GAME_MODES[gameState.mode]
   const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log } = gameState
-  const settlement = SETTLEMENTS[player.location]
+  const settlement = mc.settlements[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket
     ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location)
@@ -88,7 +87,7 @@ export default function MobileGame() {
   const used = totalInventoryItems(player.inventory)
   const space = capacity - used
   const availableChems = CHEM_IDS.filter(id => market.prices[id])
-  const roads = getAdjacentRoads(player.location)
+  const roads = getAdjacentRoads(mc, player.location)
   const adjRoadMap = new Map(roads.map(r => [getRoadDestination(r, player.location), r]))
 
   // ── Stats render function ──────────────────────────────────────────────
@@ -270,8 +269,8 @@ export default function MobileGame() {
             {serviceOpen === 'gunshop' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-3">
                 <div className="pip-label">Gun Shop</div>
-                {GUN_IDS.map(gunId => {
-                  const gun = GUNS[gunId]
+                {mc.gunIds.map(gunId => {
+                  const gun = mc.guns[gunId]
                   const owned = player.gun?.id === gunId
                   return (
                     <div key={gunId} className="flex justify-between items-center">
@@ -293,7 +292,7 @@ export default function MobileGame() {
                 })}
                 {player.gun && (
                   <div className="border-t border-pip-border-dim pt-2">
-                    <div className="pip-label">Ammo — {AMMO_PRICE} ¤/round</div>
+                    <div className="pip-label">Ammo — {mc.ammoPrice} ¤/round</div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <input
                         type="number" min={1} value={ammoQty}
@@ -302,10 +301,10 @@ export default function MobileGame() {
                       />
                       <button
                         className="pip-btn text-sm"
-                        disabled={player.caps < ammoQty * AMMO_PRICE}
+                        disabled={player.caps < ammoQty * mc.ammoPrice}
                         onClick={() => store.purchaseAmmo(ammoQty)}
                       >
-                        BUY {ammoQty} ({ammoQty * AMMO_PRICE} ¤)
+                        BUY {ammoQty} ({ammoQty * mc.ammoPrice} ¤)
                       </button>
                     </div>
                   </div>
@@ -315,19 +314,19 @@ export default function MobileGame() {
 
             {serviceOpen === 'guards' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-2">
-                <div className="pip-label">Guards — {CONFIG.GUARD_COST} ¤ each</div>
+                <div className="pip-label">Guards — {mc.guardCost} ¤ each</div>
                 <div className="text-xs text-pip-green-dim">
-                  {player.guards} current · each absorbs {CONFIG.GUARD_HEALTH} HP in combat
+                  {player.guards} current · each absorbs {mc.guardHealth} HP in combat
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {[1, 2, 3].map(n => (
                     <button
                       key={n}
                       className="pip-btn text-sm"
-                      disabled={player.caps < n * CONFIG.GUARD_COST}
+                      disabled={player.caps < n * mc.guardCost}
                       onClick={() => store.hireguards(n)}
                     >
-                      HIRE {n} ({n * CONFIG.GUARD_COST} ¤)
+                      HIRE {n} ({n * mc.guardCost} ¤)
                     </button>
                   ))}
                 </div>
@@ -336,19 +335,19 @@ export default function MobileGame() {
 
             {serviceOpen === 'brahmin' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-2">
-                <div className="pip-label">Brahmin — {CONFIG.BRAHMIN_COST} ¤ each</div>
+                <div className="pip-label">Brahmin — {mc.brahminCost} ¤ each</div>
                 <div className="text-xs text-pip-green-dim">
-                  {player.brahmin} owned · +10 pack capacity each
+                  {player.brahmin} owned · +{mc.capacityPerBrahmin} pack capacity each
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {[1, 2].map(n => (
                     <button
                       key={n}
                       className="pip-btn text-sm"
-                      disabled={player.caps < n * CONFIG.BRAHMIN_COST}
+                      disabled={player.caps < n * mc.brahminCost}
                       onClick={() => store.purchaseBrahmin(n)}
                     >
-                      BUY {n} ({n * CONFIG.BRAHMIN_COST} ¤)
+                      BUY {n} ({n * mc.brahminCost} ¤)
                     </button>
                   ))}
                 </div>
@@ -402,12 +401,16 @@ export default function MobileGame() {
           const maxQty = Math.min(Math.floor(player.caps / price), stock, space)
           const pStyle = priceColor(price, chem.basePrice, chem.priceVariance)
 
+          const flash = inventoryFlashes[chemId]
+          const flashVariant = flash?.direction === 'up' ? 'buy' : 'sell'
+
           return (
             <div
               key={chemId}
-              className="rounded-lg border border-pip-border overflow-hidden"
+              className="rounded-lg border border-pip-border overflow-hidden relative"
               style={PANEL_STYLE}
             >
+              <FlashOverlay flashKey={flash?.key ?? 0} variant={flashVariant} />
               {/* Line 1: icon + name + price */}
               <div className="flex items-center gap-2 px-3 pt-3 pb-1">
                 {chem.imageUrl ? (
@@ -463,14 +466,16 @@ export default function MobileGame() {
 
   function renderTravel() {
     return (
-      <div className="px-3 py-3 space-y-2 pb-6">
-        <div className="text-pip-green-dim text-xs px-1 mb-1">
-          At <span className="text-pip-green font-display">{settlement.name}</span>. Tap an adjacent settlement to travel.
+      <div className="px-3 py-3 pb-6 space-y-3">
+        {/* Compact map — tap a node to fill destination detail below */}
+        <div className="rounded-lg border border-pip-border overflow-hidden" style={PANEL_STYLE}>
+          <SettlementMap player={player} mc={mc} onTravel={id => travelTo(id)} compact />
         </div>
 
+        {/* Adjacent road list */}
         {roads.map(road => {
           const destId = getRoadDestination(road, player.location)
-          const dest = SETTLEMENTS[destId]
+          const dest = mc.settlements[destId]
           const services = [
             dest.hasDoctor && 'Doctor',
             dest.hasBank && 'Bank',
@@ -498,29 +503,11 @@ export default function MobileGame() {
                 className="w-full pip-btn rounded-none border-0 border-t border-pip-border py-2.5 text-sm"
                 onClick={() => travelTo(destId)}
               >
-                TRAVEL
+                TRAVEL ({road.travelCost} ¤)
               </button>
             </div>
           )
         })}
-
-        {/* Non-adjacent settlements — faded reference */}
-        <div className="rounded-lg border border-pip-border-dim p-3" style={{ ...PANEL_STYLE, opacity: 0.55 }}>
-          <div className="pip-label mb-2">Not reachable from here</div>
-          <div className="space-y-1">
-            {SETTLEMENT_IDS
-              .filter(id => id !== player.location && !adjRoadMap.has(id))
-              .map(id => {
-                const s = SETTLEMENTS[id]
-                return (
-                  <div key={id} className="flex justify-between items-center">
-                    <span className="font-display text-pip-green-dim text-sm">{s.name}</span>
-                    <span className="text-xs text-pip-green-dim">{s.faction}</span>
-                  </div>
-                )
-              })}
-          </div>
-        </div>
       </div>
     )
   }
@@ -614,7 +601,7 @@ export default function MobileGame() {
   ]
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex flex-col overflow-hidden" data-mode={gameState.mode}>
       {/* Background settlement image — hidden during travel/combat/events */}
       {!isActionBlocked && settlement.imageUrl && (
         <img
@@ -673,7 +660,9 @@ export default function MobileGame() {
               <span className="text-pip-green-dim text-xs ml-2">{settlement.faction}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-display text-pip-amber text-sm">{player.caps.toLocaleString()} ¤</span>
+              <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-amber text-sm">
+                {player.caps.toLocaleString()} ¤
+              </FlashText>
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>
             </div>
           </div>

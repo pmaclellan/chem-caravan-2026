@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
-import { SETTLEMENTS } from '../data/settlements'
+import { GAME_MODES } from '../data/modes'
 import { applyMarketEvents } from '../engine/market'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PlayerStats from '../components/game/PlayerStats'
@@ -52,7 +52,8 @@ export default function Game() {
   }
 
   const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log } = gameState
-  const settlement = SETTLEMENTS[player.location]
+  const mc = GAME_MODES[gameState.mode]
+  const settlement = mc.settlements[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
 
@@ -78,7 +79,7 @@ export default function Game() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-pip-bg p-2 gap-2">
+    <div className="min-h-screen flex flex-col bg-pip-bg p-2 gap-2" data-mode={gameState.mode}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-pip-red text-pip-bg font-display text-lg px-6 py-2 rounded border border-pip-red">
