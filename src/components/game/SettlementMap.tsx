@@ -39,7 +39,6 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
   const viewW = 600
   const viewH = 548
   const scale = compact ? 0.58 : 1
-  const svgW  = Math.round(viewW * scale)
   const svgH  = Math.round(viewH * scale)
 
   return (
