@@ -85,7 +85,9 @@ export function startTravel(state: GameState, destinationId: string): GameState 
   const destName = mc.settlements[destinationId]?.name ?? destinationId
   const log = [...state.log, makeLog(state.world.turn, `Heading to ${destName} via ${road.name}...`, 'info')]
 
-  const q = mc.transitQuotes[Math.floor(Math.random() * mc.transitQuotes.length)]
+  const q = rng() < 0.33
+    ? mc.transitQuotes[Math.floor(rng() * mc.transitQuotes.length)]
+    : null
 
   return {
     ...state,

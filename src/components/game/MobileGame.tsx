@@ -629,7 +629,7 @@ export default function MobileGame() {
         <div className="relative flex-1 overflow-y-auto">
           <div className="min-h-full p-4">
             <div className="rounded-lg border border-pip-border p-4" style={PANEL_STYLE}>
-              {phase === 'traveling' && pendingQuote && pendingDestination && (
+              {phase === 'traveling' && pendingDestination && (
                 <TravelSplash quote={pendingQuote} destination={pendingDestination} />
               )}
               {phase === 'combat' && combat && (

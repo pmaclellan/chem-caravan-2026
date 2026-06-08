@@ -65,7 +65,7 @@ export default function Game() {
 
   const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'combat_summary' || phase === 'traveling'
   const mainContent = () => {
-    if (phase === 'traveling' && pendingQuote && pendingDestination) {
+    if (phase === 'traveling' && pendingDestination) {
       return <TravelSplash quote={pendingQuote} destination={pendingDestination} />
     }
     if (phase === 'combat' && combat) return <CombatPanel player={player} combat={combat} />
