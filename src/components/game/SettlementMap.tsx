@@ -87,31 +87,21 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             {mc.mapTitle}
           </text>
 
-          {/* Non-adjacent roads (dim dashed) */}
-          {mc.roads.filter(r => !isAdjRoad(r)).map(road => {
+          {/* All roads — danger-colored; adjacent = solid+bold, others = dashed+dim */}
+          {mc.roads.map(road => {
             const from = positions[road.from]
             const to   = positions[road.to]
             if (!from || !to) return null
-            return (
-              <line key={road.id}
-                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                stroke="rgba(105, 68, 24, 0.28)"
-                strokeWidth={3} strokeDasharray="6 5" strokeLinecap="round"
-              />
-            )
-          })}
-
-          {/* Adjacent roads (bold, colored by danger) */}
-          {mc.roads.filter(r => isAdjRoad(r)).map(road => {
-            const from = positions[road.from]
-            const to   = positions[road.to]
-            if (!from || !to) return null
+            const adj   = isAdjRoad(road)
             const color = dangerColor(road.dangerLevel)
-            const w = road.dangerLevel >= 0.65 ? 5 : 3.5
             return (
               <line key={road.id}
                 x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                stroke={color} strokeWidth={w} strokeLinecap="round"
+                stroke={color}
+                strokeOpacity={adj ? 1 : 0.35}
+                strokeWidth={adj ? (road.dangerLevel >= 0.65 ? 5 : 3.5) : 2.5}
+                strokeDasharray={adj ? undefined : '6 5'}
+                strokeLinecap="round"
               />
             )
           })}
