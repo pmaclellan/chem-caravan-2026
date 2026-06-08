@@ -198,14 +198,17 @@ export function payBrotherhoodToll(player: PlayerState, toll: number): { player:
   return { player: { ...player, caps: player.caps - toll }, paid: true }
 }
 
-// Add chems from a stash find directly to inventory (ignores capacity — it's a gift)
 export function addChemStash(
   player: PlayerState,
   chemId: string,
   quantity: number,
 ): PlayerState {
+  const capacity = calculateCapacity(player.brahmin)
+  const current = totalInventoryItems(player.inventory)
+  const canAdd = Math.min(quantity, Math.max(0, capacity - current))
+  if (canAdd === 0) return player
   const existing = player.inventory[chemId]
-  const newQty = (existing?.quantity ?? 0) + quantity
+  const newQty = (existing?.quantity ?? 0) + canAdd
   return {
     ...player,
     inventory: {
