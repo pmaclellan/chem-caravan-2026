@@ -68,13 +68,13 @@ export default function EventPanel({ event, player }: Props) {
       )}
 
       {event.type === 'debt_collector' && (() => {
-        const { minPayment, warnings = 0 } = (event.payload ?? {}) as { minPayment?: number; warnings?: number }
+        const { warnings = 0 } = (event.payload ?? {}) as { warnings?: number }
         const threatLine =
           warnings === 0
-            ? `Pay at least ${minPayment ?? '?'} ¤ toward your debt each turn to keep them away.`
+            ? "Make your payments at the next loanshark. Don't make them come back."
             : warnings === 1
-              ? `One more miss and they finish the job. Pay ${minPayment ?? '?'} ¤/turn.`
-              : `This is the last warning. They won't leave you breathing next time.`
+              ? "One more miss and they finish the job."
+              : "This is the last warning. They won't leave you breathing next time."
         return (
           <div className="flex flex-col gap-2">
             <div className="text-pip-red text-sm">The {collectorFaction} are collecting. There's no reasoning with them.</div>

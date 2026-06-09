@@ -83,23 +83,49 @@ export default function ServicesPanel({ player }: Props) {
         </div>
       )}
 
-      {activeTab === 'loanshark' && (
-        <div className="border border-pip-border p-3 rounded space-y-3">
-          <div className="pip-label">LOANSHARK — {interestPct}% interest per turn</div>
-          <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
-          <div className="flex items-center gap-2">
-            <input type="number" min={100} step={100} value={amount} onChange={e => setAmount(Math.max(100, parseInt(e.target.value) || 100))} className="pip-input w-24" />
-            <button className="pip-btn-danger" onClick={() => store.borrow(amount)}>BORROW ({amount} ¤)</button>
-          </div>
-          {player.debt > 0 && (
-            <div className="flex gap-2 mt-1">
-              <button className="pip-btn" disabled={player.caps < Math.min(amount, player.debt)} onClick={() => store.payDebt(amount)}>
-                REPAY {Math.min(amount, player.debt)} ¤
-              </button>
+      {activeTab === 'loanshark' && (() => {
+        const isOverGrace = player.ageOfDebt >= mc.debtGracePeriod
+        const windowStartAge   = player.debtWindowStartAge ?? player.ageOfDebt
+        const turnsElapsed     = player.ageOfDebt - windowStartAge
+        const turnsLeft        = Math.max(0, mc.debtWindowSize - turnsElapsed)
+        const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
+        const windowPaid       = player.debtWindowCapsPaid ?? 0
+        const stillOwed        = Math.max(0, minWindowPayment - windowPaid)
+        const windowOverdue    = turnsElapsed >= mc.debtWindowSize
+        const windowSatisfied  = windowPaid >= minWindowPayment
+
+        return (
+          <div className="border border-pip-border p-3 rounded space-y-3">
+            <div className="pip-label">LOANSHARK — {interestPct}% interest per turn</div>
+            <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
+
+            {player.debt > 0 && isOverGrace && (
+              <div className={`text-xs rounded p-2 border ${windowOverdue && !windowSatisfied ? 'border-pip-red text-pip-red' : windowSatisfied ? 'border-pip-border text-pip-green-dim' : 'border-pip-border text-pip-green-dim'}`}>
+                {windowSatisfied
+                  ? `Paid up this window. Next payment due in ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''}.`
+                  : windowOverdue
+                    ? `OVERDUE — pay ${stillOwed} ¤ now to keep them off your back.`
+                    : `Pay ${stillOwed} ¤ within ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''} to stay safe.`}
+                {!windowSatisfied && windowPaid > 0 && (
+                  <span className="text-pip-green-dim"> ({windowPaid} ¤ paid so far this window)</span>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input type="number" min={100} step={100} value={amount} onChange={e => setAmount(Math.max(100, parseInt(e.target.value) || 100))} className="pip-input w-24" />
+              <button className="pip-btn-danger" onClick={() => store.borrow(amount)}>BORROW ({amount} ¤)</button>
             </div>
-          )}
-        </div>
-      )}
+            {player.debt > 0 && (
+              <div className="flex gap-2 mt-1">
+                <button className="pip-btn" disabled={player.caps < Math.min(amount, player.debt)} onClick={() => store.payDebt(amount)}>
+                  REPAY {Math.min(amount, player.debt)} ¤
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {activeTab === 'gunshop' && (
         <div className="border border-pip-border p-3 rounded space-y-3">
