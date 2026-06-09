@@ -192,9 +192,10 @@ export default function Game() {
 }
 
 function GameOverScreen({ gameState, onHome }: { gameState: import('../types/game').GameState; onHome: () => void }) {
-  const { player, gameOverReason, endReason } = gameState
+  const { player, gameOverReason, endReason, log } = gameState
   const score = player.caps + player.bank - player.debt
   const isWin = gameOverReason === 'turns'
+  const [logOpen, setLogOpen] = useState(false)
 
   const subtitle = endReason ?? (
     gameOverReason === 'turns'   ? 'Time ran out on your caravan run.' :
@@ -240,6 +241,26 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
           <button className="pip-btn flex-1" onClick={onHome}>MAIN MENU</button>
           <button className="pip-btn flex-1" onClick={() => window.location.href = '/leaderboard'}>LEADERBOARD</button>
         </div>
+
+        <button
+          className="pip-btn w-full text-sm"
+          onClick={() => setLogOpen(o => !o)}
+        >
+          {logOpen ? 'HIDE RUN LOG ▲' : `VIEW RUN LOG (${log.length} entries) ▼`}
+        </button>
+
+        {logOpen && (
+          <div className="border border-pip-border rounded text-left max-h-72 overflow-y-auto">
+            <div className="text-xs font-mono space-y-0.5 p-2">
+              {log.map((entry, i) => (
+                <div key={i} className={`log-${entry.type}`}>
+                  <span className="text-pip-green-dim">[T{String(entry.turn).padStart(2, '0')}]</span>{' '}
+                  {entry.message}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
