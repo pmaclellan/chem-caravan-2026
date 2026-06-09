@@ -318,6 +318,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             return resolveChemStash(state)
 
           case 'brotherhood_checkpoint':
+            if (choice === 'fight') return startCombat(state)
             return resolveBrotherhoodToll(state, choice === 'pay')
 
           case 'debt_collector':
@@ -329,9 +330,10 @@ export const useGameStore = create<GameStore>((set, get) => {
             return completeTravel({ ...state, player, pendingEvent: null, pendingDestination: null }, dest)
           }
 
-          case 'wandering_merchant':
-            // Merchant trading handled via buy/sell — just dismiss for now
-            return { ...state, phase: 'merchant' as const }
+          case 'wandering_merchant': {
+            const dest = state.pendingDestination ?? state.player.location
+            return completeTravel({ ...state, pendingEvent: null, pendingDestination: null }, dest)
+          }
 
           default:
             return state

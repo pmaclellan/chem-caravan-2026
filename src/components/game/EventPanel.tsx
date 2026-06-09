@@ -34,16 +34,19 @@ export default function EventPanel({ event, player }: Props) {
         <p className="text-pip-green text-sm">{event.description}</p>
       </div>
 
-      {event.type === 'raider_ambush' && (
-        <div className="flex gap-3">
-          <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
-            FIGHT
-          </button>
-          <button className="pip-btn-amber flex-1" onClick={() => resolveEvent('run')}>
-            RUN ({runChance}% chance)
-          </button>
-        </div>
-      )}
+      {event.type === 'raider_ambush' && (() => {
+        const { count } = event.payload as { enemyTypeId?: string; count?: number }
+        return (
+          <div className="flex gap-3">
+            <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
+              FIGHT ({count ?? '?'} {count === 1 ? 'enemy' : 'enemies'})
+            </button>
+            <button className="pip-btn-amber flex-1" onClick={() => resolveEvent('run')}>
+              RUN ({runChance}% chance)
+            </button>
+          </div>
+        )
+      })()}
 
       {event.type === 'chem_stash' && (() => {
         const { chemId, qty } = event.payload as { chemId: string; qty: number }
@@ -82,13 +85,19 @@ export default function EventPanel({ event, player }: Props) {
       })()}
 
       {event.type === 'brotherhood_checkpoint' && (() => {
-        const { toll } = event.payload as { toll: number }
+        const { toll } = event.payload as { toll: number; enemyTypeId?: string }
+        const hasFightingChance = !!player.gun && player.guards >= 2
         return (
           <div className="flex flex-col gap-3">
             <div className="text-pip-green-dim text-sm">
-              The Brotherhood demands {toll} caps to pass. You can pay or turn back.
+              They demand {toll} caps to pass. Pay the toll, turn back (costs a turn), or fight your way through.
             </div>
-            <div className="flex gap-3">
+            {!hasFightingChance && (
+              <div className="text-pip-red text-xs italic">
+                Fighting them without a weapon and guards would be suicide.
+              </div>
+            )}
+            <div className="flex gap-3 flex-wrap">
               <button
                 className="pip-btn flex-1"
                 disabled={player.caps < toll}
@@ -98,6 +107,9 @@ export default function EventPanel({ event, player }: Props) {
               </button>
               <button className="pip-btn-amber flex-1" onClick={() => resolveEvent('refuse')}>
                 TURN BACK
+              </button>
+              <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
+                FIGHT ({player.guards} guards{player.gun ? `, ${player.gun.name}` : ', no gun'})
               </button>
             </div>
           </div>
@@ -196,7 +208,7 @@ export default function EventPanel({ event, player }: Props) {
             </table>
 
             <button className="pip-btn self-start" onClick={() => resolveEvent('continue')}>
-              {isFence ? 'PASS MERCHANT' : 'MOVE ON'}
+              MOVE ON
             </button>
           </div>
         )

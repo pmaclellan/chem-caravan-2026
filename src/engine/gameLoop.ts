@@ -208,6 +208,40 @@ export function resolveChemStash(state: GameState): GameState {
   return completeTravel({ ...state, player, log }, dest)
 }
 
+// Consume a turn without changing location — used when travel is aborted mid-road.
+// Increments world.turn, ticks market events, and checks the turn-limit win condition.
+function consumeTurnInPlace(state: GameState, message: string, logType: LogEntry['type']): GameState {
+  const mc = GAME_MODES[state.mode]
+  const turn = state.world.turn + 1
+  let world = { ...state.world, turn }
+  world = updateWorldMarkets(world, mc)
+  const log = [...state.log, makeLog(turn, message, logType)]
+
+  if (turn > world.maxTurns) {
+    const score = calculateFinalScore(state.player)
+    log.push(makeLog(turn, `Time's up. Final score: ${score} caps.`, 'system'))
+    return {
+      ...state,
+      world,
+      phase: 'game_over',
+      gameOverReason: 'turns',
+      endReason: 'Turn limit reached',
+      pendingEvent: null,
+      pendingDestination: null,
+      log,
+    }
+  }
+
+  return {
+    ...state,
+    world,
+    phase: 'settlement',
+    pendingEvent: null,
+    pendingDestination: null,
+    log,
+  }
+}
+
 export function resolveBrotherhoodToll(state: GameState, pay: boolean): GameState {
   const event = state.pendingEvent
   const dest = state.pendingDestination
@@ -219,27 +253,12 @@ export function resolveBrotherhoodToll(state: GameState, pay: boolean): GameStat
   if (pay) {
     const { player, paid } = payBrotherhoodToll(state.player, toll)
     if (!paid) {
-      log.push(makeLog(state.world.turn, "You can't pay the toll. The checkpoint turns you back.", 'danger'))
-      return {
-        ...state,
-        player,
-        phase: 'settlement',
-        pendingEvent: null,
-        pendingDestination: null,
-        log,
-      }
+      return consumeTurnInPlace(state, "You can't afford the toll. The wasted journey costs you a turn.", 'danger')
     }
     log.push(makeLog(state.world.turn, `You pay the ${toll} cap checkpoint toll and pass through.`, 'info'))
     return completeTravel({ ...state, player, log }, dest)
   } else {
-    log.push(makeLog(state.world.turn, "You refuse to pay. They turn you back at gunpoint.", 'danger'))
-    return {
-      ...state,
-      phase: 'settlement',
-      pendingEvent: null,
-      pendingDestination: null,
-      log,
-    }
+    return consumeTurnInPlace(state, "You turn back from the checkpoint. The wasted journey costs you a turn.", 'danger')
   }
 }
 
@@ -309,8 +328,10 @@ export function startCombat(state: GameState): GameState {
       )
     : null
 
-  const forcedTypeId = (state.pendingEvent?.payload as { enemyTypeId?: string } | undefined)?.enemyTypeId
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId)
+  const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number } | undefined
+  const forcedTypeId = payload?.enemyTypeId
+  const forcedCount  = payload?.count
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount)
   return {
     ...state,
     phase: 'combat',
