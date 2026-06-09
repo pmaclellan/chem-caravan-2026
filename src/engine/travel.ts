@@ -25,13 +25,18 @@ export function selectTravelEvent(
   road: Road,
   player: PlayerState,
   modeConfig: GameModeConfig,
-  debtPaidThisCycle = 0,
 ): TravelEvent | null {
-  // Debt collector — grace period + payment check
+  // Debt collector — window-based payment check.
+  // Fires once the current payment window has closed without meeting the 15% threshold.
   if (player.debt > 0 && player.ageOfDebt >= modeConfig.debtGracePeriod) {
-    const minPayment = Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
-    const hasPaid    = debtPaidThisCycle >= minPayment
-    if (!hasPaid && rng() < modeConfig.debtCollectorProb) {
+    const windowStartAge  = player.debtWindowStartAge ?? player.ageOfDebt
+    const turnsElapsed    = player.ageOfDebt - windowStartAge
+    const windowOverdue   = turnsElapsed >= modeConfig.debtWindowSize
+    const windowPaid      = player.debtWindowCapsPaid ?? 0
+    const minWindowPayment = Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
+    const windowUnsatisfied = windowPaid < minWindowPayment
+
+    if (windowOverdue && windowUnsatisfied && rng() < modeConfig.debtCollectorProb) {
       const def      = modeConfig.travelEvents.find(e => e.type === 'debt_collector')!
       const warnings = player.debtWarnings ?? 0
       const description =
@@ -43,7 +48,7 @@ export function selectTravelEvent(
         type: def.type,
         title: def.title,
         description,
-        payload: { minPayment, warnings },
+        payload: { warnings },
       }
     }
   }

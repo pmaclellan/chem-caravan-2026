@@ -29,6 +29,8 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
     gun: null,
     debtPaidThisCycle: 0,
     debtWarnings: 0,
+    debtWindowCapsPaid: 0,
+    debtWindowStartAge: mc.debtGracePeriod,
   }
 
   const settlements: WorldState['settlements'] = {}
@@ -115,14 +117,27 @@ export function continueTravel(state: GameState): GameState {
   let player = { ...state.player }
   const log = [...state.log]
 
-  // Snapshot payment before the tick resets it — used for enforcement check below
+  // Snapshot payment before the tick resets it
   const debtPaidThisCycle = player.debtPaidThisCycle ?? 0
 
-  // Apply travel cost and interest tick
+  // Apply interest tick (grows debt, increments ageOfDebt, resets debtPaidThisCycle)
   player = applyTurnInterest(player, mc.interestRate)
 
-  // Select a travel event (debt collector check uses pre-tick payment)
-  const event = selectTravelEvent(road, player, mc, debtPaidThisCycle)
+  // Update payment window using post-interest debt as the threshold baseline.
+  // If cumulative window payment meets 15% of current debt, open a fresh window.
+  if (player.debt > 0) {
+    const windowCapsPaid = (player.debtWindowCapsPaid ?? 0) + debtPaidThisCycle
+    const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
+    const windowSatisfied = windowCapsPaid >= minWindowPayment
+    player = {
+      ...player,
+      debtWindowCapsPaid: windowSatisfied ? 0 : windowCapsPaid,
+      debtWindowStartAge: windowSatisfied ? player.ageOfDebt : (player.debtWindowStartAge ?? player.ageOfDebt),
+    }
+  }
+
+  // Select a travel event
+  const event = selectTravelEvent(road, player, mc)
   if (event) {
     return {
       ...state,
