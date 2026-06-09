@@ -60,14 +60,14 @@ export function selectTravelEvent(
   return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig, road)
 }
 
-// Enemy-specific ambush lines — used when a raider_ambush is generated
-const AMBUSH_LINES: Record<string, string> = {
-  raider:       "Raiders emerge from cover. They want your caps.",
-  super_mutant: "Super Mutants block the road ahead, weapons raised.",
-  great_khan:   "Great Khans ride out of the dust, armed and looking for trouble.",
-  legionnaire:  "Legion Assassins step out of the shadows. Blades drawn.",
-  deathclaw:    "A Deathclaw rounds the bend. You might want to run.",
-  fiend:        "Fiends pour out of a wrecked vehicle, wild-eyed and armed.",
+// Enemy-specific ambush lines — functions of count so description reads naturally
+const AMBUSH_LINES: Record<string, (n: number) => string> = {
+  raider:       (n) => n === 1 ? "A lone Raider steps out from cover, weapon raised." : `${n} Raiders emerge from cover. They want your caps.`,
+  super_mutant: (n) => n === 1 ? "A Super Mutant charges from the rubble, roaring." : `${n} Super Mutants block the road ahead, weapons raised.`,
+  great_khan:   (n) => n === 1 ? "A Great Khan rides out of the dust, armed." : `${n} Great Khans ride out of the dust, looking for trouble.`,
+  legionnaire:  (n) => n === 1 ? "A Legionnaire steps from the shadows. Blade drawn." : `${n} Legion Assassins step out of the shadows. Blades drawn.`,
+  deathclaw:    (n) => n === 1 ? "A Deathclaw rounds the bend. You might want to run." : `${n} Deathclaws emerge from the ruins. Run.`,
+  fiend:        (n) => n === 1 ? "A wild-eyed Fiend rushes from cover, screaming." : `${n} Fiends pour out of a wrecked vehicle, wild-eyed and armed.`,
 }
 
 function buildEventPayload(
@@ -88,17 +88,19 @@ function buildEventPayload(
       return { type, title, description, payload: { chemId, qty } }
     }
     case 'raider_ambush': {
-      // Pre-select enemy type so the player can make an informed fight/run decision
-      const weightedPool = modeConfig.enemies.map(e => ({
-        ...e,
-        weight: road?.enemyWeights?.[e.id] ?? 1,
-      }))
+      // Pre-select enemy type and count so the player can make an informed fight/run decision.
+      // Only non-event-only enemies appear in random road encounters.
+      const weightedPool = modeConfig.enemies
+        .filter(e => !e.eventOnly)
+        .map(e => ({ ...e, weight: road?.enemyWeights?.[e.id] ?? 1 }))
       const picked = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
-      const ambushDesc = AMBUSH_LINES[picked.id] ?? description
-      return { type, title, description: ambushDesc, payload: { enemyTypeId: picked.id } }
+      const maxCount = Math.max(2, Math.ceil((road?.dangerLevel ?? 0.5) * 4))
+      const count = rngInt(1, maxCount)
+      const ambushDesc = AMBUSH_LINES[picked.id]?.(count) ?? description
+      return { type, title, description: ambushDesc, payload: { enemyTypeId: picked.id, count } }
     }
     case 'brotherhood_checkpoint':
-      return { type, title, description, payload: { toll: brotherhoodToll } }
+      return { type, title, description, payload: { toll: brotherhoodToll, enemyTypeId: getCheckpointEnemyTypeId(modeConfig) } }
     case 'wandering_merchant': {
       const chemIds = [...stashChems].sort(() => rng() - 0.5).slice(0, 3)
       const isFence = rng() < 0.35
@@ -148,6 +150,11 @@ function getStashChems(mc: GameModeConfig): string[] {
 
 function getBrotherhoodToll(_mc: GameModeConfig): number {
   return 100 // base toll; mode-specific events just flavor the name
+}
+
+function getCheckpointEnemyTypeId(mc: GameModeConfig): string {
+  if (mc.id === 'mojave_wasteland') return 'ncr_ranger'
+  return 'brotherhood_paladin'
 }
 
 export function dropExcessInventory(player: PlayerState): PlayerState {

@@ -5,6 +5,7 @@ export interface EnemyType {
   name: string
   caps: [number, number]     // [min, max] caps carried
   lootChems: string[]        // possible drops on victory
+  eventOnly?: boolean        // if true, never spawns in random road encounters
 }
 
 export interface EnemyUnit {
