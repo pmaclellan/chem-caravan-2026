@@ -35,9 +35,9 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
     (road.from === player.location && adjIds.has(road.to)) ||
     (road.to   === player.location && adjIds.has(road.from))
 
-  // compact: scale the 600×548 viewBox down to ~340×310 for mobile
-  const viewW = 600
-  const viewH = 548
+  // compact: scale the 620×620 viewBox down to ~360×360 for mobile
+  const viewW = 620
+  const viewH = 620
   const scale = compact ? 0.58 : 1
   const svgH  = Math.round(viewH * scale)
 
@@ -179,10 +179,10 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
           })}
 
           {/* Compass */}
-          <text x="572" y="52" textAnchor="middle" fontSize="9"
+          <text x="594" y="52" textAnchor="middle" fontSize="9"
             fontFamily='"Special Elite", serif'
             fill="rgba(80, 50, 18, 0.45)">N</text>
-          <line x1="572" y1="54" x2="572" y2="64"
+          <line x1="594" y1="54" x2="594" y2="64"
             stroke="rgba(80, 50, 18, 0.35)" strokeWidth="1" />
         </svg>
       </div>

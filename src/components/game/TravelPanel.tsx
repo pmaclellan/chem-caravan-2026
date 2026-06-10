@@ -28,12 +28,11 @@ export default function TravelPanel({ player }: Props) {
   return (
     <div className="h-full overflow-y-auto space-y-3">
       <div className="text-pip-green-dim text-xs mb-2">
-        Select a destination. Travel costs caps and advances the turn.
+        Select a destination. Travel advances the turn.
       </div>
       {roads.map(road => {
         const destId = getRoadDestination(road, player.location)
         const dest = mc.settlements[destId]
-        const canAfford = player.caps >= road.travelCost
 
         const services = [
           dest.hasDoctor && 'Doctor',
@@ -51,7 +50,6 @@ export default function TravelPanel({ player }: Props) {
                 <div className="text-pip-green-dim text-xs">via {road.name}</div>
               </div>
               <div className="text-right">
-                <div className="text-pip-amber font-display">{road.travelCost} ¤</div>
                 <DangerBars level={road.dangerLevel} />
               </div>
             </div>
@@ -59,10 +57,9 @@ export default function TravelPanel({ player }: Props) {
             {services && <div className="text-xs text-pip-green-dim mb-2">Services: {services}</div>}
             <button
               className="pip-btn w-full"
-              disabled={!canAfford}
               onClick={() => travelTo(destId)}
             >
-              {canAfford ? `TRAVEL (${road.travelCost} ¤)` : 'CANNOT AFFORD'}
+              TRAVEL
             </button>
           </div>
         )
