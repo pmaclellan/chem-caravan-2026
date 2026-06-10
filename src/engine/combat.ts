@@ -2,6 +2,7 @@ import type { CombatState, EnemyUnit, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
+import { loseBrahmin } from './travel'
 
 const RUN_BASE_CHANCE      = 0.40
 const RUN_GUARD_BONUS      = 0.10  // per guard
@@ -200,13 +201,13 @@ export function resolveRun(
   ))
   const success = rng() < runChance
   const log: string[] = []
-  let { health, brahmin } = player
+  let updatedPlayer = player
   let { phase } = combat
   let damageTaken = 0
 
   if (success) {
-    if (brahmin > 0 && rng() < 0.30) {
-      brahmin = brahmin - 1
+    if (player.brahmin > 0 && rng() < 0.30) {
+      updatedPlayer = loseBrahmin(player)
       log.push("You escape! But one of your brahmin couldn't keep up and bolted.")
     } else {
       log.push("You manage to escape!")
@@ -221,17 +222,17 @@ export function resolveRun(
       const [min, max] = stats ? stats.damage : [5, 15]
       totalDamage += rngInt(Math.max(1, Math.floor(min * 0.5)), Math.floor(max * 0.5))
     }
-    health = Math.max(0, health - totalDamage)
+    updatedPlayer = { ...updatedPlayer, health: Math.max(0, updatedPlayer.health - totalDamage) }
     damageTaken = totalDamage
     log.push(`You try to run but the enemies catch you! They hit you for ${totalDamage} damage.`)
-    if (health <= 0) {
+    if (updatedPlayer.health <= 0) {
       phase = 'lost'
       log.push("You've been killed trying to flee.")
     }
   }
 
   return {
-    player: { ...player, health, brahmin },
+    player: updatedPlayer,
     combat: {
       ...combat,
       totalDamageTaken: combat.totalDamageTaken + damageTaken,
