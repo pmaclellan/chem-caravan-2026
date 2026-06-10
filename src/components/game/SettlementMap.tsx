@@ -3,8 +3,8 @@ import type { GameModeConfig, MapNodePosition } from '../../data/modes'
 import { getAdjacentRoads, getRoadDestination } from '../../engine/travel'
 
 function dangerColor(danger: number): string {
-  if (danger >= 0.65) return '#8c1c1c'
-  if (danger >= 0.45) return '#c47810'
+  if (danger >= 0.50) return '#8c1c1c'
+  if (danger >= 0.33) return '#c47810'
   return '#4a6a20'
 }
 

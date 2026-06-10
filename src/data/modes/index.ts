@@ -58,8 +58,7 @@ export interface GameModeConfig {
   doctorCost: number
   doctorCostCheap: number
   // events
-  eventBaseProb: number
-  eventDangerScale: number
+  nonCombatEventProb: number     // probability of a non-combat event when no ambush fires
   debtGracePeriod: number        // turns before any enforcement begins
   debtWindowSize: number         // turns in each payment window (player must pay 15% within the window)
   debtMinPaymentRate: number     // fraction of current debt required per payment window (cumulative)
@@ -116,8 +115,7 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   brahminCost: 300,
   doctorCost: 200,
   doctorCostCheap: 100,
-  eventBaseProb: 0.10,
-  eventDangerScale: 0.60,
+  nonCombatEventProb: 0.30,
   debtGracePeriod: 10,
   debtWindowSize: 4,
   debtMinPaymentRate: 0.15,   // pay 15% of current debt within each 4-turn window

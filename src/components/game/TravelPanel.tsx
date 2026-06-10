@@ -12,7 +12,7 @@ function DangerBars({ level }: { level: number }) {
       {[1, 2, 3, 4, 5].map(i => (
         <div
           key={i}
-          className={`w-2 h-3 rounded-sm ${i <= bars ? (bars >= 4 ? 'bg-pip-red' : bars >= 3 ? 'bg-pip-amber' : 'bg-pip-green') : 'bg-pip-border'}`}
+          className={`w-2 h-3 rounded-sm ${i <= bars ? (bars >= 3 ? 'bg-pip-red' : bars >= 2 ? 'bg-pip-amber' : 'bg-pip-green') : 'bg-pip-border'}`}
         />
       ))}
     </div>

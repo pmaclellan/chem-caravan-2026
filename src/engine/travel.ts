@@ -53,16 +53,22 @@ export function selectTravelEvent(
     }
   }
 
-  const eventProb = modeConfig.eventBaseProb + road.dangerLevel * modeConfig.eventDangerScale
-  if (rng() > eventProb) return null
+  // Combat roll — dangerLevel is the direct probability of a combat encounter.
+  if (rng() < road.dangerLevel) {
+    const def = modeConfig.travelEvents.find(e => e.type === 'raider_ambush')
+    if (def) return buildEventPayload('raider_ambush', def.title, def.description, modeConfig, road)
+  }
 
-  const eligible = modeConfig.travelEvents.filter(
-    e => e.weight > 0 && road.dangerLevel >= e.minDangerToTrigger
-  )
-  const chosen = rngWeightedPick(eligible)
-  if (!chosen) return null
+  // Non-combat event roll — only reached when no ambush this trip.
+  if (rng() < modeConfig.nonCombatEventProb) {
+    const eligible = modeConfig.travelEvents.filter(
+      e => e.weight > 0 && e.type !== 'raider_ambush' && road.dangerLevel >= e.minDangerToTrigger
+    )
+    const chosen = rngWeightedPick(eligible)
+    if (chosen) return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig, road)
+  }
 
-  return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig, road)
+  return null
 }
 
 // Enemy-specific ambush lines — functions of count so description reads naturally

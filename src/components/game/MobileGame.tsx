@@ -29,7 +29,7 @@ function DangerBars({ level }: { level: number }) {
           key={i}
           className={`inline-block w-1.5 h-3 rounded-sm ${
             i <= bars
-              ? bars >= 4 ? 'bg-pip-red' : bars >= 3 ? 'bg-pip-amber' : 'bg-pip-green'
+              ? bars >= 3 ? 'bg-pip-red' : bars >= 2 ? 'bg-pip-amber' : 'bg-pip-green'
               : 'bg-pip-border'
           }`}
         />
