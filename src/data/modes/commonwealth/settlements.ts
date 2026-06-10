@@ -18,7 +18,7 @@ export interface Road {
   name: string
   from: string
   to: string
-  dangerLevel: number   // 0-1, drives event probability
+  dangerLevel: number   // 0-1, direct probability of a combat encounter per trip
   description: string
   enemyWeights?: Partial<Record<string, number>>  // relative spawn weights; equal weight if absent
 }
@@ -159,7 +159,7 @@ export const ROADS: Road[] = [
     name: 'Combat Zone Alley',
     from: 'diamond_city',
     to: 'goodneighbor',
-    dangerLevel: 0.55,
+    dangerLevel: 0.44,
     description: "Short route through derelict combat zone territory.",
   },
   {
@@ -167,7 +167,7 @@ export const ROADS: Road[] = [
     name: 'Abandoned Subway Tunnel',
     from: 'diamond_city',
     to: 'park_street_station',
-    dangerLevel: 0.60,
+    dangerLevel: 0.48,
     description: "Underground passage. Ghouls haunt the dark stretches.",
   },
   {
@@ -175,7 +175,7 @@ export const ROADS: Road[] = [
     name: 'South Boston Freeway',
     from: 'diamond_city',
     to: 'jamaica_plain',
-    dangerLevel: 0.70,
+    dangerLevel: 0.56,
     description: "Exposed highway run through raider-heavy south Boston.",
   },
   {
@@ -183,7 +183,7 @@ export const ROADS: Road[] = [
     name: 'Memorial Bridge Road',
     from: 'diamond_city',
     to: 'bunker_hill',
-    dangerLevel: 0.40,
+    dangerLevel: 0.32,
     description: "Relatively safe merchant road. Caravans run this daily.",
   },
   {
@@ -191,7 +191,7 @@ export const ROADS: Road[] = [
     name: "Triggermen's Row",
     from: 'goodneighbor',
     to: 'park_street_station',
-    dangerLevel: 0.45,
+    dangerLevel: 0.36,
     description: "Short hop between Triggermen territory nodes.",
   },
   {
@@ -199,7 +199,7 @@ export const ROADS: Road[] = [
     name: 'North End Passage',
     from: 'goodneighbor',
     to: 'bunker_hill',
-    dangerLevel: 0.35,
+    dangerLevel: 0.28,
     description: "North End streets. Reasonably patrolled by Triggermen.",
   },
   {
@@ -207,7 +207,7 @@ export const ROADS: Road[] = [
     name: 'Route 3 North',
     from: 'bunker_hill',
     to: 'sanctuary_hills',
-    dangerLevel: 0.50,
+    dangerLevel: 0.40,
     description: "Long haul north on pre-war Route 3.",
   },
   {
@@ -215,7 +215,7 @@ export const ROADS: Road[] = [
     name: 'Lexington Bypass',
     from: 'bunker_hill',
     to: 'graygarden',
-    dangerLevel: 0.55,
+    dangerLevel: 0.44,
     description: "Through Lexington ruins. Feral ghouls are common.",
   },
   {
@@ -223,7 +223,7 @@ export const ROADS: Road[] = [
     name: 'Oberland Station Road',
     from: 'sanctuary_hills',
     to: 'graygarden',
-    dangerLevel: 0.30,
+    dangerLevel: 0.24,
     description: "Farmland route. Relatively open and safe.",
   },
   {
@@ -231,7 +231,7 @@ export const ROADS: Road[] = [
     name: 'Country Route 81',
     from: 'sanctuary_hills',
     to: 'vault_81',
-    dangerLevel: 0.60,
+    dangerLevel: 0.48,
     description: "Western wilderness route. Gunners patrol this stretch.",
   },
   {
@@ -239,7 +239,7 @@ export const ROADS: Road[] = [
     name: 'Quincy Ruins Road',
     from: 'vault_81',
     to: 'the_castle',
-    dangerLevel: 0.75,
+    dangerLevel: 0.60,
     description: "Brutal southern route. Quincy is Gunner-held.",
   },
   {
@@ -247,7 +247,7 @@ export const ROADS: Road[] = [
     name: 'Coastal Highway',
     from: 'the_castle',
     to: 'jamaica_plain',
-    dangerLevel: 0.65,
+    dangerLevel: 0.52,
     description: "Coastal road through raider territory.",
   },
 ]

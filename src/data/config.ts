@@ -21,16 +21,4 @@ export const CONFIG = {
   DOCTOR_COST: 200,         // caps to fully heal at Diamond City
   DOCTOR_COST_CHEAP: 100,   // caps at other settlements
 
-  EVENT_BASE_PROB: 0.10,    // minimum chance of a travel event on any road
-  EVENT_DANGER_SCALE: 0.60, // how much road danger amplifies event probability
-  DEBT_COLLECTOR_MIN_AGE: 5,
-  DEBT_COLLECTOR_PROB: 0.30,
-
-  MARKET_EVENT_PROB_PER_TURN: 0.15,   // chance a new market event fires each turn
-  MARKET_EVENT_DURATION_MIN: 1,
-  MARKET_EVENT_DURATION_MAX: 2,
-  SHORTAGE_MULTIPLIER_MIN: 2.0,
-  SHORTAGE_MULTIPLIER_MAX: 4.0,
-  SURPLUS_MULTIPLIER_MIN: 0.25,
-  SURPLUS_MULTIPLIER_MAX: 0.55,
 } as const

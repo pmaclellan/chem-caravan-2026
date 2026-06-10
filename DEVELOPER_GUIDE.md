@@ -274,11 +274,12 @@ All pure functions returning `{ player, error? }` or `{ player, profit?, error? 
 
 ### `engine/travel.ts` — Roads and Events
 
-`selectTravelEvent(road, player, modeConfig)` — called from `continueTravel`:
-1. First checks debt collector condition: `ageOfDebt >= gracePeriod` AND current payment window is overdue (elapsed turns ≥ windowSize without meeting 15% payment threshold) AND random roll < `debtCollectorProb`
-2. Then rolls base event probability: `eventBaseProb + road.dangerLevel * eventDangerScale`
-3. Filters eligible event definitions by `minDangerToTrigger`, picks via weighted random
-4. Calls `buildEventPayload` to attach event-specific data (enemy type, chem quantity, merchant prices)
+`selectTravelEvent(road, player, modeConfig)` — called from `continueTravel`, two sequential rolls:
+1. **Debt collector check** — fires when payment window is overdue (elapsed turns ≥ `debtWindowSize` without meeting 15% threshold) AND `rng() < debtCollectorProb`. Returns immediately if triggered; skips both rolls below.
+2. **Combat roll** — `rng() < road.dangerLevel`. `dangerLevel` is the direct probability of a combat encounter; no scaling factor. Returns a `raider_ambush` event if triggered.
+3. **Non-combat roll** — only reached when no ambush. `rng() < modeConfig.nonCombatEventProb` (0.30). Picks from the non-combat event pool (chem stash, wandering merchant, brahmin lost, checkpoint) filtered by `minDangerToTrigger`.
+
+This means on a 0.60 road, 60% of trips trigger combat and 12% (0.40 × 0.30) trigger a non-combat event. Non-combat events are therefore naturally rarer on dangerous roads — the non-combat roll is only reached on the fraction of trips that avoided combat.
 
 `buildEventPayload` for `wandering_merchant` randomly decides fence (buy from them, 35% chance) vs. desperate buyer (sell to them, 65% chance), with appropriate pricing.
 
@@ -435,7 +436,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 **Debt enforcement is window-based, not turn-based.** The collector fires when a full payment window (`debtWindowSize` turns) elapses without the player paying 15% of current debt. It does not fire on a specific turn number. The `debtEnforcement` array in `GameModeConfig` is keyed by `debtWarnings` count (escalating damage), not by turn age.
 
-**Second-wave encounters.** After combat on a high-danger road (`dangerLevel >= 0.65`), `afterCombat` may spawn a second wave. The second encounter event has `payload.isSecondEncounter = true`, which prevents a third wave from spawning.
+**Second-wave encounters.** After combat on a high-danger road (`dangerLevel >= 0.65`, i.e. the top tier after scaling), `afterCombat` may spawn a second wave. The second encounter event has `payload.isSecondEncounter = true`, which prevents a third wave from spawning.
 
 **`consumeTurnInPlace`** — used when travel is aborted mid-road (can't afford toll, turns back from checkpoint). Increments the turn counter and ticks market events but leaves the player at their current location. This is distinct from completing travel.
 
@@ -586,10 +587,11 @@ The component receives `mc: GameModeConfig` and reads two things from it:
 
 **Road color** is determined by `dangerLevel` alone (not by which mode you're in):
 ```
-dangerLevel >= 0.65  →  dark red  (#8c1c1c)
-dangerLevel >= 0.45  →  amber     (#c47810)
-otherwise            →  muted green (#4a6a20)
+dangerLevel >= 0.50  →  dark red    (#8c1c1c)   — combat > 50% per trip
+dangerLevel >= 0.33  →  amber       (#c47810)   — combat 33–50%
+otherwise            →  muted green (#4a6a20)   — combat < 33%
 ```
+The `DangerBars` indicator in TravelPanel and MobileGame uses `Math.round(level * 5)` bars; bars ≥ 3 shows red, bars ≥ 2 amber, below shows green — which aligns with the same thresholds.
 
 **Service icons** (`✚ ¤ ⚙ ⚔`) are assembled from the settlement's boolean flags (`hasDoctor`, `hasBank`, `hasGunShop`, `hasGuards`) and placed as a second text row below (or above) the settlement name, 10–11px further in the same direction as the label.
 
