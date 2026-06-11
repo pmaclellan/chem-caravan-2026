@@ -62,9 +62,10 @@ export default function Leaderboard() {
   }, [tab])
 
   const displayed = rows.slice(0, 10)
+  const activeMode = tab === 'global' ? 'commonwealth' : tab
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4">
+    <div className="min-h-screen flex flex-col items-center p-4 bg-pip-bg" data-mode={activeMode}>
       <div className="max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h1 className="font-display text-4xl text-pip-green tracking-widest">LEADERBOARD</h1>
