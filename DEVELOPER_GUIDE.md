@@ -20,7 +20,8 @@ A reference for anyone picking up development on this project. Covers architectu
 12. [How To: Add a New Game Mode](#how-to-add-a-new-game-mode)
 13. [How To: Add a New Travel Event Type](#how-to-add-a-new-travel-event-type)
 14. [SVG Settlement Map](#svg-settlement-map)
-15. [Running and Building](#running-and-building)
+15. [Adding Game Images](#adding-game-images)
+16. [Running and Building](#running-and-building)
 
 ---
 
@@ -692,6 +693,85 @@ There is no generation script — the positions are set manually. The workflow:
 - If two labels collide, the most common fix is changing one node's `labelAnchor` from `'middle'` to `'start'` or `'end'`, and adjusting `labelDx` to ±13.
 - For nodes on the same row at adjacent x positions (e.g. x=225 and x=355), center labels (`'middle'`, `labelDy ± 15`) work well. For nodes at the same y on adjacent columns, side labels (`'start'`/`'end'`, `labelDx ±13`, `labelDy ±4`) avoid collisions.
 - The service icon row is placed at `labelDy + 11` (or `labelDy - 10` if the label is above the node), so leave extra vertical clearance below bottom-row nodes if they have many services.
+
+---
+
+## Adding Game Images
+
+### Settlement background images
+
+Settlement backgrounds are rendered in the desktop game view as a full-bleed cover behind the center panel at **52% opacity**, with the mode's `--pip-bg` colour showing through underneath. A gradient overlay (`transparent → pip-bg`) covers the bottom ~25% of the image to keep the parchment panels legible.
+
+**Where images are used:** `Game.tsx` only (desktop layout). The mobile layout (`MobileGame.tsx`) does not render settlement backgrounds. Images are not shown during travel, combat, or event phases — only when `phase === 'settlement'` and the settlement has a non-null `imageUrl`.
+
+**Where to put files:** `public/assets/settlements/`
+
+**Naming:** match the settlement id — e.g. `diamond_city.webp`, `rivet_city.webp`.
+
+**How to register:** set `imageUrl` in the settlement's definition in the mode's `settlements.ts`:
+```ts
+imageUrl: '/assets/settlements/diamond_city.webp',
+```
+Set `imageUrl: null` to show no background (the plain `pip-bg` colour shows instead).
+
+#### Format and resolution
+
+| Property | Recommendation |
+|---|---|
+| Format | **WebP** — best quality-to-size ratio, supported by all modern browsers. JPEG is an acceptable fallback for photographic content. Avoid PNG (too large for photos). |
+| Dimensions | **1200 × 900 px** is a good target. The panel is roughly 800 px wide at 1280px viewport and expands to ~1000 px at 1920px. `object-cover` fills the space and crops edges, so there is no strict requirement, but going narrower than the display width causes upscaling. |
+| Aspect ratio | Landscape works best. The panel is typically taller than it is wide on a standard 16:9 monitor, so a **4:3** ratio (e.g. 1200 × 900) fits well without excessive cropping. Avoid portrait-oriented images. |
+| File size | Target **100–250 KB** per image. At 52% opacity the image doesn't need to be razor-sharp; 80–85% WebP quality is indistinguishable from higher settings here. |
+| Content placement | `object-cover` anchors to the centre, so keep the focal subject centred. The **bottom 25% of the image** is heavily darkened by the gradient overlay — avoid placing important content there. |
+
+#### Quick resize/export recipe (ImageMagick)
+
+```bash
+# Convert and resize to 1200px wide, preserve aspect ratio, ~85% quality
+magick input.jpg -resize 1200x -quality 85 public/assets/settlements/my_settlement.webp
+```
+
+If ImageMagick is not available, [Squoosh](https://squoosh.app) (browser-based) works well: resize to 1200 × 900, export as WebP at 80% quality.
+
+---
+
+### Chem item images
+
+Chem images appear in two places:
+- **Market table** (`MarketPanel.tsx`): `24 × 24 px` (`w-6 h-6 object-contain`)
+- **Inventory panel** (`InventoryPanel.tsx`): `32 × 32 px` (`w-8 h-8 object-contain`)
+
+`object-contain` is used in both cases, so the image is letterboxed rather than cropped — a square image with some padding works best.
+
+**Where to put files:** `public/assets/chems/`
+
+**Naming:** match the chem id — e.g. `jet.png`, `psycho.webp`.
+
+**How to register:** set `imageUrl` in the chem's definition in `src/data/chems.ts`:
+```ts
+imageUrl: '/assets/chems/jet.png',
+```
+Set `imageUrl: null` to show a `?` placeholder in the market table and nothing in inventory.
+
+#### Format and resolution
+
+| Property | Recommendation |
+|---|---|
+| Format | **PNG** with transparency is ideal — item icons typically have transparent backgrounds. WebP with alpha is also fine. Avoid JPEG (no transparency). |
+| Source size | Display is 24–32 px, so a source image of **64 × 64** or **128 × 128 px** is more than sufficient. Higher resolution adds file size with no visible benefit. |
+| Background | Transparent preferred. If sourcing from the Fallout wiki, the icons are typically 56 × 56 px transparent PNGs — these can be used directly without resizing. |
+| File size | Should be well under **20 KB** per icon at these dimensions. |
+
+#### Sourcing images
+
+The Fandom wiki (`fallout.fandom.com`) hosts item icons but **blocks cross-origin image requests** — using a Fandom CDN URL directly in the code will result in broken images in the browser. Always download the image and serve it from `public/assets/chems/` instead.
+
+To find a wiki icon: search the item on the Fallout wiki, open the item's infobox image in a new tab, right-click → save. The direct image URL typically looks like:
+```
+https://static.wikia.nocookie.net/fallout/images/x/xx/Fallout4_Jet.png
+```
+
+Save it to `public/assets/chems/jet.png` and update `imageUrl` in `chems.ts` to `/assets/chems/jet.png`.
 
 ---
 
