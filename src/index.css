@@ -18,14 +18,14 @@
 }
 
 [data-mode="capital_wasteland"] {
-  --pip-bg:          #3d4f30;
-  --pip-bg-light:    #c8d4b4;
+  --pip-bg:          #8a9e70;
+  --pip-bg-light:    #ccd8b0;
   --pip-green:       #1a3010;
-  --pip-green-dim:   #4a6035;
-  --pip-green-mid:   #2e5020;
-  --pip-amber:       #8a7040;
+  --pip-green-dim:   #364c22;
+  --pip-green-mid:   #2a4818;
+  --pip-amber:       #786830;
   --pip-red:         #7a2010;
-  --pip-border:      #506040;
+  --pip-border:      #4e6038;
   --pip-border-dim:  #90a870;
 }
 
