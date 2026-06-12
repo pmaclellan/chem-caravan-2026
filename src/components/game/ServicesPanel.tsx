@@ -16,13 +16,13 @@ export default function ServicesPanel({ player }: Props) {
   const [ammoQty, setAmmoQty] = useState(10)
   const store = useGameStore()
 
-  const tabs: { key: Tab; label: string; available: boolean }[] = (
+  const tabs: { key: Tab; icon: string; label: string; available: boolean }[] = (
     [
-      { key: 'doctor',    label: '🏥 DOCTOR',    available: settlement.hasDoctor },
-      { key: 'loanshark', label: '💰 LOANS',     available: settlement.hasLoanshark },
-      { key: 'gunshop',   label: '🔫 GUNS',      available: settlement.hasGunShop },
-      { key: 'followers', label: '👥 FOLLOWERS', available: settlement.hasFollowers },
-    ] as { key: Tab; label: string; available: boolean }[]
+      { key: 'doctor',    icon: '/assets/icons/bandage-svgrepo-com.svg',          label: 'DOCTOR',    available: settlement.hasDoctor },
+      { key: 'loanshark', icon: '/assets/icons/briefcase-dollar-svgrepo-com.svg', label: 'LOANS',     available: settlement.hasLoanshark },
+      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      available: settlement.hasGunShop },
+      { key: 'followers', icon: '/assets/icons/followers-svgrepo-com.svg',        label: 'FOLLOWERS', available: settlement.hasFollowers },
+    ] as { key: Tab; icon: string; label: string; available: boolean }[]
   ).filter(t => t.available)
 
   if (tabs.length === 0) {
@@ -37,9 +37,10 @@ export default function ServicesPanel({ player }: Props) {
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={activeTab === tab.key ? 'pip-btn bg-pip-green text-pip-bg' : 'pip-btn'}
+            className={activeTab === tab.key ? 'pip-btn bg-pip-green text-pip-bg flex items-center gap-1.5' : 'pip-btn flex items-center gap-1.5'}
             onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}
           >
+            <img src={tab.icon} alt="" width={14} height={14} style={{ opacity: 0.75 }} />
             {tab.label}
           </button>
         ))}

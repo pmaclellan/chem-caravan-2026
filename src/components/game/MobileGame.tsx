@@ -15,6 +15,7 @@ import CombatSummaryPanel from './CombatSummaryPanel'
 import EventPanel from './EventPanel'
 import TravelSplash from './TravelSplash'
 import SettlementMap from './SettlementMap'
+import { CapsIcon } from '../ui/CapsIcon'
 
 type MobileTab = 'player' | 'market' | 'travel' | 'settlement' | 'log'
 
@@ -135,14 +136,14 @@ export default function MobileGame() {
               <div className="pip-label">Caps on hand</div>
               <div className="font-display text-pip-amber text-xl">
                 <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="text-pip-amber">
-                  {player.caps.toLocaleString()} ¤
+                  {player.caps.toLocaleString()} <CapsIcon size={16} />
                 </FlashText>
               </div>
             </div>
             <div>
               <div className="pip-label">Debt</div>
               <div className={`font-display text-xl ${debtColor}`}>
-                {player.debt > 0 ? `${player.debt.toLocaleString()} ¤` : 'CLEAR'}
+                {player.debt > 0 ? <>{player.debt.toLocaleString()} <CapsIcon size={16} /></> : 'CLEAR'}
               </div>
               {player.debt > 0 && player.ageOfDebt > 0 && (
                 <div className="text-xs text-pip-green-dim">Age: {player.ageOfDebt}t</div>
@@ -263,7 +264,7 @@ export default function MobileGame() {
                   <div className="w-8 h-8 flex items-center justify-center text-pip-green-dim text-xs flex-shrink-0">?</div>
                 )}
                 <span className="font-display text-pip-green text-lg flex-1 leading-tight">{chem.name}</span>
-                <span className="font-display text-base" style={pStyle}>{price} ¤</span>
+                <span className="font-display text-base" style={pStyle}>{price} <CapsIcon size={13} /></span>
               </div>
 
               <div className="px-3 pb-1 text-xs text-pip-green-dim flex gap-2">
@@ -355,10 +356,10 @@ export default function MobileGame() {
 
   function renderSettlement() {
     const servicesTabs = [
-      { key: 'doctor',    label: '🏥 DOCTOR',    avail: settlement.hasDoctor },
-      { key: 'loanshark', label: '💰 LOANS',     avail: settlement.hasLoanshark },
-      { key: 'gunshop',   label: '🔫 GUNS',      avail: settlement.hasGunShop },
-      { key: 'followers', label: '👥 FOLLOWERS', avail: settlement.hasFollowers },
+      { key: 'doctor',    icon: '/assets/icons/bandage-svgrepo-com.svg',          label: 'DOCTOR',    avail: settlement.hasDoctor },
+      { key: 'loanshark', icon: '/assets/icons/briefcase-dollar-svgrepo-com.svg', label: 'LOANS',     avail: settlement.hasLoanshark },
+      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      avail: settlement.hasGunShop },
+      { key: 'followers', icon: '/assets/icons/followers-svgrepo-com.svg',        label: 'FOLLOWERS', avail: settlement.hasFollowers },
     ].filter(t => t.avail)
 
     return (
@@ -371,10 +372,11 @@ export default function MobileGame() {
                 <button
                   key={t.key}
                   className={serviceOpen === t.key
-                    ? 'pip-btn bg-pip-green text-pip-bg-light text-sm px-3 py-1.5'
-                    : 'pip-btn text-sm px-3 py-1.5'}
+                    ? 'pip-btn bg-pip-green text-pip-bg-light text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    : 'pip-btn text-sm px-3 py-1.5 flex items-center gap-1.5'}
                   onClick={() => setServiceOpen(serviceOpen === t.key ? null : t.key)}
                 >
+                  <img src={t.icon} alt="" width={14} height={14} style={{ opacity: 0.75 }} />
                   {t.label}
                 </button>
               ))}
@@ -619,7 +621,7 @@ export default function MobileGame() {
             </div>
             <div className="flex items-center gap-2">
               <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-amber text-sm">
-                {player.caps.toLocaleString()} ¤
+                {player.caps.toLocaleString()} <CapsIcon size={13} />
               </FlashText>
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>
             </div>
