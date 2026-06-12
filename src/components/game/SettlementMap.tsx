@@ -8,11 +8,24 @@ function dangerColor(danger: number): string {
   return '#4a6a20'
 }
 
-const SERVICE_ICONS: { key: 'hasDoctor' | 'hasLoanshark' | 'hasGunShop' | 'hasFollowers'; src: string }[] = [
-  { key: 'hasDoctor',    src: '/assets/icons/bandage-svgrepo-com.svg' },
-  { key: 'hasLoanshark', src: '/assets/icons/briefcase-dollar-svgrepo-com.svg' },
-  { key: 'hasGunShop',   src: '/assets/icons/crosshair-svgrepo-com.svg' },
-  { key: 'hasFollowers', src: '/assets/icons/followers-svgrepo-com.svg' },
+// Inlined path data from the 24×24 viewBox SVGs — avoids SVG-in-SVG loading restrictions
+const SERVICE_ICONS: { key: 'hasDoctor' | 'hasLoanshark' | 'hasGunShop' | 'hasFollowers'; d: string }[] = [
+  {
+    key: 'hasDoctor',
+    d: 'M7 17V7M17 17V7M10 10H10.01M14 10H14.01M14 14H14.01M10 14H10.01M6.2 17H17.8C18.9201 17 19.4802 17 19.908 16.782C20.2843 16.5903 20.5903 16.2843 20.782 15.908C21 15.4802 21 14.9201 21 13.8V10.2C21 9.07989 21 8.51984 20.782 8.09202C20.5903 7.71569 20.2843 7.40973 19.908 7.21799C19.4802 7 18.9201 7 17.8 7H6.2C5.0799 7 4.51984 7 4.09202 7.21799C3.71569 7.40973 3.40973 7.71569 3.21799 8.09202C3 8.51984 3 9.07989 3 10.2V13.8C3 14.9201 3 15.4802 3.21799 15.908C3.40973 16.2843 3.71569 16.5903 4.09202 16.782C4.51984 17 5.07989 17 6.2 17Z',
+  },
+  {
+    key: 'hasLoanshark',
+    d: 'M16 7C16 6.07003 16 5.60504 15.8978 5.22354C15.6204 4.18827 14.8117 3.37962 13.7765 3.10222C13.395 3 12.93 3 12 3C11.07 3 10.605 3 10.2235 3.10222C9.18827 3.37962 8.37962 4.18827 8.10222 5.22354C8 5.60504 8 6.07003 8 7M14 11.5C13.5 11.376 12.6851 11.3714 12 11.376M12 11.376C11.7709 11.3775 11.9094 11.3678 11.6 11.376C10.7926 11.4012 10.0016 11.7368 10 12.6875C9.99825 13.7004 11 14 12 14C13 14 14 14.2312 14 15.3125C14 16.1251 13.1925 16.4812 12.1861 16.5991C11.3861 16.5991 11 16.625 10 16.5M12 11.376L12 10M12 16.5995V18M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V11.8C21 10.1198 21 9.27976 20.673 8.63803C20.3854 8.07354 19.9265 7.6146 19.362 7.32698C18.7202 7 17.8802 7 16.2 7H7.8C6.11984 7 5.27976 7 4.63803 7.32698C4.07354 7.6146 3.6146 8.07354 3.32698 8.63803C3 9.27976 3 10.1198 3 11.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z',
+  },
+  {
+    key: 'hasGunShop',
+    d: 'M12 3V7M12 17V21M3 12H7M17 12H21M12 12H12.01M19 12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12C5 8.13401 8.13401 5 12 5C15.866 5 19 8.13401 19 12Z',
+  },
+  {
+    key: 'hasFollowers',
+    d: 'M13 20V18C13 15.2386 10.7614 13 8 13C5.23858 13 3 15.2386 3 18V20H13ZM13 20H21V19C21 16.0545 18.7614 14 16 14C14.5867 14 13.3103 14.6255 12.4009 15.6311M11 7C11 8.65685 9.65685 10 8 10C6.34315 10 5 8.65685 5 7C5 5.34315 6.34315 4 8 4C9.65685 4 11 5.34315 11 7ZM18 9C18 10.1046 17.1046 11 16 11C14.8954 11 14 10.1046 14 9C14 7.89543 14.8954 7 16 7C17.1046 7 18 7.89543 18 9Z',
+  },
 ]
 
 function ServiceIcons({
@@ -26,33 +39,41 @@ function ServiceIcons({
   labelDy: number
   size: number
 }) {
-  const srcs = SERVICE_ICONS.filter(i => s[i.key]).map(i => i.src)
-  if (srcs.length === 0) return null
+  const active = SERVICE_ICONS.filter(i => s[i.key])
+  if (active.length === 0) return null
 
   const gap = 2
-  const totalW = srcs.length * size + (srcs.length - 1) * gap
+  const totalW = active.length * size + (active.length - 1) * gap
   const ax = anchorX + labelDx
   const startX = labelAnchor === 'middle' ? ax - totalW / 2
                : labelAnchor === 'end'    ? ax - totalW
                : ax
 
-  // Place icon row on the far side of the label from the node
   const rowY = labelDy < 0
-    ? nodeY + labelDy - size - 3   // label is above node → icons above label
-    : nodeY + labelDy + 3          // label is below node → icons below label
+    ? nodeY + labelDy - size - 3
+    : nodeY + labelDy + 3
+
+  const scale = size / 24
+  // Counteract the transform scale so stroke renders at a constant visual weight
+  const strokeW = 48 / size
 
   return (
     <>
-      {srcs.map((src, i) => (
-        <image
-          key={src}
-          href={src}
-          x={startX + i * (size + gap)}
-          y={rowY}
-          width={size}
-          height={size}
-          opacity={0.72}
-        />
+      {active.map((icon, i) => (
+        <g
+          key={icon.key}
+          transform={`translate(${startX + i * (size + gap)}, ${rowY}) scale(${scale})`}
+          opacity={0.75}
+        >
+          <path
+            d={icon.d}
+            fill="none"
+            stroke="#3d2208"
+            strokeWidth={strokeW}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
       ))}
     </>
   )
