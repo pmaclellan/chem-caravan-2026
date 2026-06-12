@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import pkg from '../../package.json'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
@@ -73,7 +74,7 @@ export default function Home() {
             CHEM CARAVAN
           </h1>
           <div className="text-pip-green-dim text-xs font-mono">
-            WASTELAND TRADING SIMULATION v2.0
+            WASTELAND TRADING SIMULATION v{pkg.version}
           </div>
         </div>
 

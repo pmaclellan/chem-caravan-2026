@@ -193,7 +193,7 @@ export default function Game() {
 
 function GameOverScreen({ gameState, onHome }: { gameState: import('../types/game').GameState; onHome: () => void }) {
   const { player, gameOverReason, endReason, log } = gameState
-  const score = player.caps + player.bank - player.debt
+  const score = player.caps - player.debt
   const isWin = gameOverReason === 'turns'
   const [logOpen, setLogOpen] = useState(false)
 
@@ -220,10 +220,6 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
           <div className="flex justify-between">
             <span className="pip-label">Caps on hand</span>
             <span className="text-pip-green">{player.caps.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="pip-label">In bank</span>
-            <span className="text-pip-green">{player.bank.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
             <span className="pip-label">Debt owed</span>

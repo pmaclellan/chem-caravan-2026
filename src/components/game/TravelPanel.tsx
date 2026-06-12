@@ -36,10 +36,9 @@ export default function TravelPanel({ player }: Props) {
 
         const services = [
           dest.hasDoctor && 'Doctor',
-          dest.hasBank && 'Bank',
           dest.hasLoanshark && 'Loans',
           dest.hasGunShop && 'Guns',
-          dest.hasGuards && 'Guards',
+          dest.hasFollowers && 'Followers',
         ].filter(Boolean).join(' · ')
 
         return (

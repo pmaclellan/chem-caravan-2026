@@ -98,18 +98,6 @@ export function healPlayer(player: PlayerState, cost: number): { player: PlayerS
   return { player: { ...player, health: player.maxHealth, caps: player.caps - cost } }
 }
 
-export function depositToBank(player: PlayerState, amount: number): { player: PlayerState; error?: string } {
-  if (amount <= 0) return { player, error: "Amount must be positive." }
-  if (player.caps < amount) return { player, error: "Not enough caps." }
-  return { player: { ...player, caps: player.caps - amount, bank: player.bank + amount } }
-}
-
-export function withdrawFromBank(player: PlayerState, amount: number): { player: PlayerState; error?: string } {
-  if (amount <= 0) return { player, error: "Amount must be positive." }
-  if (player.bank < amount) return { player, error: "Not enough in bank." }
-  return { player: { ...player, bank: player.bank - amount, caps: player.caps + amount } }
-}
-
 export function takeLoan(player: PlayerState, amount: number): PlayerState {
   return { ...player, caps: player.caps + amount, debt: player.debt + amount }
 }
@@ -180,7 +168,7 @@ export function buyAmmo(
 }
 
 export function calculateFinalScore(player: PlayerState): number {
-  return player.caps + player.bank - player.debt
+  return player.caps - player.debt
 }
 
 export function resolveGameStatus(

@@ -5,10 +5,8 @@ export interface Settlement {
   faction: string
   hasDoctor: boolean
   hasLoanshark: boolean
-  hasBank: boolean
   hasGunShop: boolean
-  hasGuards: boolean
-  hasBrahminMarket: boolean
+  hasFollowers: boolean
   doctorCost: number    // caps to heal fully
   imageUrl: string | null
 }
@@ -31,10 +29,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Independent',
     hasDoctor: true,
     hasLoanshark: true,
-    hasBank: true,
     hasGunShop: true,
-    hasGuards: true,
-    hasBrahminMarket: true,
+    hasFollowers: true,
     doctorCost: 200,
     imageUrl: '/assets/settlements/diamond_city.webp',
   },
@@ -45,10 +41,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Triggermen',
     hasDoctor: true,
     hasLoanshark: true,
-    hasBank: false,
     hasGunShop: true,
-    hasGuards: true,
-    hasBrahminMarket: false,
+    hasFollowers: true,
     doctorCost: 150,
     imageUrl: '/assets/settlements/goodneighbor.webp',
   },
@@ -59,10 +53,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Independent',
     hasDoctor: false,
     hasLoanshark: true,
-    hasBank: true,
     hasGunShop: false,
-    hasGuards: true,
-    hasBrahminMarket: true,
+    hasFollowers: true,
     doctorCost: 0,
     imageUrl: '/assets/settlements/bunker_hill.webp',
   },
@@ -73,10 +65,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Minutemen',
     hasDoctor: true,
     hasLoanshark: false,
-    hasBank: false,
     hasGunShop: true,
-    hasGuards: true,
-    hasBrahminMarket: false,
+    hasFollowers: true,
     doctorCost: 100,
     imageUrl: '/assets/settlements/the_castle.webp',
   },
@@ -87,10 +77,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Vault',
     hasDoctor: true,
     hasLoanshark: false,
-    hasBank: false,
     hasGunShop: false,
-    hasGuards: false,
-    hasBrahminMarket: false,
+    hasFollowers: false,
     doctorCost: 100,
     imageUrl: '/assets/settlements/vault_81.jpg',
   },
@@ -101,10 +89,9 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Minutemen',
     hasDoctor: false,
     hasLoanshark: false,
-    hasBank: false,
+
     hasGunShop: false,
-    hasGuards: false,
-    hasBrahminMarket: false,
+    hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/sanctuary_hills.webp',
   },
@@ -115,10 +102,9 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Robots',
     hasDoctor: false,
     hasLoanshark: false,
-    hasBank: false,
+
     hasGunShop: false,
-    hasGuards: false,
-    hasBrahminMarket: false,
+    hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/graygarden.jpg',
   },
@@ -129,10 +115,9 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Raiders',
     hasDoctor: false,
     hasLoanshark: false,
-    hasBank: false,
+
     hasGunShop: true,
-    hasGuards: false,
-    hasBrahminMarket: false,
+    hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/jamaica_plain.webp',
   },
@@ -143,10 +128,9 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Triggermen',
     hasDoctor: false,
     hasLoanshark: true,
-    hasBank: false,
+
     hasGunShop: true,
-    hasGuards: false,
-    hasBrahminMarket: false,
+    hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/park_street_station.webp',
   },

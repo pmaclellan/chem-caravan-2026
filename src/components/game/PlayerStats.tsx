@@ -40,13 +40,6 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         </div>
       </div>
 
-      {player.bank > 0 && (
-        <div>
-          <div className="pip-label">In Bank</div>
-          <div className="text-pip-green font-display text-lg">{player.bank.toLocaleString()} ¤</div>
-        </div>
-      )}
-
       <div>
         <div className="pip-label">Debt</div>
         <div className={`font-display text-lg ${debtColor}`}>

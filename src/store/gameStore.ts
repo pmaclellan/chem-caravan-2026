@@ -21,8 +21,6 @@ import {
   buyChems,
   sellChems,
   healPlayer,
-  depositToBank,
-  withdrawFromBank,
   takeLoan,
   repayDebt,
   hireGuards,
@@ -84,8 +82,6 @@ interface GameStore {
 
   // Services
   heal: () => void
-  deposit: (amount: number) => void
-  withdraw: (amount: number) => void
   borrow: (amount: number) => void
   payDebt: (amount: number) => void
   hireguards: (count: number) => void
@@ -453,24 +449,6 @@ export const useGameStore = create<GameStore>((set, get) => {
           message: `Fully healed at the doctor for ${settlement.doctorCost} caps.`,
           type: 'info' as const,
         }]
-        return { ...state, player, log }
-      })
-    },
-
-    deposit: (amount) => {
-      mutate(state => {
-        const { player, error } = depositToBank(state.player, amount)
-        if (error) { set({ toast: error }); return state }
-        const log = [...state.log, { turn: state.world.turn, message: `Deposited ${amount} caps to bank.`, type: 'info' as const }]
-        return { ...state, player, log }
-      })
-    },
-
-    withdraw: (amount) => {
-      mutate(state => {
-        const { player, error } = withdrawFromBank(state.player, amount)
-        if (error) { set({ toast: error }); return state }
-        const log = [...state.log, { turn: state.world.turn, message: `Withdrew ${amount} caps from bank.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
