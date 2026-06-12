@@ -8,14 +8,14 @@ function dangerColor(danger: number): string {
   return '#4a6a20'
 }
 
-// Service icon glyphs — compact emoji row below node name
+// Service icon glyphs — monochrome Unicode, render with SVG fill color
 function serviceIcons(s: GameModeConfig['settlements'][string]): string {
   const icons: string[] = []
-  if (s.hasDoctor)  icons.push('🏥')
-  if (s.hasLoanshark) icons.push('💰')
-  if (s.hasGunShop) icons.push('🔫')
-  if (s.hasFollowers) icons.push('👥')
-  return icons.join(' ')
+  if (s.hasDoctor)    icons.push('⊕')   // circled plus → medical
+  if (s.hasLoanshark) icons.push('¤')   // currency sign → loans
+  if (s.hasGunShop)   icons.push('⌖')   // crosshair → guns
+  if (s.hasFollowers) icons.push('⊞')   // squared plus → followers
+  return icons.join('  ')
 }
 
 interface Props {
@@ -121,12 +121,12 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const nodeStroke  = isCurrent ? '#e8a050' : isAdj ? '#6a4818' : 'rgba(120, 80, 28, 0.42)'
             const nodeStrokeW = isCurrent ? 3   : isAdj ? 2   : 1.5
             const textFill    = isCurrent || isAdj ? '#200e04' : 'rgba(80, 50, 18, 0.50)'
-            const fontSize    = isCurrent ? 9.5 : isAdj ? 8.5 : 7.5
+            const fontSize    = isCurrent ? 11.5 : isAdj ? 10 : 8.5
             const textStrokeW = isCurrent ? 3.5 : isAdj ? 3   : 2
 
             // Icon row position — offset further than name
-            const iconDy = labelDy < 0 ? labelDy - 10 : labelDy + 11
-            const iconFontSize = isCurrent ? 11 : 9
+            const iconDy = labelDy < 0 ? labelDy - 12 : labelDy + 13
+            const iconFontSize = isCurrent ? 13 : isAdj ? 11 : 9
 
             return (
               <g key={id}
@@ -166,6 +166,9 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
                     x={pos.x + labelDx} y={pos.y + iconDy}
                     textAnchor={labelAnchor}
                     fontSize={iconFontSize}
+                    fontFamily="monospace"
+                    fill={textFill}
+                    stroke="#d8bf88" strokeWidth="2.5" paintOrder="stroke"
                     style={{ userSelect: 'none' }}
                   >
                     {icons}
