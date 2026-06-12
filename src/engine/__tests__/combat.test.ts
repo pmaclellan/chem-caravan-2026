@@ -63,7 +63,6 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
     name: 'Test',
     caps: 500,
-    bank: 0,
     debt: 0,
     health: 100,
     maxHealth: 100,
