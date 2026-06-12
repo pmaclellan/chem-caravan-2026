@@ -651,10 +651,10 @@ export default function MobileGame() {
                   style={{ backgroundColor: tab === t.id ? 'var(--pip-amber)' : 'transparent' }}
                 />
                 <span
-                  className="font-display tracking-widest transition-colors duration-100"
+                  className="font-display tracking-wide transition-colors duration-100"
                   style={{
-                    fontSize: '0.6rem',
-                    color: tab === t.id ? 'var(--pip-bg-light)' : 'color-mix(in srgb, var(--pip-bg-light) 55%, transparent)',
+                    fontSize: '0.68rem',
+                    color: tab === t.id ? 'var(--pip-bg-light)' : 'color-mix(in srgb, var(--pip-bg-light) 72%, transparent)',
                   }}
                 >
                   {t.label}
