@@ -8,13 +8,13 @@ function dangerColor(danger: number): string {
   return '#4a6a20'
 }
 
-// Service icon glyphs — compact row below node name
+// Service icon glyphs — compact emoji row below node name
 function serviceIcons(s: GameModeConfig['settlements'][string]): string {
   const icons: string[] = []
-  if (s.hasDoctor) icons.push('✚')
-  if (s.hasBank)   icons.push('¤')
-  if (s.hasGunShop) icons.push('⚙')
-  if (s.hasGuards) icons.push('⚔')
+  if (s.hasDoctor)  icons.push('🏥')
+  if (s.hasLoanshark) icons.push('💰')
+  if (s.hasGunShop) icons.push('🔫')
+  if (s.hasFollowers) icons.push('👥')
   return icons.join(' ')
 }
 
@@ -126,7 +126,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
 
             // Icon row position — offset further than name
             const iconDy = labelDy < 0 ? labelDy - 10 : labelDy + 11
-            const iconFontSize = isCurrent ? 8 : 6.5
+            const iconFontSize = isCurrent ? 11 : 9
 
             return (
               <g key={id}
@@ -166,9 +166,6 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
                     x={pos.x + labelDx} y={pos.y + iconDy}
                     textAnchor={labelAnchor}
                     fontSize={iconFontSize}
-                    fontFamily="monospace"
-                    fill={textFill}
-                    stroke="#d8bf88" strokeWidth="2" paintOrder="stroke"
                     style={{ userSelect: 'none' }}
                   >
                     {icons}

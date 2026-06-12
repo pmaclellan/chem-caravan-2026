@@ -17,7 +17,6 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
   const player: PlayerState = {
     name: characterName,
     caps: mc.startingCaps,
-    bank: 0,
     debt: mc.startingDebt,
     health: mc.startingHealth,
     maxHealth: mc.startingHealth,

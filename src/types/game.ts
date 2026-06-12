@@ -34,7 +34,6 @@ export interface InventoryEntry {
 export interface PlayerState {
   name: string
   caps: number
-  bank: number
   debt: number
   health: number
   maxHealth: number

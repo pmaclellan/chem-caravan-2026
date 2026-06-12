@@ -5,7 +5,7 @@ import { useGameStore } from '../../store/gameStore'
 
 interface Props { player: PlayerState }
 
-type Tab = 'doctor' | 'bank' | 'loanshark' | 'gunshop' | 'guards' | 'brahmin'
+type Tab = 'doctor' | 'loanshark' | 'gunshop' | 'followers'
 
 export default function ServicesPanel({ player }: Props) {
   const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
@@ -18,12 +18,10 @@ export default function ServicesPanel({ player }: Props) {
 
   const tabs: { key: Tab; label: string; available: boolean }[] = (
     [
-      { key: 'doctor',    label: 'DOCTOR',   available: settlement.hasDoctor },
-      { key: 'bank',      label: 'BANK',     available: settlement.hasBank },
-      { key: 'loanshark', label: 'LOANS',    available: settlement.hasLoanshark },
-      { key: 'gunshop',   label: 'GUNS',     available: settlement.hasGunShop },
-      { key: 'guards',    label: 'GUARDS',   available: settlement.hasGuards },
-      { key: 'brahmin',   label: 'BRAHMIN',  available: settlement.hasBrahminMarket },
+      { key: 'doctor',    label: '🏥 DOCTOR',    available: settlement.hasDoctor },
+      { key: 'loanshark', label: '💰 LOANS',     available: settlement.hasLoanshark },
+      { key: 'gunshop',   label: '🔫 GUNS',      available: settlement.hasGunShop },
+      { key: 'followers', label: '👥 FOLLOWERS', available: settlement.hasFollowers },
     ] as { key: Tab; label: string; available: boolean }[]
   ).filter(t => t.available)
 
@@ -61,28 +59,6 @@ export default function ServicesPanel({ player }: Props) {
         </div>
       )}
 
-      {activeTab === 'bank' && (
-        <div className="border border-pip-border p-3 rounded space-y-3">
-          <div className="pip-label">BANK — caps safe from robbery</div>
-          <div className="text-xs text-pip-green-dim">On hand: {player.caps} ¤ · In bank: {player.bank} ¤</div>
-          <div className="flex items-center gap-2">
-            <input type="number" min={1} value={amount} onChange={e => setAmount(Math.max(1, parseInt(e.target.value) || 1))} className="pip-input w-24" />
-            <button className="pip-btn" disabled={player.caps < amount} onClick={() => store.deposit(amount)}>DEPOSIT</button>
-            <button className="pip-btn" disabled={player.bank < amount} onClick={() => store.withdraw(amount)}>WITHDRAW</button>
-          </div>
-          {player.debt > 0 && (
-            <div>
-              <div className="pip-label mt-2">Repay Debt — current: {player.debt} ¤</div>
-              <div className="flex gap-2 mt-1">
-                <button className="pip-btn" disabled={player.caps < Math.min(amount, player.debt)} onClick={() => store.payDebt(amount)}>
-                  PAY {Math.min(amount, player.debt)} ¤
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {activeTab === 'loanshark' && (() => {
         const isOverGrace = player.ageOfDebt >= mc.debtGracePeriod
         const windowStartAge   = player.debtWindowStartAge ?? player.ageOfDebt
@@ -100,7 +76,7 @@ export default function ServicesPanel({ player }: Props) {
             <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
 
             {player.debt > 0 && isOverGrace && (
-              <div className={`text-xs rounded p-2 border ${windowOverdue && !windowSatisfied ? 'border-pip-red text-pip-red' : windowSatisfied ? 'border-pip-border text-pip-green-dim' : 'border-pip-border text-pip-green-dim'}`}>
+              <div className={`text-xs rounded p-2 border ${windowOverdue && !windowSatisfied ? 'border-pip-red text-pip-red' : 'border-pip-border text-pip-green-dim'}`}>
                 {windowSatisfied
                   ? `Paid up this window. Next payment due in ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''}.`
                   : windowOverdue
@@ -163,40 +139,39 @@ export default function ServicesPanel({ player }: Props) {
         </div>
       )}
 
-      {activeTab === 'guards' && (
-        <div className="border border-pip-border p-3 rounded space-y-2">
-          <div className="pip-label">HIRE GUARDS — {mc.guardCost} ¤ each</div>
-          <div className="text-xs text-pip-green-dim">Current guards: {player.guards} · Each guard absorbs {mc.guardHealth} HP in combat and improves escape chance.</div>
-          <div className="flex gap-2 mt-2">
-            {[1, 2, 3].map(n => (
-              <button
-                key={n}
-                className="pip-btn"
-                disabled={player.caps < n * mc.guardCost}
-                onClick={() => store.hireguards(n)}
-              >
-                HIRE {n} ({n * mc.guardCost} ¤)
-              </button>
-            ))}
+      {activeTab === 'followers' && (
+        <div className="border border-pip-border p-3 rounded space-y-4">
+          <div className="space-y-2">
+            <div className="pip-label">GUARDS — {mc.guardCost} ¤ each</div>
+            <div className="text-xs text-pip-green-dim">Current: {player.guards} · Each absorbs {mc.guardHealth} HP in combat and improves escape chance.</div>
+            <div className="flex gap-2 mt-1">
+              {[1, 2, 3].map(n => (
+                <button
+                  key={n}
+                  className="pip-btn"
+                  disabled={player.caps < n * mc.guardCost}
+                  onClick={() => store.hireguards(n)}
+                >
+                  HIRE {n} ({n * mc.guardCost} ¤)
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {activeTab === 'brahmin' && (
-        <div className="border border-pip-border p-3 rounded space-y-2">
-          <div className="pip-label">BRAHMIN MARKET — {mc.brahminCost} ¤ each</div>
-          <div className="text-xs text-pip-green-dim">Current: {player.brahmin} brahmin · +{mc.capacityPerBrahmin} inventory capacity each</div>
-          <div className="flex gap-2 mt-2">
-            {[1, 2].map(n => (
-              <button
-                key={n}
-                className="pip-btn"
-                disabled={player.caps < n * mc.brahminCost}
-                onClick={() => store.purchaseBrahmin(n)}
-              >
-                BUY {n} ({n * mc.brahminCost} ¤)
-              </button>
-            ))}
+          <div className="border-t border-pip-border-dim pt-3 space-y-2">
+            <div className="pip-label">BRAHMIN — {mc.brahminCost} ¤ each</div>
+            <div className="text-xs text-pip-green-dim">Current: {player.brahmin} · +{mc.capacityPerBrahmin} inventory capacity each</div>
+            <div className="flex gap-2 mt-1">
+              {[1, 2].map(n => (
+                <button
+                  key={n}
+                  className="pip-btn"
+                  disabled={player.caps < n * mc.brahminCost}
+                  onClick={() => store.purchaseBrahmin(n)}
+                >
+                  BUY {n} ({n * mc.brahminCost} ¤)
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
