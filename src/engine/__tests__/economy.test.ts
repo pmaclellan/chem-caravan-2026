@@ -6,8 +6,6 @@ import {
   sellChems,
   calculateFinalScore,
   hireGuards,
-  depositToBank,
-  withdrawFromBank,
   repayDebt,
 } from '../economy'
 import type { DebtEnforcementEntry } from '../../data/modes'
@@ -23,7 +21,6 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
     name: 'Test',
     caps: 1000,
-    bank: 0,
     debt: 500,
     health: 100,
     maxHealth: 100,
@@ -181,13 +178,13 @@ describe('sellChems', () => {
 })
 
 describe('calculateFinalScore', () => {
-  it('returns caps + bank - debt', () => {
-    const player = makePlayer({ caps: 1000, bank: 500, debt: 200 })
-    expect(calculateFinalScore(player)).toBe(1300)
+  it('returns caps - debt', () => {
+    const player = makePlayer({ caps: 1000, debt: 200 })
+    expect(calculateFinalScore(player)).toBe(800)
   })
 
   it('can be negative', () => {
-    const player = makePlayer({ caps: 100, bank: 0, debt: 5000 })
+    const player = makePlayer({ caps: 100, debt: 5000 })
     expect(calculateFinalScore(player)).toBe(-4900)
   })
 })
@@ -211,28 +208,6 @@ describe('hireGuards', () => {
     // Mode with guard cost 200 — hiring 2 costs 400
     const { player: result } = hireGuards(player, 2, 200)
     expect(result.caps).toBe(100)
-  })
-})
-
-describe('depositToBank / withdrawFromBank', () => {
-  it('moves caps to bank', () => {
-    const { player: result } = depositToBank(makePlayer({ caps: 500, bank: 0 }), 300)
-    expect(result.caps).toBe(200)
-    expect(result.bank).toBe(300)
-  })
-
-  it('rejects deposit if not enough caps', () => {
-    expect(depositToBank(makePlayer({ caps: 100 }), 200).error).toBeTruthy()
-  })
-
-  it('moves caps from bank', () => {
-    const { player: result } = withdrawFromBank(makePlayer({ caps: 0, bank: 500 }), 200)
-    expect(result.caps).toBe(200)
-    expect(result.bank).toBe(300)
-  })
-
-  it('rejects withdrawal if not enough in bank', () => {
-    expect(withdrawFromBank(makePlayer({ bank: 100 }), 200).error).toBeTruthy()
   })
 })
 
