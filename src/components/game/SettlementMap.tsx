@@ -49,13 +49,14 @@ function ServiceIcons({
                : labelAnchor === 'end'    ? ax - totalW
                : ax
 
+  // For above-node labels, use size*2 gap so icons clear the full text ascent zone
   const rowY = labelDy < 0
-    ? nodeY + labelDy - size - 3
+    ? nodeY + labelDy - size * 2
     : nodeY + labelDy + 3
 
   const scale = size / 24
-  // Counteract the transform scale so stroke renders at a constant visual weight
-  const strokeW = 48 / size
+  // strokeW counteracts the scale so rendered stroke stays at ~1.5px across all sizes
+  const strokeW = 36 / size
 
   return (
     <>
@@ -184,7 +185,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const fontSize    = isCurrent ? 11.5 : isAdj ? 10 : 8.5
             const textStrokeW = isCurrent ? 3.5 : isAdj ? 3   : 2
 
-            const iconSize = isCurrent ? 13 : isAdj ? 11 : 9
+            const iconSize = isCurrent ? 14 : isAdj ? 12 : 10
 
             return (
               <g key={id}
