@@ -8,14 +8,54 @@ function dangerColor(danger: number): string {
   return '#4a6a20'
 }
 
-// Service icon glyphs — monochrome Unicode, render with SVG fill color
-function serviceIcons(s: GameModeConfig['settlements'][string]): string {
-  const icons: string[] = []
-  if (s.hasDoctor)    icons.push('⊕')   // circled plus → medical
-  if (s.hasLoanshark) icons.push('¤')   // currency sign → loans
-  if (s.hasGunShop)   icons.push('⌖')   // crosshair → guns
-  if (s.hasFollowers) icons.push('⊞')   // squared plus → followers
-  return icons.join('  ')
+const SERVICE_ICONS: { key: 'hasDoctor' | 'hasLoanshark' | 'hasGunShop' | 'hasFollowers'; src: string }[] = [
+  { key: 'hasDoctor',    src: '/assets/icons/bandage-svgrepo-com.svg' },
+  { key: 'hasLoanshark', src: '/assets/icons/briefcase-dollar-svgrepo-com.svg' },
+  { key: 'hasGunShop',   src: '/assets/icons/crosshair-svgrepo-com.svg' },
+  { key: 'hasFollowers', src: '/assets/icons/followers-svgrepo-com.svg' },
+]
+
+function ServiceIcons({
+  s, anchorX, nodeY, labelAnchor, labelDx, labelDy, size,
+}: {
+  s: GameModeConfig['settlements'][string]
+  anchorX: number
+  nodeY: number
+  labelAnchor: 'middle' | 'start' | 'end'
+  labelDx: number
+  labelDy: number
+  size: number
+}) {
+  const srcs = SERVICE_ICONS.filter(i => s[i.key]).map(i => i.src)
+  if (srcs.length === 0) return null
+
+  const gap = 2
+  const totalW = srcs.length * size + (srcs.length - 1) * gap
+  const ax = anchorX + labelDx
+  const startX = labelAnchor === 'middle' ? ax - totalW / 2
+               : labelAnchor === 'end'    ? ax - totalW
+               : ax
+
+  // Place icon row on the far side of the label from the node
+  const rowY = labelDy < 0
+    ? nodeY + labelDy - size - 3   // label is above node → icons above label
+    : nodeY + labelDy + 3          // label is below node → icons below label
+
+  return (
+    <>
+      {srcs.map((src, i) => (
+        <image
+          key={src}
+          href={src}
+          x={startX + i * (size + gap)}
+          y={rowY}
+          width={size}
+          height={size}
+          opacity={0.72}
+        />
+      ))}
+    </>
+  )
 }
 
 interface Props {
@@ -113,7 +153,6 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const isCurrent = id === player.location
             const isAdj     = adjIds.has(id)
             const name      = settlement.name.toUpperCase()
-            const icons     = serviceIcons(settlement)
             const { labelAnchor, labelDx, labelDy } = pos
 
             const nodeR       = isCurrent ? 13  : isAdj ? 9.5 : 6.5
@@ -124,9 +163,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const fontSize    = isCurrent ? 11.5 : isAdj ? 10 : 8.5
             const textStrokeW = isCurrent ? 3.5 : isAdj ? 3   : 2
 
-            // Icon row position — offset further than name
-            const iconDy = labelDy < 0 ? labelDy - 12 : labelDy + 13
-            const iconFontSize = isCurrent ? 13 : isAdj ? 11 : 9
+            const iconSize = isCurrent ? 13 : isAdj ? 11 : 9
 
             return (
               <g key={id}
@@ -161,19 +198,15 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
                 </text>
 
                 {/* Service icons */}
-                {icons && (
-                  <text
-                    x={pos.x + labelDx} y={pos.y + iconDy}
-                    textAnchor={labelAnchor}
-                    fontSize={iconFontSize}
-                    fontFamily="monospace"
-                    fill={textFill}
-                    stroke="#d8bf88" strokeWidth="2.5" paintOrder="stroke"
-                    style={{ userSelect: 'none' }}
-                  >
-                    {icons}
-                  </text>
-                )}
+                <ServiceIcons
+                  s={settlement}
+                  anchorX={pos.x}
+                  nodeY={pos.y}
+                  labelAnchor={labelAnchor}
+                  labelDx={labelDx}
+                  labelDy={labelDy}
+                  size={iconSize}
+                />
               </g>
             )
           })}

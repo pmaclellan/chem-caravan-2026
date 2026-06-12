@@ -1,6 +1,7 @@
 import type { PlayerState } from '../../types/game'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { FlashText } from '../ui/FlashText'
+import { CapsIcon } from '../ui/CapsIcon'
 
 interface Props { player: PlayerState; turn: number; maxTurns: number }
 
@@ -35,7 +36,7 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         <div className="pip-label">Caps on Hand</div>
         <div className="pip-value">
           <FlashText flashKey={capsFlash} variant={capsVariant} className="text-pip-amber">
-            {player.caps.toLocaleString()} ¤
+            {player.caps.toLocaleString()} <CapsIcon size={16} />
           </FlashText>
         </div>
       </div>
