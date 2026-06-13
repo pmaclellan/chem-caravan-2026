@@ -6,6 +6,24 @@ export interface EnemyType {
   caps: [number, number]     // [min, max] caps carried
   lootChems: string[]        // possible drops on victory
   eventOnly?: boolean        // if true, never spawns in random road encounters
+  countMultiplier?: number   // scales danger-level-based spawn count (default 1)
+}
+
+export interface ArmorDefinition {
+  id: string
+  name: string
+  price: number
+  armorPoints: number
+  repairCostPerAP: number
+  description: string
+}
+
+export interface ArmorState {
+  id: string
+  name: string
+  armorPoints: number
+  maxArmorPoints: number
+  repairCostPerAP: number
 }
 
 export interface EnemyUnit {
@@ -43,6 +61,7 @@ export interface PlayerState {
   ageOfDebt: number  // turns elapsed since debt was first taken
   inventory: Record<string, InventoryEntry>
   gun: GunState | null
+  armor: ArmorState | null
   debtPaidThisCycle?: number    // caps paid toward debt since last turn tick; resets each tick
   debtWarnings?: number         // times enforcement has triggered; drives damage escalation
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window

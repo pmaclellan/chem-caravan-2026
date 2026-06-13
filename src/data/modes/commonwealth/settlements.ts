@@ -5,7 +5,7 @@ export interface Settlement {
   faction: string
   hasDoctor: boolean
   hasLoanshark: boolean
-  hasGunShop: boolean
+  hasArmory: boolean
   hasFollowers: boolean
   doctorCost: number    // caps to heal fully
   imageUrl: string | null
@@ -29,7 +29,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Independent',
     hasDoctor: true,
     hasLoanshark: true,
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 200,
     imageUrl: '/assets/settlements/commonwealth/diamond_city.webp',
@@ -41,7 +41,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Triggermen',
     hasDoctor: true,
     hasLoanshark: true,
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 150,
     imageUrl: '/assets/settlements/commonwealth/goodneighbor.webp',
@@ -53,7 +53,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Independent',
     hasDoctor: false,
     hasLoanshark: true,
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: true,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/bunker_hill.webp',
@@ -65,7 +65,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Minutemen',
     hasDoctor: true,
     hasLoanshark: false,
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 100,
     imageUrl: '/assets/settlements/commonwealth/the_castle.webp',
@@ -77,7 +77,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Vault',
     hasDoctor: true,
     hasLoanshark: false,
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: false,
     doctorCost: 100,
     imageUrl: '/assets/settlements/commonwealth/vault_81.jpg',
@@ -90,7 +90,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/sanctuary_hills.webp',
@@ -103,7 +103,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/graygarden.jpg',
@@ -116,7 +116,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/jamaica_plain.webp',
@@ -129,7 +129,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: true,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/park_street_station.webp',
@@ -153,6 +153,7 @@ export const ROADS: Road[] = [
     to: 'park_street_station',
     dangerLevel: 0.48,
     description: "Underground passage. Ghouls haunt the dark stretches.",
+    enemyWeights: { feral_ghoul: 3, raider: 1 },
   },
   {
     id: 'dc_jp',
@@ -201,6 +202,7 @@ export const ROADS: Road[] = [
     to: 'graygarden',
     dangerLevel: 0.44,
     description: "Through Lexington ruins. Feral ghouls are common.",
+    enemyWeights: { feral_ghoul: 4, raider: 1 },
   },
   {
     id: 'sh_gg',

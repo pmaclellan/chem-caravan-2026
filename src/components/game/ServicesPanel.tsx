@@ -5,7 +5,7 @@ import { useGameStore } from '../../store/gameStore'
 
 interface Props { player: PlayerState }
 
-type Tab = 'doctor' | 'loanshark' | 'gunshop' | 'followers'
+type Tab = 'doctor' | 'loanshark' | 'armory' | 'followers'
 
 export default function ServicesPanel({ player }: Props) {
   const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
@@ -20,7 +20,7 @@ export default function ServicesPanel({ player }: Props) {
     [
       { key: 'doctor',    icon: '/assets/icons/bandage-svgrepo-com.svg',          label: 'DOCTOR',    available: settlement.hasDoctor },
       { key: 'loanshark', icon: '/assets/icons/briefcase-dollar-svgrepo-com.svg', label: 'LOANS',     available: settlement.hasLoanshark },
-      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      available: settlement.hasGunShop },
+      { key: 'armory',    icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'ARMORY',    available: settlement.hasArmory },
       { key: 'followers', icon: '/assets/icons/followers-svgrepo-com.svg',        label: 'FOLLOWERS', available: settlement.hasFollowers },
     ] as { key: Tab; icon: string; label: string; available: boolean }[]
   ).filter(t => t.available)
@@ -40,7 +40,7 @@ export default function ServicesPanel({ player }: Props) {
             className={activeTab === tab.key ? 'pip-btn bg-pip-green text-pip-bg flex items-center gap-1.5' : 'pip-btn flex items-center gap-1.5'}
             onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}
           >
-            <img src={tab.icon} alt="" width={14} height={14} style={{ opacity: 0.75 }} />
+            <img src={tab.icon} alt="" style={{ height: '1.25em', width: '1.25em', display: 'block', opacity: 0.75 }} />
             {tab.label}
           </button>
         ))}
@@ -104,9 +104,11 @@ export default function ServicesPanel({ player }: Props) {
         )
       })()}
 
-      {activeTab === 'gunshop' && (
+      {activeTab === 'armory' && (
         <div className="border border-pip-border p-3 rounded space-y-3">
-          <div className="pip-label">GUN SHOP</div>
+          <div className="pip-label">ARMORY</div>
+
+          {/* Guns */}
           {mc.gunIds.map(gunId => {
             const gun = mc.guns[gunId]
             const owned = player.gun?.id === gunId
@@ -126,6 +128,8 @@ export default function ServicesPanel({ player }: Props) {
               </div>
             )
           })}
+
+          {/* Ammo */}
           {player.gun && (
             <div className="border-t border-pip-border pt-2">
               <div className="pip-label">AMMO — {mc.ammoPrice} ¤/round</div>
@@ -137,6 +141,50 @@ export default function ServicesPanel({ player }: Props) {
               </div>
             </div>
           )}
+
+          {/* Armor */}
+          <div className="border-t border-pip-border pt-2 space-y-2">
+            <div className="pip-label">ARMOR</div>
+            {mc.armorIds.map(armorId => {
+              const armor = mc.armors[armorId]
+              const equipped = player.armor?.id === armorId
+              return (
+                <div key={armorId} className="flex justify-between items-center">
+                  <div>
+                    <div className="text-pip-green text-sm">{armor.name}</div>
+                    <div className="text-xs text-pip-green-dim">{armor.armorPoints} AP · {armor.repairCostPerAP} ¤/AP repair</div>
+                  </div>
+                  <button
+                    className={equipped ? 'pip-btn text-xs' : 'pip-btn-amber text-xs'}
+                    disabled={equipped || player.caps < armor.price}
+                    onClick={() => store.purchaseArmor(armorId)}
+                  >
+                    {equipped ? 'EQUIPPED' : `${armor.price} ¤`}
+                  </button>
+                </div>
+              )
+            })}
+
+            {/* Repair */}
+            {player.armor && player.armor.armorPoints < player.armor.maxArmorPoints && (() => {
+              const missingAP = player.armor.maxArmorPoints - player.armor.armorPoints
+              const repairCost = missingAP * player.armor.repairCostPerAP
+              return (
+                <div className="border border-pip-blue rounded p-2 space-y-1">
+                  <div className="text-xs text-pip-blue">
+                    {player.armor.name}: {player.armor.armorPoints} / {player.armor.maxArmorPoints} AP
+                  </div>
+                  <button
+                    className="pip-btn w-full text-xs"
+                    disabled={player.caps < repairCost}
+                    onClick={() => store.repairArmor()}
+                  >
+                    REPAIR ({repairCost} ¤)
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
         </div>
       )}
 

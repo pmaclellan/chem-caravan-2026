@@ -10,7 +10,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: true,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 250,
     imageUrl: null,
@@ -23,7 +23,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: true,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: false,
     doctorCost: 100,
     imageUrl: null,
@@ -36,7 +36,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: false,
     doctorCost: 100,
     imageUrl: null,
@@ -49,7 +49,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 0,
     imageUrl: null,
@@ -62,7 +62,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 150,
     imageUrl: null,
@@ -75,7 +75,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 0,
     imageUrl: null,
@@ -88,7 +88,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
 
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: true,
     doctorCost: 200,
     imageUrl: null,
@@ -101,7 +101,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
 
-    hasGunShop: true,
+    hasArmory: true,
     hasFollowers: true,
     doctorCost: 150,
     imageUrl: null,
@@ -114,7 +114,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
 
-    hasGunShop: false,
+    hasArmory: false,
     hasFollowers: true,
     doctorCost: 100,
     imageUrl: null,

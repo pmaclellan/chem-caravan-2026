@@ -15,9 +15,7 @@ export function initiateCombat(
   forcedEnemyTypeId?: string,
   forcedCount?: number,
 ): CombatState {
-  const count = forcedCount ?? Math.max(1, Math.round(dangerLevel * 5))
-
-  // Pick one enemy type — use pre-selected type from event panel if provided
+  // Pick enemy type first so countMultiplier can scale the base count
   const weightedPool = modeConfig.enemies
     .filter(e => !e.eventOnly)
     .map(e => ({
@@ -27,6 +25,10 @@ export function initiateCombat(
   const enemyType = forcedEnemyTypeId
     ? (modeConfig.enemies.find(e => e.id === forcedEnemyTypeId) ?? rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
     : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
+
+  const baseCount = Math.max(1, Math.round(dangerLevel * 5))
+  const count = forcedCount ?? Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1)))
+
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 
   const enemies: EnemyUnit[] = []
@@ -84,6 +86,7 @@ export function resolveFight(
   let { capsPool } = combat
   let { health, guards } = player
   let gun = { ...player.gun }
+  let armor = player.armor ? { ...player.armor } : null
   let damageDealt = 0
 
   // ── Player fires ─────────────────────────────────────────────────────────
@@ -146,19 +149,28 @@ export function resolveFight(
     // Guards absorb incoming (each guard absorbs guardHealth before player takes damage)
     const guardAbsorb = Math.min(guards, Math.floor(totalIncoming / modeConfig.guardHealth))
     const absorbed = guardAbsorb * modeConfig.guardHealth
-    const playerDamage = Math.max(0, totalIncoming - absorbed)
+    const postGuardDamage = Math.max(0, totalIncoming - absorbed)
     guards = Math.max(0, guards - guardAbsorb)
-    health = Math.max(0, health - playerDamage)
-    damageTaken = playerDamage
+
+    // Armor absorbs remaining damage before HP
+    let armorAbsorb = 0
+    if (armor && postGuardDamage > 0) {
+      armorAbsorb = Math.min(armor.armorPoints, postGuardDamage)
+      armor = { ...armor, armorPoints: armor.armorPoints - armorAbsorb }
+    }
+    const finalDamage = Math.max(0, postGuardDamage - armorAbsorb)
+    health = Math.max(0, health - finalDamage)
+    damageTaken = finalDamage
 
     if (guardAbsorb > 0) log.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
-    if (playerDamage > 0) log.push(`Enemies hit you for ${playerDamage} damage.`)
+    if (armorAbsorb > 0) log.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
+    if (finalDamage > 0) log.push(`Enemies hit you for ${finalDamage} damage.`)
   }
 
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, gun }
+  let updatedPlayer: PlayerState = { ...player, health, guards, gun, armor }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
@@ -222,9 +234,16 @@ export function resolveRun(
       const [min, max] = stats ? stats.damage : [5, 15]
       totalDamage += rngInt(Math.max(1, Math.floor(min * 0.5)), Math.floor(max * 0.5))
     }
-    updatedPlayer = { ...updatedPlayer, health: Math.max(0, updatedPlayer.health - totalDamage) }
-    damageTaken = totalDamage
-    log.push(`You try to run but the enemies catch you! They hit you for ${totalDamage} damage.`)
+    let armor = updatedPlayer.armor ? { ...updatedPlayer.armor } : null
+    let armorAbsorb = 0
+    if (armor && totalDamage > 0) {
+      armorAbsorb = Math.min(armor.armorPoints, totalDamage)
+      armor = { ...armor, armorPoints: armor.armorPoints - armorAbsorb }
+    }
+    const finalDamage = Math.max(0, totalDamage - armorAbsorb)
+    updatedPlayer = { ...updatedPlayer, health: Math.max(0, updatedPlayer.health - finalDamage), armor }
+    damageTaken = finalDamage
+    log.push(`You try to run but the enemies catch you! They hit you for ${totalDamage} damage.${armorAbsorb > 0 ? ` Armor absorbed ${armorAbsorb}.` : ''}`)
     if (updatedPlayer.health <= 0) {
       phase = 'lost'
       log.push("You've been killed trying to flee.")

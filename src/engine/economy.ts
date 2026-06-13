@@ -1,6 +1,6 @@
 import type { GunDefinition } from '../data/guns'
 import type { DebtEnforcementEntry } from '../data/modes'
-import type { InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
+import type { ArmorDefinition, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
 export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
@@ -150,6 +150,41 @@ export function buyGun(
         ammo: ammoWithPurchase,
         ammoPerShot: gunDef.ammoPerShot,
       },
+    },
+  }
+}
+
+export function buyArmor(
+  player: PlayerState,
+  armorDef: ArmorDefinition,
+): { player: PlayerState; error?: string } {
+  if (player.caps < armorDef.price) return { player, error: "Not enough caps." }
+  return {
+    player: {
+      ...player,
+      caps: player.caps - armorDef.price,
+      armor: {
+        id: armorDef.id,
+        name: armorDef.name,
+        armorPoints: armorDef.armorPoints,
+        maxArmorPoints: armorDef.armorPoints,
+        repairCostPerAP: armorDef.repairCostPerAP,
+      },
+    },
+  }
+}
+
+export function repairArmor(player: PlayerState): { player: PlayerState; error?: string } {
+  if (!player.armor) return { player, error: "You don't have any armor." }
+  if (player.armor.armorPoints >= player.armor.maxArmorPoints) return { player, error: "Armor is already at full condition." }
+  const missingAP = player.armor.maxArmorPoints - player.armor.armorPoints
+  const cost = missingAP * player.armor.repairCostPerAP
+  if (player.caps < cost) return { player, error: `Not enough caps. Repair costs ${cost} caps.` }
+  return {
+    player: {
+      ...player,
+      caps: player.caps - cost,
+      armor: { ...player.armor, armorPoints: player.armor.maxArmorPoints },
     },
   }
 }

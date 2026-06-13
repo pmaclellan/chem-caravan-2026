@@ -17,6 +17,7 @@ export default {
         'pip-red':         'var(--pip-red)',
         'pip-border':      'var(--pip-border)',
         'pip-border-dim':  'var(--pip-border-dim)',
+        'pip-blue':        'var(--pip-blue)',
       },
       fontFamily: {
         'mono':    ['"Courier Prime"', 'Courier New', 'monospace'],
