@@ -26,6 +26,7 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
     ageOfDebt: 0,
     inventory: {},
     gun: null,
+    armor: null,
     debtPaidThisCycle: 0,
     debtWarnings: 0,
     debtWindowCapsPaid: 0,

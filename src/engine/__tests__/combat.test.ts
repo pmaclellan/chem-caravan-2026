@@ -72,6 +72,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     ageOfDebt: 0,
     inventory: {},
     gun: { id: 'pistol_10mm', name: '10mm Pistol', accuracy: 0.70, damage: 40, ammo: 20, ammoPerShot: 1 },
+    armor: null,
     ...overrides,
   }
 }
