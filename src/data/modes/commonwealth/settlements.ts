@@ -32,7 +32,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: true,
     hasFollowers: true,
     doctorCost: 200,
-    imageUrl: '/assets/settlements/diamond_city.webp',
+    imageUrl: '/assets/settlements/commonwealth/diamond_city.webp',
   },
   goodneighbor: {
     id: 'goodneighbor',
@@ -44,7 +44,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: true,
     hasFollowers: true,
     doctorCost: 150,
-    imageUrl: '/assets/settlements/goodneighbor.webp',
+    imageUrl: '/assets/settlements/commonwealth/goodneighbor.webp',
   },
   bunker_hill: {
     id: 'bunker_hill',
@@ -56,7 +56,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: false,
     hasFollowers: true,
     doctorCost: 0,
-    imageUrl: '/assets/settlements/bunker_hill.webp',
+    imageUrl: '/assets/settlements/commonwealth/bunker_hill.webp',
   },
   the_castle: {
     id: 'the_castle',
@@ -68,7 +68,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: true,
     hasFollowers: true,
     doctorCost: 100,
-    imageUrl: '/assets/settlements/the_castle.webp',
+    imageUrl: '/assets/settlements/commonwealth/the_castle.webp',
   },
   vault_81: {
     id: 'vault_81',
@@ -80,7 +80,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: false,
     hasFollowers: false,
     doctorCost: 100,
-    imageUrl: '/assets/settlements/vault_81.jpg',
+    imageUrl: '/assets/settlements/commonwealth/vault_81.jpg',
   },
   sanctuary_hills: {
     id: 'sanctuary_hills',
@@ -93,7 +93,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: false,
     hasFollowers: false,
     doctorCost: 0,
-    imageUrl: '/assets/settlements/sanctuary_hills.webp',
+    imageUrl: '/assets/settlements/commonwealth/sanctuary_hills.webp',
   },
   graygarden: {
     id: 'graygarden',
@@ -106,7 +106,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: false,
     hasFollowers: false,
     doctorCost: 0,
-    imageUrl: '/assets/settlements/graygarden.jpg',
+    imageUrl: '/assets/settlements/commonwealth/graygarden.jpg',
   },
   jamaica_plain: {
     id: 'jamaica_plain',
@@ -119,7 +119,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: true,
     hasFollowers: false,
     doctorCost: 0,
-    imageUrl: '/assets/settlements/jamaica_plain.webp',
+    imageUrl: '/assets/settlements/commonwealth/jamaica_plain.webp',
   },
   park_street_station: {
     id: 'park_street_station',
@@ -132,7 +132,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasGunShop: true,
     hasFollowers: false,
     doctorCost: 0,
-    imageUrl: '/assets/settlements/park_street_station.webp',
+    imageUrl: '/assets/settlements/commonwealth/park_street_station.webp',
   },
 }
 
