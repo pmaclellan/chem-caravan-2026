@@ -25,6 +25,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     ageOfDebt: 0,
     inventory: {},
     gun: null,
+    armor: null,
     ...overrides,
   }
 }
