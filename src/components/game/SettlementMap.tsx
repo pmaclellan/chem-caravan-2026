@@ -11,7 +11,7 @@ function dangerColor(danger: number): string {
 const ICON_SIZES = {
   SMALL:  { px: 10, strokeW: 1.5 },
   MEDIUM: { px: 12, strokeW: 2.0 },
-  LARGE:  { px: 14, strokeW: 3.0 },
+  LARGE:  { px: 14, strokeW: 2.5 },
 } as const
 
 type IconSize = typeof ICON_SIZES[keyof typeof ICON_SIZES]
@@ -148,7 +148,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
           <rect width={viewW} height={viewH} fill="url(#map-vignette)" />
 
           {/* Map title */}
-          <text x={viewW / 2} y="32" textAnchor="middle" fontSize="9.5"
+          <text x={viewW / 2} y="32" textAnchor="middle" fontSize="18"
             fontFamily='"Special Elite", serif'
             fill="rgba(80, 50, 18, 0.50)"
             letterSpacing="0.14em"
