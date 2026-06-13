@@ -272,6 +272,30 @@ export const ROADS: Road[] = [
     dangerLevel: 0.45,
     description: "TBD???",
   },
+  {
+    id: 'big_meg',
+    name: 'Unknown Road',
+    from: 'big_town',
+    to: 'megaton',
+    dangerLevel: 0.25,
+    description: "TBD???",
+  },
+  {
+    id: 'big_cc',
+    name: 'Unknown Road',
+    from: 'big_town',
+    to: 'canterbury_commons',
+    dangerLevel: 0.45,
+    description: "TBD???",
+  },
+  {
+    id: 'pf_cc',
+    name: 'Unknown Road',
+    from: 'paradise_falls',
+    to: 'canterbury_commons',
+    dangerLevel: 0.60,
+    description: "TBD???",
+  },
 
 ]
 

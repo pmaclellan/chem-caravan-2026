@@ -197,18 +197,18 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
   transitQuotes: CAP_QUOTES,
   mapTitle: 'CAPITAL WASTELAND',
   mapPositions: {
-    little_lamplight:    { x: 100, y: 200, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
     canterbury_commons:  { x: 500, y: 100, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
     paradise_falls:      { x: 200, y: 100, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
     megaton:             { x: 300, y: 400, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
     big_town:            { x: 360, y: 220, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
+    little_lamplight:    { x: 100, y: 260, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
+    tenpenny_tower:      { x: 140, y: 530, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
+    andale:              { x: 320, y: 560, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
+    girdershade:         { x: 100, y: 500, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
     underworld:          { x: 520, y: 400, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
-    washington_monument: { x: 430, y: 430, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
+    washington_monument: { x: 480, y: 430, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
     rivet_city:          { x: 500, y: 500, labelAnchor: 'start',  labelDx:  13, labelDy:   4 },
     the_citadel:         { x: 400, y: 460, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
-    tenpenny_tower:      { x: 260, y: 480, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
-    andale:              { x: 340, y: 460, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
-    girdershade:         { x: 160, y: 400, labelAnchor: 'middle', labelDx:   0, labelDy:  16 },
   },
 }
 
