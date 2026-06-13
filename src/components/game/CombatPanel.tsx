@@ -25,6 +25,7 @@ export default function CombatPanel({ player, combat }: Props) {
   const { flashKey: hpFlash }     = useValueFlash(player.health)
   const { flashKey: guardsFlash } = useValueFlash(player.guards)
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
+  const { flashKey: apFlash }     = useValueFlash(player.armor?.armorPoints ?? 0)
 
   const logRef = (el: HTMLDivElement | null) => {
     if (el) el.scrollTop = el.scrollHeight
@@ -55,14 +56,28 @@ export default function CombatPanel({ player, combat }: Props) {
       {/* Player status */}
       <div className="border border-pip-border rounded p-3">
         <div className="pip-label mb-1">You</div>
-        <div className="h-2.5 bg-pip-border-dim rounded overflow-hidden mb-2">
+        <div className="h-2.5 bg-pip-border-dim rounded overflow-hidden mb-1">
           <div
             className="h-full bg-pip-green transition-all duration-300"
             style={{ width: `${playerHpPct}%` }}
           />
         </div>
+        {player.armor && (() => {
+          const apPct = Math.max(0, Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * 100))
+          return (
+            <div className="h-2 bg-pip-border-dim rounded overflow-hidden mb-2">
+              <div className="h-full bg-pip-blue transition-all duration-300" style={{ width: `${apPct}%` }} />
+            </div>
+          )
+        })()}
+        {!player.armor && <div className="mb-2" />}
         <div className="text-xs text-pip-green-dim flex gap-3 flex-wrap">
           <FlashText flashKey={hpFlash} variant="red">{player.health} HP</FlashText>
+          {player.armor && (
+            <FlashText flashKey={apFlash} variant="amber">
+              <span className="text-pip-blue">{player.armor.armorPoints} AP</span>
+            </FlashText>
+          )}
           {player.gun && (
             <FlashText flashKey={ammoFlash} variant={ammoDir === 'down' ? 'red' : 'green'}>
               {player.gun.name} · {player.gun.ammo} ammo
@@ -88,6 +103,7 @@ export default function CombatPanel({ player, combat }: Props) {
             className={
               line.includes('dead') || line.includes('defeated') ? 'text-pip-amber' :
               line.includes('killed') || line.includes('hit you') || line.includes('flee') || line.includes('Missed') ? 'text-pip-red' :
+              line.includes('armor absorbs') ? 'text-pip-blue' :
               line.includes('Hit') ? 'text-pip-green-mid' :
               'text-pip-green'
             }

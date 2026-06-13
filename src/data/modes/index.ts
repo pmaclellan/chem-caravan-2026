@@ -1,8 +1,9 @@
-import type { EnemyType, GameModeId } from '../../types/game'
+import type { EnemyType, GameModeId, ArmorDefinition } from '../../types/game'
 import type { Settlement, Road } from './commonwealth/settlements'
 import type { GunDefinition } from './commonwealth/guns'
 import type { TravelEventDefinition } from './commonwealth/events'
 import type { TransitQuote } from './commonwealth/quotes'
+import { ARMORS, ARMOR_IDS } from '../armors'
 
 import { SETTLEMENTS as CW_SETTLEMENTS, ROADS as CW_ROADS, SETTLEMENT_IDS as CW_SETTLEMENT_IDS } from './commonwealth/settlements'
 import { GUNS as CW_GUNS, GUN_IDS as CW_GUN_IDS, AMMO_PRICE as CW_AMMO_PRICE, AMMO_WITH_PURCHASE as CW_AMMO_WITH_PURCHASE } from './commonwealth/guns'
@@ -20,7 +21,7 @@ import { TRAVEL_EVENT_DEFS as MOJ_EVENTS } from './mojave_wasteland/events'
 import { TRANSIT_QUOTES as MOJ_QUOTES } from './mojave_wasteland/quotes'
 
 // Re-export shared types so consumers can import from one place
-export type { Settlement, Road, GunDefinition, TravelEventDefinition, TransitQuote }
+export type { Settlement, Road, GunDefinition, ArmorDefinition, TravelEventDefinition, TransitQuote }
 
 export interface MapNodePosition {
   x: number
@@ -76,7 +77,7 @@ export interface GameModeConfig {
   enemyStats: Record<string, { health: number; damage: [number, number] }>
   // chems available in this mode's markets (subset of global CHEMS registry)
   availableChemIds: string[]
-  // world data — mode-specific settlements, roads, guns
+  // world data — mode-specific settlements, roads, guns, armor
   settlements: Record<string, Settlement>
   settlementIds: string[]
   roads: Road[]
@@ -84,6 +85,8 @@ export interface GameModeConfig {
   gunIds: string[]
   ammoPrice: number
   ammoWithPurchase: number
+  armors: Record<string, ArmorDefinition>
+  armorIds: string[]
   startingLocation: string
   travelEvents: TravelEventDefinition[]
   transitQuotes: TransitQuote[]
@@ -128,11 +131,13 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   surplusMultiplierMin: 0.25,
   surplusMultiplierMax: 0.55,
   enemies: [
-    { id: 'raider',              name: 'Raider',               caps: [20, 150], lootChems: ['jet', 'psycho', 'buffout', 'radx', 'radaway'] },
+    { id: 'raider',              name: 'Raider',               caps: [20, 150],   lootChems: ['jet', 'psycho', 'buffout', 'radx', 'radaway'] },
+    { id: 'feral_ghoul',         name: 'Feral Ghoul',          caps: [0, 20],     lootChems: ['radaway', 'radx'], countMultiplier: 1.5 },
     { id: 'brotherhood_paladin', name: 'Brotherhood Paladin',  caps: [500, 1000], lootChems: ['stimpak', 'medx'], eventOnly: true },
   ],
   enemyStats: {
     raider:              { health: 40,  damage: [10, 30] },
+    feral_ghoul:         { health: 20,  damage: [6, 16] },
     brotherhood_paladin: { health: 130, damage: [30, 55] },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'daytripper'],
@@ -143,6 +148,8 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   gunIds: CW_GUN_IDS,
   ammoPrice: CW_AMMO_PRICE,
   ammoWithPurchase: CW_AMMO_WITH_PURCHASE,
+  armors: ARMORS,
+  armorIds: ARMOR_IDS,
   startingLocation: 'diamond_city',
   travelEvents: CW_EVENTS,
   transitQuotes: CW_QUOTES,
@@ -175,12 +182,14 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
     { age: 12, damage: 999, message: "The last thing you see is a Talon Company contract with your name on it." },
   ],
   enemies: [
-    { id: 'raider',              name: 'Raider',               caps: [20, 150], lootChems: ['jet', 'psycho', 'buffout', 'radx', 'radaway'] },
-    { id: 'super_mutant',        name: 'Super Mutant',          caps: [10, 80],  lootChems: ['psycho', 'buffout', 'stimpak'] },
+    { id: 'raider',              name: 'Raider',               caps: [20, 150],   lootChems: ['jet', 'psycho', 'buffout', 'radx', 'radaway'] },
+    { id: 'feral_ghoul',         name: 'Feral Ghoul',          caps: [0, 20],     lootChems: ['radaway', 'radx'], countMultiplier: 1.5 },
+    { id: 'super_mutant',        name: 'Super Mutant',         caps: [10, 80],    lootChems: ['psycho', 'buffout', 'stimpak'] },
     { id: 'brotherhood_paladin', name: 'Brotherhood Paladin',  caps: [500, 1000], lootChems: ['stimpak', 'medx'], eventOnly: true },
   ],
   enemyStats: {
     raider:              { health: 45,  damage: [11, 32] },
+    feral_ghoul:         { health: 20,  damage: [6, 16] },
     super_mutant:        { health: 70,  damage: [15, 35] },
     brotherhood_paladin: { health: 130, damage: [30, 55] },
   },

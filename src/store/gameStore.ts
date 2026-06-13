@@ -27,6 +27,8 @@ import {
   buyBrahmin,
   buyGun,
   buyAmmo,
+  buyArmor,
+  repairArmor,
   calculateFinalScore,
   resolveGameStatus,
 } from '../engine/economy'
@@ -88,6 +90,8 @@ interface GameStore {
   purchaseBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
   purchaseAmmo: (rounds: number) => void
+  purchaseArmor: (armorId: string) => void
+  repairArmor: () => void
 
   // Internal
   _setToast: (msg: string | null) => void
@@ -97,8 +101,15 @@ const VALID_MODES = new Set<GameModeId>(['commonwealth', 'capital_wasteland', 'm
 
 // Old v1.0 saves have no mode field. Coerce to 'commonwealth' so GAME_MODES[mode] is never undefined.
 function normalizeState(state: GameState): GameState {
-  if (VALID_MODES.has(state.mode)) return state
-  return { ...state, mode: 'commonwealth' }
+  const mode = VALID_MODES.has(state.mode) ? state.mode : 'commonwealth'
+  return {
+    ...state,
+    mode,
+    player: {
+      ...state.player,
+      armor: state.player.armor ?? null,
+    },
+  }
 }
 
 function resolveEndStatus(state: GameState): 'won' | 'dead' | 'bankrupt' {
@@ -509,6 +520,27 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyAmmo(state.player, rounds, mc.ammoPrice)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Bought ${rounds} rounds.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    purchaseArmor: (armorId) => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const armorDef = mc.armors[armorId]
+        if (!armorDef) return state
+        const { player, error } = buyArmor(state.player, armorDef)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Purchased ${armorDef.name}. (${armorDef.armorPoints} AP)`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    repairArmor: () => {
+      mutate(state => {
+        const { player, error } = repairArmor(state.player)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Armor repaired to full condition.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },

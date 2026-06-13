@@ -15,6 +15,7 @@
   --pip-red:         #8c1c1c;
   --pip-border:      #8a6020;
   --pip-border-dim:  #cdb070;
+  --pip-blue:        #2a5a8a;
 }
 
 [data-mode="capital_wasteland"] {
@@ -27,6 +28,7 @@
   --pip-red:         #7a2010;
   --pip-border:      #4e6038;
   --pip-border-dim:  #90a870;
+  --pip-blue:        #2a5a8a;
 }
 
 [data-mode="mojave_wasteland"] {
@@ -39,6 +41,7 @@
   --pip-red:         #8c1c10;
   --pip-border:      #a05020;
   --pip-border-dim:  #d4a060;
+  --pip-blue:        #2a5a8a;
 }
 
 @layer base {

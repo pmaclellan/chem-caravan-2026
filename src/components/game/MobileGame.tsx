@@ -114,6 +114,21 @@ export default function MobileGame() {
             </div>
           </div>
 
+          {player.armor && (() => {
+            const apPct = Math.max(0, Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * 100))
+            return (
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="pip-label">Armor</span>
+                  <span className="text-xs text-pip-blue">{player.armor.armorPoints} / {player.armor.maxArmorPoints} AP</span>
+                </div>
+                <div className="h-3 bg-pip-border-dim rounded overflow-hidden">
+                  <div className="h-full bg-pip-blue transition-all duration-300" style={{ width: `${apPct}%` }} />
+                </div>
+              </div>
+            )
+          })()}
+
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="pip-label">Turn</span>

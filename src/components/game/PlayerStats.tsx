@@ -27,6 +27,19 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         </div>
       </div>
 
+      {player.armor && (() => {
+        const apPct = Math.max(0, Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * 100))
+        return (
+          <div>
+            <div className="pip-label">Armor</div>
+            <div className="text-xs text-pip-blue mb-1">{player.armor.armorPoints} / {player.armor.maxArmorPoints} AP</div>
+            <div className="h-3 bg-pip-border-dim rounded overflow-hidden">
+              <div className="h-full bg-pip-blue transition-all duration-300" style={{ width: `${apPct}%` }} />
+            </div>
+          </div>
+        )
+      })()}
+
       <div>
         <div className="pip-label">Turn</div>
         <div className="pip-value">{turn} <span className="text-pip-green-dim text-sm">/ {maxTurns}</span></div>
@@ -72,6 +85,16 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
           <div className="text-pip-green text-sm">{player.gun.name}</div>
           <div className="text-xs text-pip-green-dim">
             Ammo: {player.gun.ammo} | Acc: {Math.round(player.gun.accuracy * 100)}%
+          </div>
+        </div>
+      )}
+
+      {player.armor && (
+        <div className="border-t border-pip-border pt-2">
+          <div className="pip-label">Armor</div>
+          <div className="text-pip-blue text-sm">{player.armor.name}</div>
+          <div className="text-xs text-pip-green-dim">
+            {player.armor.armorPoints} / {player.armor.maxArmorPoints} AP
           </div>
         </div>
       )}
