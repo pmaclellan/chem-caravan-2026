@@ -8,6 +8,14 @@ function dangerColor(danger: number): string {
   return '#4a6a20'
 }
 
+const ICON_SIZES = {
+  SMALL:  { px: 10, strokeW: 1.5 },
+  MEDIUM: { px: 12, strokeW: 2.0 },
+  LARGE:  { px: 14, strokeW: 3.0 },
+} as const
+
+type IconSize = typeof ICON_SIZES[keyof typeof ICON_SIZES]
+
 // Inlined path data from the 24×24 viewBox SVGs — avoids SVG-in-SVG loading restrictions
 const SERVICE_ICONS: { key: 'hasDoctor' | 'hasLoanshark' | 'hasGunShop' | 'hasFollowers'; d: string }[] = [
   {
@@ -29,7 +37,7 @@ const SERVICE_ICONS: { key: 'hasDoctor' | 'hasLoanshark' | 'hasGunShop' | 'hasFo
 ]
 
 function ServiceIcons({
-  s, anchorX, nodeY, labelAnchor, labelDx, labelDy, size,
+  s, anchorX, nodeY, labelAnchor, labelDx, labelDy, iconSize,
 }: {
   s: GameModeConfig['settlements'][string]
   anchorX: number
@@ -37,33 +45,32 @@ function ServiceIcons({
   labelAnchor: 'middle' | 'start' | 'end'
   labelDx: number
   labelDy: number
-  size: number
+  iconSize: IconSize
 }) {
   const active = SERVICE_ICONS.filter(i => s[i.key])
   if (active.length === 0) return null
 
+  const { px, strokeW } = iconSize
   const gap = 2
-  const totalW = active.length * size + (active.length - 1) * gap
+  const totalW = active.length * px + (active.length - 1) * gap
   const ax = anchorX + labelDx
   const startX = labelAnchor === 'middle' ? ax - totalW / 2
                : labelAnchor === 'end'    ? ax - totalW
                : ax
 
-  // For above-node labels, use size*2 gap so icons clear the full text ascent zone
+  // For above-node labels, use px*2 gap so icons clear the full text ascent zone
   const rowY = labelDy < 0
-    ? nodeY + labelDy - size * 2
+    ? nodeY + labelDy - px * 2
     : nodeY + labelDy + 3
 
-  const scale = size / 24
-  // strokeW counteracts the scale so rendered stroke stays at ~1.5px across all sizes
-  const strokeW = 36 / size
+  const scale = px / 24
 
   return (
     <>
       {active.map((icon, i) => (
         <g
           key={icon.key}
-          transform={`translate(${startX + i * (size + gap)}, ${rowY}) scale(${scale})`}
+          transform={`translate(${startX + i * (px + gap)}, ${rowY}) scale(${scale})`}
           opacity={0.75}
         >
           <path
@@ -185,7 +192,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const fontSize    = isCurrent ? 11.5 : isAdj ? 10 : 8.5
             const textStrokeW = isCurrent ? 3.5 : isAdj ? 3   : 2
 
-            const iconSize = isCurrent ? 14 : isAdj ? 12 : 10
+            const iconSize = isCurrent ? ICON_SIZES.LARGE : isAdj ? ICON_SIZES.MEDIUM : ICON_SIZES.SMALL
 
             return (
               <g key={id}
@@ -227,7 +234,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
                   labelAnchor={labelAnchor}
                   labelDx={labelDx}
                   labelDy={labelDy}
-                  size={iconSize}
+                  iconSize={iconSize}
                 />
               </g>
             )
