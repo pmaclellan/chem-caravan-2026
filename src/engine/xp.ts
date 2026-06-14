@@ -1,0 +1,74 @@
+import type { PlayerState } from '../types/game'
+
+export enum XpEventType {
+  RoadTravel          = 'road_travel',
+  CombatVictory       = 'combat_victory',
+  SettlementDiscovery = 'settlement_discovery',
+  DebtSurvival        = 'debt_survival',
+  TradeProfit         = 'trade_profit',
+}
+
+const XP_CONFIG = {
+  ROAD_TRAVEL_FACTOR:   100,  // floor(dangerLevel × scaleFactor × 100)
+  COMBAT_BASE:           50,  // flat per victory, multiplied by scaleFactor
+  COMBAT_PER_ENEMY:      20,  // per enemy in the group
+  SETTLEMENT_DISCOVERY:  50,  // flat first-visit bonus
+  DEBT_SURVIVAL:        100,  // flat survived-enforcement bonus
+  TRADE_PROFIT_DIVISOR:   5,  // floor(profit / 5)
+} as const
+
+// scaleFactor = 1 in standard games; ramps up in Free Play as turns increase.
+export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play'): number {
+  if (gameType !== 'free_play') return 1
+  return 1 + turn / 60
+}
+
+export type XpEventParams =
+  | { type: XpEventType.RoadTravel;          dangerLevel: number; scaleFactor: number }
+  | { type: XpEventType.CombatVictory;       enemyCount: number;  scaleFactor: number }
+  | { type: XpEventType.SettlementDiscovery; settlementName: string }
+  | { type: XpEventType.DebtSurvival }
+  | { type: XpEventType.TradeProfit;         profit: number }
+
+export function calculateXp(event: XpEventParams): number {
+  switch (event.type) {
+    case XpEventType.RoadTravel:
+      return Math.floor(event.dangerLevel * event.scaleFactor * XP_CONFIG.ROAD_TRAVEL_FACTOR)
+    case XpEventType.CombatVictory:
+      return Math.floor(XP_CONFIG.COMBAT_BASE * event.scaleFactor) + XP_CONFIG.COMBAT_PER_ENEMY * event.enemyCount
+    case XpEventType.SettlementDiscovery:
+      return XP_CONFIG.SETTLEMENT_DISCOVERY
+    case XpEventType.DebtSurvival:
+      return XP_CONFIG.DEBT_SURVIVAL
+    case XpEventType.TradeProfit:
+      return Math.floor(event.profit / XP_CONFIG.TRADE_PROFIT_DIVISOR)
+  }
+}
+
+function logMessage(event: XpEventParams, amount: number): string {
+  switch (event.type) {
+    case XpEventType.RoadTravel:
+      return `+${amount} XP — road taken.`
+    case XpEventType.CombatVictory:
+      return `+${amount} XP — combat victory!`
+    case XpEventType.SettlementDiscovery:
+      return `+${amount} XP — first visit to ${event.settlementName}!`
+    case XpEventType.DebtSurvival:
+      return `+${amount} XP — survived debt enforcement.`
+    case XpEventType.TradeProfit:
+      return `+${amount} XP — trade profit.`
+  }
+}
+
+// Returns the updated player and a log message, or null if no XP was awarded.
+export function awardXp(
+  player: PlayerState,
+  event: XpEventParams,
+): { player: PlayerState; logMessage: string | null } {
+  const amount = calculateXp(event)
+  if (amount <= 0) return { player, logMessage: null }
+  return {
+    player: { ...player, xp: player.xp + amount },
+    logMessage: logMessage(event, amount),
+  }
+}

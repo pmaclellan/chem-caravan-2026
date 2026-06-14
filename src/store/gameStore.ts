@@ -32,6 +32,7 @@ import {
   calculateFinalScore,
   resolveGameStatus,
 } from '../engine/economy'
+import { awardXp, XpEventType } from '../engine/xp'
 import type { SettlementMarket, WorldState } from '../types/game'
 import { applyMarketEvents } from '../engine/market'
 
@@ -438,11 +439,9 @@ export const useGameStore = create<GameStore>((set, get) => {
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
         if (profit > 0) {
-          const tradeXp = Math.floor(profit / 5)
-          if (tradeXp > 0) {
-            player = { ...player, xp: (player.xp ?? 0) + tradeXp }
-            log.push({ turn: state.world.turn, message: `+${tradeXp} XP — trade profit.`, type: 'profit' as const })
-          }
+          const { player: px, logMessage: xpMsg } = awardXp(player, { type: XpEventType.TradeProfit, profit })
+          player = px
+          if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
         return { ...state, player, world, log }
       })
@@ -492,11 +491,9 @@ export const useGameStore = create<GameStore>((set, get) => {
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
         if (profit > 0) {
-          const tradeXp = Math.floor(profit / 5)
-          if (tradeXp > 0) {
-            player = { ...player, xp: (player.xp ?? 0) + tradeXp }
-            log.push({ turn: state.world.turn, message: `+${tradeXp} XP — trade profit.`, type: 'profit' as const })
-          }
+          const { player: px, logMessage: xpMsg } = awardXp(player, { type: XpEventType.TradeProfit, profit })
+          player = px
+          if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
