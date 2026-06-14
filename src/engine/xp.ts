@@ -11,12 +11,11 @@ export const XpEventType = {
 export type XpEventType = typeof XpEventType[keyof typeof XpEventType]
 
 const XP_CONFIG = {
-  ROAD_TRAVEL_FACTOR:   100,  // floor(dangerLevel × scaleFactor × 100)
-  COMBAT_BASE:           50,  // flat per victory, multiplied by scaleFactor
-  COMBAT_PER_ENEMY:      20,  // per enemy in the group
-  SETTLEMENT_DISCOVERY:  50,  // flat first-visit bonus
+  ROAD_TRAVEL_FACTOR:   30,   // floor(dangerLevel × scaleFactor × 30) — small risk bonus vs. combat
+  COMBAT_BASE:          50,   // flat victory bonus, multiplied by scaleFactor
+  SETTLEMENT_DISCOVERY: 50,   // flat first-visit bonus
   DEBT_SURVIVAL:        100,  // flat survived-enforcement bonus
-  TRADE_PROFIT_DIVISOR:   5,  // floor(profit / 5)
+  TRADE_PROFIT_DIVISOR:  5,   // floor(profit / 5)
 } as const
 
 // scaleFactor = 1 in standard games; ramps up in Free Play as turns increase.
@@ -27,7 +26,7 @@ export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play')
 
 export type XpEventParams =
   | { type: 'road_travel';          dangerLevel: number; scaleFactor: number }
-  | { type: 'combat_victory';       enemyCount: number;  scaleFactor: number }
+  | { type: 'combat_victory';       xpFromKills: number; scaleFactor: number }
   | { type: 'settlement_discovery'; settlementName: string }
   | { type: 'debt_survival' }
   | { type: 'trade_profit';         profit: number }
@@ -37,7 +36,7 @@ export function calculateXp(event: XpEventParams): number {
     case XpEventType.RoadTravel:
       return Math.floor(event.dangerLevel * event.scaleFactor * XP_CONFIG.ROAD_TRAVEL_FACTOR)
     case XpEventType.CombatVictory:
-      return Math.floor(XP_CONFIG.COMBAT_BASE * event.scaleFactor) + XP_CONFIG.COMBAT_PER_ENEMY * event.enemyCount
+      return Math.floor((XP_CONFIG.COMBAT_BASE + event.xpFromKills) * event.scaleFactor)
     case XpEventType.SettlementDiscovery:
       return XP_CONFIG.SETTLEMENT_DISCOVERY
     case XpEventType.DebtSurvival:

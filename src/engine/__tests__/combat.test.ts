@@ -40,7 +40,7 @@ const testMode = {
     { id: 'raider', name: 'Raider', caps: [20, 150], lootChems: ['jet', 'psycho'] },
   ],
   enemyStats: {
-    raider: { health: 40, damage: [10, 30] },
+    raider: { health: 40, damage: [10, 30], xpReward: 15 },
   },
   availableChemIds: ['jet', 'psycho', 'stimpak'],
 } as unknown as GameModeConfig
@@ -53,8 +53,8 @@ const multiEnemyMode = {
     { id: 'super_mutant', name: 'Super Mutant',  caps: [10, 80],  lootChems: ['psycho'] },
   ],
   enemyStats: {
-    raider:       { health: 40, damage: [10, 30] },
-    super_mutant: { health: 70, damage: [15, 35] },
+    raider:       { health: 40, damage: [10, 30], xpReward: 15 },
+    super_mutant: { health: 70, damage: [15, 35], xpReward: 25 },
   },
   availableChemIds: ['jet', 'psycho', 'stimpak'],
 } as unknown as GameModeConfig
@@ -121,7 +121,7 @@ describe('initiateCombat', () => {
   it('enemies with higher stats reflect harder mode', () => {
     const harderMode: GameModeConfig = {
       ...testMode,
-      enemyStats: { raider: { health: 80, damage: [20, 50] } },
+      enemyStats: { raider: { health: 80, damage: [20, 50], xpReward: 15 } },
     }
     const combat = initiateCombat(0.5, harderMode)
     expect(combat.enemies.every(e => e.maxHealth === 80)).toBe(true)
@@ -251,7 +251,7 @@ describe('resolveRun', () => {
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(20) // mid-damage
     const harderMode: GameModeConfig = {
       ...testMode,
-      enemyStats: { raider: { health: 40, damage: [30, 60] } },
+      enemyStats: { raider: { health: 40, damage: [30, 60], xpReward: 15 } },
     }
     const combat = initiateCombat(0.2, harderMode) // 1 enemy
     const player = makePlayer({ health: 200 })

@@ -425,7 +425,11 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
 
   if (combat.phase === 'won') {
     const sf = getScaleFactor(turn, state.gameType)
-    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, enemyCount: combat.enemies.length, scaleFactor: sf })
+    const mc = GAME_MODES[state.mode]
+    const xpFromKills = combat.enemies
+      .filter(e => e.dead)
+      .reduce((sum, e) => sum + (mc.enemyStats[e.typeId]?.xpReward ?? 15), 0)
+    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, xpFromKills, scaleFactor: sf })
     const xpGained = p4.xp - player.xp
     player = p4
     combat = { ...combat, xpGained }

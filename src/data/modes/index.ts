@@ -74,7 +74,7 @@ export interface GameModeConfig {
   surplusMultiplierMax: number
   // enemies — identity/loot only; health/damage per enemy in enemyStats
   enemies: EnemyType[]
-  enemyStats: Record<string, { health: number; damage: [number, number] }>
+  enemyStats: Record<string, { health: number; damage: [number, number]; xpReward: number }>
   // chems available in this mode's markets (subset of global CHEMS registry)
   availableChemIds: string[]
   // world data — mode-specific settlements, roads, guns, armor
@@ -137,10 +137,10 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     { id: 'brotherhood_paladin', name: 'Brotherhood Paladin',  caps: [500, 1000], lootChems: ['stimpak', 'medx'], eventOnly: true },
   ],
   enemyStats: {
-    raider:              { health: 40,  damage: [10, 30] },
-    feral_ghoul:         { health: 20,  damage: [6, 16] },
-    yao_guai:            { health: 85,  damage: [28, 48] },
-    brotherhood_paladin: { health: 130, damage: [30, 55] },
+    raider:              { health: 40,  damage: [10, 30], xpReward: 15 },
+    feral_ghoul:         { health: 20,  damage: [6, 16],  xpReward: 8  },
+    yao_guai:            { health: 85,  damage: [28, 48], xpReward: 40 },
+    brotherhood_paladin: { health: 130, damage: [30, 55], xpReward: 60 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'daytripper'],
   settlements: CW_SETTLEMENTS,
@@ -192,12 +192,12 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
     { id: 'brotherhood_paladin', name: 'Brotherhood Paladin',  caps: [500, 1000], lootChems: ['stimpak', 'medx'], eventOnly: true },
   ],
   enemyStats: {
-    raider:              { health: 45,  damage: [11, 32] },
-    feral_ghoul:         { health: 20,  damage: [6, 16] },
-    super_mutant:        { health: 70,  damage: [15, 35] },
-    radscorpion:         { health: 70,  damage: [20, 42] },
-    yao_guai:            { health: 85,  damage: [28, 48] },
-    brotherhood_paladin: { health: 130, damage: [30, 55] },
+    raider:              { health: 45,  damage: [11, 32], xpReward: 15 },
+    feral_ghoul:         { health: 20,  damage: [6, 16],  xpReward: 8  },
+    super_mutant:        { health: 70,  damage: [15, 35], xpReward: 25 },
+    radscorpion:         { health: 70,  damage: [20, 42], xpReward: 30 },
+    yao_guai:            { health: 85,  damage: [28, 48], xpReward: 40 },
+    brotherhood_paladin: { health: 130, damage: [30, 55], xpReward: 60 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'nuka_cola_quantum'],
   settlements: CAP_SETTLEMENTS,
@@ -251,12 +251,12 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
     { id: 'ncr_ranger',   name: 'NCR Ranger',   caps: [500, 1000], lootChems: ['stimpak', 'radx'], eventOnly: true },
   ],
   enemyStats: {
-    fiend:       { health: 40,  damage: [10, 30] },
-    great_khan:  { health: 55,  damage: [14, 32] },
-    legionnaire: { health: 70,  damage: [22, 42] },
-    deathclaw:   { health: 140, damage: [50, 90] },
-    radscorpion: { health: 70,  damage: [20, 42] },
-    ncr_ranger:  { health: 110, damage: [28, 50] },
+    fiend:       { health: 40,  damage: [10, 30], xpReward: 15 },
+    great_khan:  { health: 55,  damage: [14, 32], xpReward: 20 },
+    legionnaire: { health: 70,  damage: [22, 42], xpReward: 35 },
+    deathclaw:   { health: 140, damage: [50, 90], xpReward: 80 },
+    radscorpion: { health: 70,  damage: [20, 42], xpReward: 30 },
+    ncr_ranger:  { health: 110, damage: [28, 50], xpReward: 50 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'turbo', 'rocket'],
   settlements: MOJ_SETTLEMENTS,
