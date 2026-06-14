@@ -145,6 +145,11 @@ export default function MobileGame() {
               </div>
             )}
           </div>
+
+          <div className="flex justify-between items-center">
+            <span className="pip-label">XP</span>
+            <span className="font-display text-pip-blue">{(player.xp ?? 0).toLocaleString()}</span>
+          </div>
         </div>
 
         {/* Finances */}

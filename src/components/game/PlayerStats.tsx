@@ -52,7 +52,7 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
 
       <div>
         <div className="pip-label">XP</div>
-        <div className="font-display text-lg text-pip-amber">{(player.xp ?? 0).toLocaleString()}</div>
+        <div className="font-display text-lg text-pip-blue">{(player.xp ?? 0).toLocaleString()}</div>
       </div>
 
       <div className="border-t border-pip-border pt-2">

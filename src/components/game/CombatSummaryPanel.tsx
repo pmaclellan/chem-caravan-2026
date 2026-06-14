@@ -22,8 +22,8 @@ const KEYFRAMES = `
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes ambientGlow {
-    0%, 100% { box-shadow: 0 0 4px var(--pip-amber), inset 0 0 6px rgba(196,80,26,0.06); }
-    50%       { box-shadow: 0 0 14px var(--pip-amber), inset 0 0 12px rgba(196,80,26,0.12); }
+    0%, 100% { box-shadow: 0 0 4px var(--pip-blue), inset 0 0 6px rgba(42,90,138,0.06); }
+    50%       { box-shadow: 0 0 14px var(--pip-blue), inset 0 0 12px rgba(42,90,138,0.12); }
   }
   @keyframes btnReady {
     0%, 100% { opacity: 1; }
@@ -158,7 +158,7 @@ export default function CombatSummaryPanel({ combat }: Props) {
       {/* ── XP box ────────────────────────────────────────────── */}
       {won && xpGained > 0 && (
         <div
-          className="border border-pip-amber rounded mt-4 px-4 py-3 flex items-baseline justify-between"
+          className="border border-pip-blue rounded mt-4 px-4 py-3 flex items-baseline justify-between"
           style={{
             animation: 'riseIn 0.4s ease 820ms both, ambientGlow 2.4s ease-in-out 1.3s infinite',
           }}
@@ -167,7 +167,7 @@ export default function CombatSummaryPanel({ combat }: Props) {
             <div className="pip-label text-xs tracking-widest mb-0.5">XP EARNED</div>
             <div className="text-pip-green-dim text-xs opacity-70">this combat</div>
           </div>
-          <span className="font-display text-3xl text-pip-amber tabular-nums">+{xpCounted}</span>
+          <span className="font-display text-3xl text-pip-blue tabular-nums">+{xpCounted}</span>
         </div>
       )}
 
