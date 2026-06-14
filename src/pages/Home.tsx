@@ -50,12 +50,13 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     async function checkUnlock() {
+      // status='won' only exists on standard games — free play always ends dead/bankrupt.
+      // No game_type filter needed, and avoids a dependency on migration 005 being applied.
       const { data } = await supabase
         .from('games')
         .select('mode')
         .eq('user_id', user!.id)
         .eq('status', 'won')
-        .eq('game_type', 'standard')
       if (!data) return
       const wonModes = new Set(data.map((r: { mode: string | null }) => r.mode).filter(Boolean))
       setFreePlayUnlocked(
