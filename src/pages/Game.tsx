@@ -22,7 +22,7 @@ type ActiveTab = 'market' | 'travel' | 'services'
 export default function Game() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { gameState, loadActiveGame, toast, _setToast } = useGameStore()
+  const { gameState, loadActiveGame, toast, _setToast, retire } = useGameStore()
   const [tab, setTab] = useState<ActiveTab>('market')
   const isMobile = useIsMobile()
 
@@ -95,6 +95,9 @@ export default function Game() {
             <div className="text-pip-amber text-xs font-mono animate-pulse">
               {world.activeMarketEvents.length} MARKET EVENT{world.activeMarketEvents.length > 1 ? 'S' : ''} ACTIVE
             </div>
+          )}
+          {gameState.gameType === 'free_play' && !isActionBlocked && (
+            <button className="pip-btn-amber text-xs" onClick={() => retire()}>RETIRE</button>
           )}
           <button className="pip-btn text-xs" onClick={() => navigate('/')}>MENU</button>
         </div>
@@ -195,21 +198,31 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
   const { player, gameOverReason, endReason, log } = gameState
   const isFreePlay = gameState.gameType === 'free_play'
   const score = player.caps - player.debt
-  const isWin = gameOverReason === 'turns'
+  const isRetired = gameOverReason === 'retired'
+  const isWin = gameOverReason === 'turns' || isRetired
   const [logOpen, setLogOpen] = useState(false)
 
   const subtitle = endReason ?? (
+    gameOverReason === 'retired' ? 'You chose to hang up your pack.' :
     gameOverReason === 'turns'   ? 'Time ran out on your caravan run.' :
     gameOverReason === 'combat'  ? 'You were killed on the road.' :
     gameOverReason === 'debt'    ? 'Your debtors finally caught up with you.' :
     'Game ended.'
   )
 
+  const titleText =
+    isRetired          ? 'RETIRED' :
+    isFreePlay         ? 'RUN ENDED' :
+    isWin              ? 'GAME OVER' :
+    'YOU DIED'
+
+  const titleColor = isRetired ? 'text-pip-amber' : (isWin ? 'text-pip-green' : 'text-pip-red')
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-pip-bg" data-mode={gameState.mode}>
       <div className="pip-panel max-w-md w-full text-center space-y-4">
-        <div className="font-display text-5xl text-pip-red">
-          {isFreePlay ? 'RUN ENDED' : (isWin ? 'GAME OVER' : 'YOU DIED')}
+        <div className={`font-display text-5xl ${titleColor}`}>
+          {titleText}
         </div>
         {isFreePlay && <div className="text-pip-amber text-xs font-mono tracking-widest">FREE PLAY</div>}
         <div className="text-pip-green-dim text-sm">{subtitle}</div>

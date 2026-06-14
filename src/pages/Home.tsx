@@ -27,31 +27,23 @@ export default function Home() {
   const store     = useGameStore()
   const { activeGameSummaries, freePlaySummary, loadActiveGames, startNewGame, loadGameById, clearGame } = store
 
-  const [showAuth,     setShowAuth]     = useState(false)
-  const [showTutorial, setShowTutorial] = useState(false)
-  const [selectedMode, setSelectedMode] = useState<GameModeId>('commonwealth')
-  const [charName,     setCharName]     = useState('')
-  const [showNewGame,  setShowNewGame]  = useState(false)
+  const [showAuth,       setShowAuth]       = useState(false)
+  const [showTutorial,   setShowTutorial]   = useState(false)
+  const [selectedMode,   setSelectedMode]   = useState<GameModeId>('commonwealth')
+  const [gameType,       setGameType]       = useState<'standard' | 'free_play'>('standard')
+  const [charName,       setCharName]       = useState('')
+  const [showNewGame,    setShowNewGame]    = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
-  const [starting,     setStarting]     = useState(false)
-
-  // Free Play state
+  const [starting,       setStarting]       = useState(false)
   const [freePlayUnlocked, setFreePlayUnlocked] = useState(false)
-  const [showFreePlayNew,  setShowFreePlayNew]  = useState(false)
-  const [freePlayMode,     setFreePlayMode]     = useState<GameModeId>('commonwealth')
-  const [freePlayName,     setFreePlayName]     = useState('')
-  const [freePlayStarting, setFreePlayStarting] = useState(false)
 
   useEffect(() => {
     if (user) loadActiveGames(user.id)
   }, [user, loadActiveGames])
 
-  // Check if free play is unlocked (won at least one game in each of the 3 modes)
   useEffect(() => {
     if (!user) return
     async function checkUnlock() {
-      // status='won' only exists on standard games — free play always ends dead/bankrupt.
-      // No game_type filter needed, and avoids a dependency on migration 005 being applied.
       const { data } = await supabase
         .from('games')
         .select('mode')
@@ -68,31 +60,39 @@ export default function Home() {
     checkUnlock()
   }, [user])
 
+  // When switching to free play, highlight the existing run's mode if there is one
+  useEffect(() => {
+    if (gameType === 'free_play' && freePlaySummary) {
+      setSelectedMode(freePlaySummary.modeId)
+    }
+  }, [gameType, freePlaySummary])
+
+  // Reset action state when switching game type
+  useEffect(() => {
+    setShowNewGame(false)
+    setConfirmAbandon(false)
+    setCharName('')
+  }, [gameType])
+
   async function handleContinue(gameId: string) {
     await loadGameById(gameId)
     navigate('/game')
   }
 
-  async function handleStartNew() {
+  async function handleStart() {
     if (!user || !charName.trim()) return
     setStarting(true)
     clearGame()
-    await startNewGame(charName.trim(), user.id, selectedMode)
+    await startNewGame(charName.trim(), user.id, selectedMode, gameType)
     navigate('/game')
   }
 
-  async function handleStartFreePlay() {
-    if (!user || !freePlayName.trim()) return
-    setFreePlayStarting(true)
-    clearGame()
-    await startNewGame(freePlayName.trim(), user.id, freePlayMode, 'free_play')
-    navigate('/game')
-  }
+  const existingRun = gameType === 'standard'
+    ? activeGameSummaries?.[selectedMode]
+    : freePlaySummary
 
-  function requestNewGame(modeId: GameModeId) {
-    setSelectedMode(modeId)
-    const existing = activeGameSummaries?.[modeId]
-    if (existing) {
+  function requestNewGame() {
+    if (existingRun) {
       setConfirmAbandon(true)
     } else {
       setShowNewGame(true)
@@ -100,56 +100,67 @@ export default function Home() {
     setCharName('')
   }
 
+  function handleModeSelect(modeId: GameModeId) {
+    setSelectedMode(modeId)
+    if (gameType === 'free_play') {
+      setConfirmAbandon(false)
+      setShowNewGame(false)
+    }
+  }
+
+  const isFreePlay = gameType === 'free_play'
+
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden" data-mode={selectedMode}>
-      {/* Background image — portrait version on narrow viewports */}
+    <div
+      className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden"
+      data-mode={selectedMode}
+    >
+      {/* Background */}
       <div className="absolute inset-0">
         <picture>
           <source media="(max-width: 639px)" srcSet="/assets/main_menu_background_mobile.png" />
           <img src="/assets/main_menu_background.png" alt="" className="w-full h-full object-cover object-center" />
         </picture>
       </div>
-      {/* Mode-tinted color wash — sits on top of image so mode changes are visible */}
       <div className="absolute inset-0 bg-pip-bg opacity-30" />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
-      <div className="relative max-w-2xl w-full pip-panel" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 75%, transparent)' }}>
+      <div
+        className="relative max-w-2xl w-full pip-panel"
+        style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 75%, transparent)' }}
+      >
         {!user ? (
-          /* ── Logged out ─────────────────────────────────────────────────── */
           <div className="space-y-3">
             <button className="pip-btn w-full text-xl" onClick={() => setShowAuth(true)}>
               ENTER THE WASTELAND
             </button>
             <div className="flex gap-2">
-              <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>
-                LEADERBOARD
-              </button>
-              <button className="pip-btn flex-1" onClick={() => navigate('/how-to-play')}>
-                HOW TO PLAY
-              </button>
+              <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
+              <button className="pip-btn flex-1" onClick={() => navigate('/how-to-play')}>HOW TO PLAY</button>
             </div>
           </div>
         ) : (
-          /* ── Logged in ──────────────────────────────────────────────────── */
           <div className="space-y-5">
 
             {/* Mode cards */}
             <div>
-              <div className="pip-label mb-3">Select Region</div>
+              <div className="pip-label mb-3">SELECT REGION</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {MODE_IDS.map(modeId => {
-                  const mc       = GAME_MODES[modeId]
-                  const summary  = activeGameSummaries?.[modeId]
-                  const isActive = selectedMode === modeId
+                  const mc         = GAME_MODES[modeId]
+                  const stdRun     = activeGameSummaries?.[modeId]
+                  const fpRun      = freePlaySummary?.modeId === modeId ? freePlaySummary : null
+                  const displayRun = isFreePlay ? fpRun : stdRun
+                  const isSelected = selectedMode === modeId
 
                   return (
                     <div
                       key={modeId}
-                      onClick={() => setSelectedMode(modeId)}
+                      onClick={() => handleModeSelect(modeId)}
                       className={`border rounded p-3 cursor-pointer transition-colors duration-100 ${
-                        isActive
+                        isSelected
                           ? 'border-pip-amber bg-pip-bg'
                           : 'border-pip-border hover:border-pip-green'
                       }`}
@@ -160,10 +171,12 @@ export default function Home() {
                         {DIFFICULTY_LABEL[modeId]}
                       </div>
 
-                      {summary ? (
+                      {displayRun ? (
                         <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs">
-                          <div className="text-pip-green font-display">{summary.characterName}</div>
-                          <div className="text-pip-green-dim">Turn {summary.turn}/30</div>
+                          <div className="text-pip-green font-display">{displayRun.characterName}</div>
+                          <div className="text-pip-green-dim">
+                            Turn {displayRun.turn}{!isFreePlay ? '/30' : ''}
+                          </div>
                         </div>
                       ) : (
                         <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs text-pip-green-dim">
@@ -176,21 +189,65 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Action buttons for selected mode */}
-            <div className="space-y-2">
-              {activeGameSummaries?.[selectedMode] && !showNewGame && !confirmAbandon && (
+            {/* Game type toggle + action area */}
+            <div className="space-y-3">
+
+              {/* Pill toggle */}
+              <div className="flex rounded border border-pip-border overflow-hidden">
                 <button
-                  className="pip-btn w-full text-xl"
-                  onClick={() => handleContinue(activeGameSummaries[selectedMode]!.id)}
+                  className={`flex-1 py-1.5 text-sm font-display tracking-wider transition-colors duration-100 ${
+                    !isFreePlay ? 'bg-pip-green text-pip-bg' : 'text-pip-green-dim hover:text-pip-green'
+                  }`}
+                  onClick={() => setGameType('standard')}
                 >
-                  CONTINUE — {GAME_MODES[selectedMode].name} (T{activeGameSummaries[selectedMode]!.turn})
+                  STANDARD
+                </button>
+                <button
+                  className={`flex-1 py-1.5 text-sm font-display tracking-wider transition-colors duration-100 ${
+                    !freePlayUnlocked
+                      ? 'opacity-40 cursor-not-allowed'
+                      : isFreePlay
+                        ? 'bg-pip-amber text-pip-bg'
+                        : 'text-pip-green-dim hover:text-pip-amber'
+                  }`}
+                  onClick={() => freePlayUnlocked && setGameType('free_play')}
+                  disabled={!freePlayUnlocked}
+                  title={!freePlayUnlocked ? 'Win all 3 difficulties to unlock' : undefined}
+                >
+                  FREE PLAY{!freePlayUnlocked ? ' 🔒' : ''}
+                </button>
+              </div>
+
+              {/* Contextual subtitle */}
+              {isFreePlay && (
+                <div className="text-xs text-pip-amber text-center opacity-75">
+                  No turn limit · danger scales with time · score = XP earned
+                </div>
+              )}
+              {!isFreePlay && !freePlayUnlocked && (
+                <div className="text-xs text-pip-green-dim text-center opacity-60">
+                  Win all 3 difficulties to unlock Free Play
+                </div>
+              )}
+
+              {/* Continue */}
+              {existingRun && !showNewGame && !confirmAbandon && (
+                <button
+                  className={`w-full text-xl ${isFreePlay ? 'pip-btn-amber' : 'pip-btn'}`}
+                  onClick={() => handleContinue(existingRun.id)}
+                >
+                  CONTINUE{isFreePlay ? ' FREE PLAY' : ''} —{' '}
+                  {isFreePlay
+                    ? `${GAME_MODES[existingRun.modeId].name.split(' ')[0]} (T${existingRun.turn})`
+                    : `${GAME_MODES[selectedMode].name} (T${existingRun.turn})`}
                 </button>
               )}
 
+              {/* Abandon confirm */}
               {confirmAbandon && (
                 <div className="border border-pip-red rounded p-3 space-y-2">
                   <div className="text-pip-red text-sm font-display">
-                    ABANDON active run as {activeGameSummaries?.[selectedMode]?.characterName}?
+                    ABANDON active run as {existingRun?.characterName}?
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -199,128 +256,53 @@ export default function Home() {
                     >
                       ABANDON & START NEW
                     </button>
-                    <button className="pip-btn flex-1" onClick={() => setConfirmAbandon(false)}>
-                      CANCEL
-                    </button>
+                    <button className="pip-btn flex-1" onClick={() => setConfirmAbandon(false)}>CANCEL</button>
                   </div>
                 </div>
               )}
 
+              {/* New game form */}
               {showNewGame ? (
                 <div className="space-y-2">
-                  <div>
-                    <label className="pip-label block mb-1">
-                      Character Name — {GAME_MODES[selectedMode].name}
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={30}
-                      value={charName}
-                      onChange={e => setCharName(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleStartNew()}
-                      className="pip-input w-full"
-                      placeholder="Enter your name, Wanderer"
-                      autoFocus
-                    />
-                  </div>
-                  <button
-                    className="pip-btn w-full text-xl"
-                    disabled={!charName.trim() || starting}
-                    onClick={handleStartNew}
-                  >
-                    {starting ? 'LOADING...' : 'START CARAVAN'}
-                  </button>
-                  <button className="pip-btn w-full text-sm" onClick={() => setShowNewGame(false)}>
-                    CANCEL
-                  </button>
-                </div>
-              ) : !confirmAbandon && (
-                <button
-                  className="pip-btn w-full"
-                  onClick={() => requestNewGame(selectedMode)}
-                >
-                  {activeGameSummaries?.[selectedMode] ? 'ABANDON & NEW GAME' : 'NEW GAME'}
-                </button>
-              )}
-            </div>
-
-            {/* Free Play */}
-            <div className="border-t border-pip-border pt-4">
-              <div className="flex justify-between items-center mb-2">
-                <div className="pip-label tracking-widest">FREE PLAY</div>
-                {freePlayUnlocked && (
-                  <span className="text-pip-green-dim text-xs">No turn limit · danger scales with time</span>
-                )}
-              </div>
-
-              {!freePlayUnlocked ? (
-                <div className="border border-pip-border-dim rounded p-3 text-center opacity-60">
-                  <div className="text-pip-green-dim text-sm">Complete all 3 difficulties to unlock</div>
-                </div>
-              ) : showFreePlayNew ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    {MODE_IDS.map(id => (
-                      <button
-                        key={id}
-                        onClick={() => setFreePlayMode(id)}
-                        className={`pip-btn flex-1 text-xs ${freePlayMode === id ? 'bg-pip-green text-pip-bg-light' : ''}`}
-                      >
-                        {GAME_MODES[id].name.split(' ')[0].toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="pip-label block mb-1">
+                    {GAME_MODES[selectedMode].name}{isFreePlay ? ' — Free Play' : ''}
+                  </label>
                   <input
                     type="text"
                     maxLength={30}
-                    value={freePlayName}
-                    onChange={e => setFreePlayName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleStartFreePlay()}
+                    value={charName}
+                    onChange={e => setCharName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleStart()}
                     className="pip-input w-full"
                     placeholder="Enter your name, Wanderer"
                     autoFocus
                   />
                   <button
-                    className="pip-btn w-full"
-                    disabled={!freePlayName.trim() || freePlayStarting}
-                    onClick={handleStartFreePlay}
+                    className={`w-full text-xl ${isFreePlay ? 'pip-btn-amber' : 'pip-btn'}`}
+                    disabled={!charName.trim() || starting}
+                    onClick={handleStart}
                   >
-                    {freePlayStarting ? 'LOADING...' : 'START FREE PLAY'}
+                    {starting ? 'LOADING...' : isFreePlay ? 'START FREE PLAY' : 'START CARAVAN'}
                   </button>
-                  <button className="pip-btn w-full text-sm" onClick={() => setShowFreePlayNew(false)}>
-                    CANCEL
-                  </button>
+                  <button className="pip-btn w-full text-sm" onClick={() => setShowNewGame(false)}>CANCEL</button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {freePlaySummary && (
-                    <button
-                      className="pip-btn w-full"
-                      onClick={() => handleContinue(freePlaySummary.id)}
-                    >
-                      CONTINUE FREE PLAY — {GAME_MODES[freePlaySummary.modeId].name.split(' ')[0]} (T{freePlaySummary.turn})
-                    </button>
-                  )}
-                  <button
-                    className="pip-btn w-full"
-                    onClick={() => { setShowFreePlayNew(true); setFreePlayName('') }}
-                  >
-                    {freePlaySummary ? 'ABANDON & NEW FREE PLAY' : 'START FREE PLAY'}
-                  </button>
-                </div>
+              ) : !confirmAbandon && (
+                <button
+                  className={`w-full ${isFreePlay ? 'pip-btn-amber' : 'pip-btn'}`}
+                  onClick={requestNewGame}
+                >
+                  {existingRun
+                    ? `ABANDON & NEW ${isFreePlay ? 'FREE PLAY' : 'GAME'}`
+                    : isFreePlay ? 'NEW FREE PLAY' : 'NEW GAME'}
+                </button>
               )}
             </div>
 
-            {/* Footer links */}
+            {/* Footer */}
             <div className="flex gap-2 flex-wrap pt-1">
               <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
               <button className="pip-btn flex-1" onClick={() => setShowTutorial(true)}>HOW TO PLAY</button>
-              <button
-                className="pip-btn text-sm text-pip-green-dim px-3"
-                onClick={() => signOut()}
-              >
-                SIGN OUT
-              </button>
+              <button className="pip-btn text-sm text-pip-green-dim px-3" onClick={() => signOut()}>SIGN OUT</button>
             </div>
           </div>
         )}

@@ -176,7 +176,7 @@ export default function MobileGame() {
             <div className="col-span-2">
               <div className="pip-label">Followers</div>
               <div className="text-pip-green text-sm font-display">
-                {player.guards} guards · {player.brahmin} brahmin
+                {player.guards} guards{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''} · {player.brahmin} brahmin
               </div>
               <div className="text-xs text-pip-green-dim">Pack {used}/{capacity}</div>
             </div>
@@ -535,38 +535,65 @@ export default function MobileGame() {
                 <div className="space-y-2">
                   <div className="pip-label">Guards — {mc.guardCost} ¤ each</div>
                   <div className="text-xs text-pip-green-dim">
-                    {player.guards} current · each absorbs {mc.guardHealth} HP in combat
+                    {player.guards} / {mc.maxGuards} · each absorbs {mc.guardHealth} HP in combat
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {[1, 2, 3].map(n => (
                       <button
                         key={n}
                         className="pip-btn text-sm"
-                        disabled={player.caps < n * mc.guardCost}
+                        disabled={player.guards >= mc.maxGuards || player.caps < n * mc.guardCost}
                         onClick={() => store.hireguards(n)}
                       >
                         HIRE {n} ({n * mc.guardCost} ¤)
                       </button>
                     ))}
                   </div>
+                  {player.guards >= mc.maxGuards && (
+                    <div className="text-xs text-pip-green-dim">Guard roster is full.</div>
+                  )}
+                </div>
+                <div className="border-t border-pip-border-dim pt-3 space-y-2">
+                  <div className="pip-label">Power Armor Guards — {mc.powerArmorGuardCost} ¤ each</div>
+                  <div className="text-xs text-pip-green-dim">
+                    {player.powerArmorGuards ?? 0} / {mc.maxPowerArmorGuards} · absorbs {mc.powerArmorGuardHealth} HP each
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {[1, 2].map(n => (
+                      <button
+                        key={n}
+                        className="pip-btn-amber text-sm"
+                        disabled={(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards || player.caps < n * mc.powerArmorGuardCost}
+                        onClick={() => store.purchasePowerArmorGuard(n)}
+                      >
+                        HIRE {n} ({n * mc.powerArmorGuardCost} ¤)
+                      </button>
+                    ))}
+                  </div>
+                  {(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards && (
+                    <div className="text-xs text-pip-green-dim">Power armor roster is full.</div>
+                  )}
                 </div>
                 <div className="border-t border-pip-border-dim pt-3 space-y-2">
                   <div className="pip-label">Brahmin — {mc.brahminCost} ¤ each</div>
                   <div className="text-xs text-pip-green-dim">
-                    {player.brahmin} owned · +{mc.capacityPerBrahmin} pack capacity each
+                    {player.brahmin} / {mc.maxBrahmin} · +{mc.capacityPerBrahmin} pack capacity each
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {[1, 2].map(n => (
                       <button
                         key={n}
                         className="pip-btn text-sm"
-                        disabled={player.caps < n * mc.brahminCost}
+                        disabled={player.brahmin >= mc.maxBrahmin || player.caps < n * mc.brahminCost}
                         onClick={() => store.purchaseBrahmin(n)}
                       >
                         BUY {n} ({n * mc.brahminCost} ¤)
                       </button>
                     ))}
                   </div>
+                  {player.brahmin >= mc.maxBrahmin && (
+                    <div className="text-xs text-pip-green-dim">Brahmin pen is full.</div>
+                  )}
                 </div>
               </div>
             )}
@@ -687,6 +714,9 @@ export default function MobileGame() {
               <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-amber text-sm">
                 {player.caps.toLocaleString()} <CapsIcon size={13} />
               </FlashText>
+              {gameState.gameType === 'free_play' && (
+                <button className="pip-btn-amber text-xs px-2 py-1" onClick={() => store.retire()}>RETIRE</button>
+              )}
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>
             </div>
           </div>

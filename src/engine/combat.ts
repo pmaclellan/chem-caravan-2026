@@ -5,8 +5,11 @@ import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
 
 const RUN_BASE_CHANCE      = 0.40
-const RUN_GUARD_BONUS      = 0.10  // per guard
+const RUN_GUARD_BONUS      = 0.10  // per guard (regular or PA)
 const RUN_BRAHMIN_PENALTY  = 0.05  // per brahmin
+
+const SPAWN_COUNT_FACTOR   = 7     // base: dangerLevel × SPAWN_COUNT_FACTOR
+
 
 export function initiateCombat(
   dangerLevel: number,
@@ -27,7 +30,7 @@ export function initiateCombat(
     ? (modeConfig.enemies.find(e => e.id === forcedEnemyTypeId) ?? rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
     : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
 
-  const baseCount = Math.max(1, Math.round(dangerLevel * 5))
+  const baseCount = Math.max(1, Math.round(dangerLevel * SPAWN_COUNT_FACTOR))
   const count = forcedCount ?? Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1) * scaleFactor))
 
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
@@ -98,6 +101,7 @@ export function resolveFight(
   const updatedEnemies = combat.enemies.map(e => ({ ...e }))
   let { capsPool } = combat
   let { health, guards } = player
+  let powerArmorGuards = player.powerArmorGuards ?? 0
   let gun = { ...player.gun }
   let armor = player.armor ? { ...player.armor } : null
   let damageDealt = 0
@@ -127,11 +131,14 @@ export function resolveFight(
   }
 
   // ── Guards fire (each costs 1 ammo from shared pool) ─────────────────────
-  for (let g = 0; g < guards; g++) {
+  const allGuardCount = guards + powerArmorGuards
+  for (let g = 0; g < allGuardCount; g++) {
     if (gun.ammo === 0) break
     gun.ammo -= 1
     const target = updatedEnemies.find(e => !e.dead)
     if (!target) break
+    const isPAGuard = g >= guards
+    const label = isPAGuard ? `PA Guard ${g - guards + 1}` : `Guard ${g + 1}`
     if (rng() < modeConfig.guardAccuracy) {
       const guardDmg = rngInt(modeConfig.guardDamage[0], modeConfig.guardDamage[1])
       const dealt = Math.min(guardDmg, target.health)
@@ -139,12 +146,12 @@ export function resolveFight(
       target.health = Math.max(0, target.health - guardDmg)
       if (target.health <= 0) {
         target.dead = true
-        log.push(`Guard ${g + 1} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`)
+        log.push(`${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`)
       } else {
-        log.push(`Guard ${g + 1} fires. Hit! (${guardDmg} damage)`)
+        log.push(`${label} fires. Hit! (${guardDmg} damage)`)
       }
     } else {
-      log.push(`Guard ${g + 1} fires. Missed.`)
+      log.push(`${label} fires. Missed.`)
     }
   }
 
@@ -159,11 +166,17 @@ export function resolveFight(
       totalIncoming += stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
     }
 
-    // Guards absorb incoming (each guard absorbs guardHealth before player takes damage)
-    const guardAbsorb = Math.min(guards, Math.floor(totalIncoming / modeConfig.guardHealth))
+    // PA guards absorb incoming first (each absorbs powerArmorGuardHealth before regular guards)
+    const paAbsorb = Math.min(powerArmorGuards, Math.floor(totalIncoming / modeConfig.powerArmorGuardHealth))
+    const paAbsorbed = paAbsorb * modeConfig.powerArmorGuardHealth
+    powerArmorGuards = Math.max(0, powerArmorGuards - paAbsorb)
+    const postPADamage = Math.max(0, totalIncoming - paAbsorbed)
+
+    // Regular guards absorb remaining
+    const guardAbsorb = Math.min(guards, Math.floor(postPADamage / modeConfig.guardHealth))
     const absorbed = guardAbsorb * modeConfig.guardHealth
-    const postGuardDamage = Math.max(0, totalIncoming - absorbed)
     guards = Math.max(0, guards - guardAbsorb)
+    const postGuardDamage = Math.max(0, postPADamage - absorbed)
 
     // Armor absorbs remaining damage before HP
     let armorAbsorb = 0
@@ -175,6 +188,7 @@ export function resolveFight(
     health = Math.max(0, health - finalDamage)
     damageTaken = finalDamage
 
+    if (paAbsorb > 0) log.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (guardAbsorb > 0) log.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (armorAbsorb > 0) log.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
     if (finalDamage > 0) log.push(`Enemies hit you for ${finalDamage} damage.`)
@@ -183,7 +197,7 @@ export function resolveFight(
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, gun, armor }
+  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun, armor }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
@@ -221,8 +235,9 @@ export function resolveRun(
   combat: CombatState,
   modeConfig: GameModeConfig,
 ): { player: PlayerState; combat: CombatState } {
+  const totalGuards = player.guards + (player.powerArmorGuards ?? 0)
   const runChance = Math.min(0.9, Math.max(0.1,
-    RUN_BASE_CHANCE + player.guards * RUN_GUARD_BONUS - player.brahmin * RUN_BRAHMIN_PENALTY
+    RUN_BASE_CHANCE + totalGuards * RUN_GUARD_BONUS - player.brahmin * RUN_BRAHMIN_PENALTY
   ))
   const success = rng() < runChance
   const log: string[] = []
