@@ -344,7 +344,7 @@ export default function MobileGame() {
           const services = [
             dest.hasDoctor && 'Doctor',
             dest.hasLoanshark && 'Loans',
-            dest.hasArmory && 'Guns',
+            dest.hasArmory && 'Armory',
             dest.hasFollowers && 'Followers',
           ].filter(Boolean).join(' · ')
 
@@ -382,7 +382,7 @@ export default function MobileGame() {
     const servicesTabs = [
       { key: 'doctor',    icon: '/assets/icons/bandage-svgrepo-com.svg',          label: 'DOCTOR',    avail: settlement.hasDoctor },
       { key: 'loanshark', icon: '/assets/icons/briefcase-dollar-svgrepo-com.svg', label: 'LOANS',     avail: settlement.hasLoanshark },
-      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      avail: settlement.hasArmory },
+      { key: 'armory',    icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'ARMORY',    avail: settlement.hasArmory },
       { key: 'followers', icon: '/assets/icons/followers-svgrepo-com.svg',        label: 'FOLLOWERS', avail: settlement.hasFollowers },
     ].filter(t => t.avail)
 
@@ -444,9 +444,9 @@ export default function MobileGame() {
               </div>
             )}
 
-            {serviceOpen === 'gunshop' && (
+            {serviceOpen === 'armory' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-3">
-                <div className="pip-label">Gun Shop</div>
+                <div className="pip-label">ARMORY</div>
                 {mc.gunIds.map(gunId => {
                   const gun = mc.guns[gunId]
                   const owned = player.gun?.id === gunId
@@ -487,6 +487,46 @@ export default function MobileGame() {
                     </div>
                   </div>
                 )}
+                <div className="border-t border-pip-border-dim pt-2 space-y-2">
+                  <div className="pip-label">ARMOR</div>
+                  {mc.armorIds.map(armorId => {
+                    const armor = mc.armors[armorId]
+                    const equipped = player.armor?.id === armorId
+                    return (
+                      <div key={armorId} className="flex justify-between items-center">
+                        <div>
+                          <div className="text-pip-green font-display">{armor.name}</div>
+                          <div className="text-xs text-pip-green-dim">{armor.armorPoints} AP · {armor.repairCostPerAP} ¤/AP repair</div>
+                        </div>
+                        <button
+                          className={equipped ? 'pip-btn text-xs px-2' : 'pip-btn-amber text-xs px-2'}
+                          disabled={equipped || player.caps < armor.price}
+                          onClick={() => store.purchaseArmor(armorId)}
+                        >
+                          {equipped ? 'EQUIPPED' : `${armor.price} ¤`}
+                        </button>
+                      </div>
+                    )
+                  })}
+                  {player.armor && player.armor.armorPoints < player.armor.maxArmorPoints && (() => {
+                    const missingAP = player.armor.maxArmorPoints - player.armor.armorPoints
+                    const repairCost = missingAP * player.armor.repairCostPerAP
+                    return (
+                      <div className="border border-pip-blue rounded p-2 space-y-1">
+                        <div className="text-xs text-pip-blue">
+                          {player.armor.name}: {player.armor.armorPoints} / {player.armor.maxArmorPoints} AP
+                        </div>
+                        <button
+                          className="pip-btn w-full text-xs"
+                          disabled={player.caps < repairCost}
+                          onClick={() => store.repairArmor()}
+                        >
+                          REPAIR ({repairCost} ¤)
+                        </button>
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
             )}
 
