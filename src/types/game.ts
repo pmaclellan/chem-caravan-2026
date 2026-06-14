@@ -95,6 +95,7 @@ export interface CombatState {
   totalDamageTaken: number
   enemyLoot: Record<string, number>     // chems found on enemies (awarded on victory)
   capsLooted: number
+  xpGained: number                      // XP awarded on this combat's victory (for summary screen)
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
 }
