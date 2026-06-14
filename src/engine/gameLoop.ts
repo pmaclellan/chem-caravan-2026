@@ -1,6 +1,6 @@
 import { GAME_MODES } from '../data/modes'
-import type { GameModeId } from '../types/game'
-import type { GameState, LogEntry, PlayerState, TravelEvent, WorldState } from '../types/game'
+import type { GameModeConfig } from '../data/modes'
+import type { GameModeId, GameState, LogEntry, MarketEvent, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
@@ -12,6 +12,29 @@ export { getScaleFactor } from './xp'
 
 function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntry {
   return { turn, message, type }
+}
+
+// Each game type owns its own opening context line.
+const GAME_START_CONTEXT: Record<'standard' | 'free_play', (mc: GameModeConfig) => string> = {
+  standard:  mc => `You have ${mc.maxTurns} turns to pay it off and make your fortune.`,
+  free_play: ()  => 'FREE PLAY: No turn limit. Danger scales with time. Earn XP — survive as long as you can.',
+}
+
+function buildStartLog(
+  characterName: string,
+  mc: GameModeConfig,
+  events: MarketEvent[],
+  gameType: 'standard' | 'free_play',
+): LogEntry[] {
+  const log: LogEntry[] = [
+    makeLog(1, `Welcome to the ${mc.name}, ${characterName}.`, 'system'),
+    makeLog(1, `You start with ${mc.startingCaps} caps and a ${mc.startingDebt} cap debt.`, 'system'),
+    makeLog(1, GAME_START_CONTEXT[gameType](mc), 'system'),
+  ]
+  for (const e of events) {
+    log.push(makeLog(1, `[MARKET INTEL] ${e.message}`, 'danger'))
+  }
+  return log
 }
 
 export function initializeGame(
@@ -61,19 +84,7 @@ export function initializeGame(
     activeMarketEvents: events,
   }
 
-  const log: LogEntry[] = [
-    makeLog(1, `Welcome to the ${mc.name}, ${characterName}.`, 'system'),
-    makeLog(1, `You start with ${mc.startingCaps} caps and a ${mc.startingDebt} cap debt.`, 'system'),
-    gameType === 'free_play'
-      ? makeLog(1, 'FREE PLAY: No turn limit. Danger scales with time. Earn XP — survive as long as you can.', 'system')
-      : makeLog(1, `You have ${mc.maxTurns} turns to pay it off and make your fortune.`, 'system'),
-  ]
-
-  if (events.length > 0) {
-    for (const e of events) {
-      log.push(makeLog(1, `[MARKET INTEL] ${e.message}`, 'danger'))
-    }
-  }
+  const log = buildStartLog(characterName, mc, events, gameType)
 
   return {
     mode: modeId,
