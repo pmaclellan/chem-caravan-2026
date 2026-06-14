@@ -72,22 +72,12 @@ export default function Home() {
         </picture>
       </div>
       {/* Tint overlay for readability */}
-      <div className="absolute inset-0 bg-pip-bg opacity-60" />
+      <div className="absolute inset-0 bg-pip-bg opacity-20" />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
       <div className="relative max-w-2xl w-full pip-panel">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="font-display text-6xl text-pip-green tracking-widest mb-1">
-            CHEM CARAVAN
-          </h1>
-          <div className="text-pip-green-dim text-xs font-mono">
-            WASTELAND TRADING SIMULATION v{pkg.version}
-          </div>
-        </div>
-
         {!user ? (
           /* ── Logged out ─────────────────────────────────────────────────── */
           <div className="space-y-3">
@@ -229,6 +219,10 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        <div className="text-center mt-4 text-pip-green-dim text-xs font-mono">
+          WASTELAND TRADING SIMULATION v{pkg.version}
+        </div>
       </div>
     </div>
   )
