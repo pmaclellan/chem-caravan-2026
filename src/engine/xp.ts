@@ -26,11 +26,11 @@ export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play')
 }
 
 export type XpEventParams =
-  | { type: XpEventType.RoadTravel;          dangerLevel: number; scaleFactor: number }
-  | { type: XpEventType.CombatVictory;       enemyCount: number;  scaleFactor: number }
-  | { type: XpEventType.SettlementDiscovery; settlementName: string }
-  | { type: XpEventType.DebtSurvival }
-  | { type: XpEventType.TradeProfit;         profit: number }
+  | { type: 'road_travel';          dangerLevel: number; scaleFactor: number }
+  | { type: 'combat_victory';       enemyCount: number;  scaleFactor: number }
+  | { type: 'settlement_discovery'; settlementName: string }
+  | { type: 'debt_survival' }
+  | { type: 'trade_profit';         profit: number }
 
 export function calculateXp(event: XpEventParams): number {
   switch (event.type) {
