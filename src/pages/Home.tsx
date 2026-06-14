@@ -63,11 +63,19 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-pip-bg transition-colors duration-300" data-mode={selectedMode}>
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden" data-mode={selectedMode}>
+      {/* Background image — portrait version on narrow viewports */}
+      <picture className="absolute inset-0 w-full h-full">
+        <source media="(max-width: 639px)" srcSet="/assets/main_menu_background_mobile.png" />
+        <img src="/assets/main_menu_background.png" alt="" className="w-full h-full object-cover object-center" />
+      </picture>
+      {/* Tint overlay for readability */}
+      <div className="absolute inset-0 bg-pip-bg opacity-60" />
+
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
-      <div className="max-w-2xl w-full pip-panel">
+      <div className="relative max-w-2xl w-full pip-panel">
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-display text-6xl text-pip-green tracking-widest mb-1">
