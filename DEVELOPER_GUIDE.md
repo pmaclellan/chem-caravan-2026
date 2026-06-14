@@ -13,15 +13,16 @@ A reference for anyone picking up development on this project. Covers architectu
 5. [Engine Layer](#engine-layer)
 6. [State Management](#state-management)
 7. [UI Layer](#ui-layer)
-8. [CSS Theme System](#css-theme-system)
-9. [Backend / Supabase](#backend--supabase)
-10. [Key Patterns and Gotchas](#key-patterns-and-gotchas)
-11. [How To: Add a New Chem](#how-to-add-a-new-chem)
-12. [How To: Add a New Game Mode](#how-to-add-a-new-game-mode)
-13. [How To: Add a New Travel Event Type](#how-to-add-a-new-travel-event-type)
-14. [SVG Settlement Map](#svg-settlement-map)
-15. [Adding Game Images](#adding-game-images)
-16. [Running and Building](#running-and-building)
+8. [Mobile vs Desktop Architecture](#mobile-vs-desktop-architecture)
+9. [CSS Theme System](#css-theme-system)
+10. [Backend / Supabase](#backend--supabase)
+11. [Key Patterns and Gotchas](#key-patterns-and-gotchas)
+12. [How To: Add a New Chem](#how-to-add-a-new-chem)
+13. [How To: Add a New Game Mode](#how-to-add-a-new-game-mode)
+14. [How To: Add a New Travel Event Type](#how-to-add-a-new-travel-event-type)
+15. [SVG Settlement Map](#svg-settlement-map)
+16. [Adding Game Images](#adding-game-images)
+17. [Running and Building](#running-and-building)
 
 ---
 
@@ -69,6 +70,7 @@ src/
     economy.ts           ← All financial operations (pure functions)
     travel.ts            ← Road queries, event selection, capacity, brahmin loss
     market.ts            ← Market init, refresh, event application
+    xp.ts                ← XP system: XpEventType, calculateXp, awardXp, getScaleFactor
     rng.ts               ← Random number wrapper (swap to seeded PRNG here)
     __tests__/           ← Vitest unit tests for engine modules
 
@@ -126,6 +128,7 @@ supabase/
     002_rls.sql
     003_add_mode_turns.sql
     004_leaderboard_public_reads.sql
+    005_add_game_type.sql  ← adds game_type column ('standard' | 'free_play')
 
 public/
   assets/
@@ -352,7 +355,7 @@ if (phase === 'event')     return <EventPanel />
 
 ### Mobile Layout (`src/components/game/MobileGame.tsx`)
 
-Self-contained 5-tab layout (stats, market, travel, pack, log). All logic is duplicated from the desktop panels within this single file using a render-function pattern for each tab. React hooks (useValueFlash, useMapFlash) must be called unconditionally at the top of the component before any conditional rendering — this is a known source of bugs if you add new flash hooks inside tab render functions.
+Self-contained 5-tab layout (stats, market, travel, pack, log). All settlement-level UI is re-implemented inline using a render-function pattern rather than importing the desktop panel components. See [Mobile vs Desktop Architecture](#mobile-vs-desktop-architecture) for the full breakdown of what's shared and what isn't.
 
 When `isMobile` is true, `Game.tsx` renders only `<MobileGame />`.
 
@@ -362,6 +365,94 @@ When `isMobile` is true, `Game.tsx` renders only `<MobileGame />`.
 - **`CombatPanel`** — shows enemy unit cards and fight/run buttons. Fight/run call `gameStore.fight()` / `gameStore.run()`.
 - **`SettlementMap`** — SVG renderer. Node positions come from `mc.mapPositions` in the mode config. Danger bars shown on roads use the road's `dangerLevel` field.
 - **`ServicesPanel`** — conditionally renders service blocks based on `settlement.hasDoctor`, `settlement.hasBank`, etc. Uses `mc` (mode config) for costs.
+
+---
+
+## Mobile vs Desktop Architecture
+
+### How the split works
+
+`useIsMobile()` (`src/hooks/useIsMobile.ts`) returns `true` when viewport width < 768px. `Game.tsx` checks this after the game-over guard and routes accordingly:
+
+```
+Game.tsx
+├── phase === 'game_over'  →  GameOverScreen   (shared — same on both)
+├── isMobile               →  <MobileGame />   (self-contained)
+└── desktop                →  3-column layout  (individual panel components)
+```
+
+### Shared components
+
+These five components are imported by **both** `Game.tsx` and `MobileGame.tsx`. They are "phase overlay" components — they replace the full main content area during their game phase, so the layout context doesn't matter:
+
+| Component | Game phase | Notes |
+|---|---|---|
+| `CombatPanel` | `combat` | Fight/run buttons, enemy unit cards |
+| `CombatSummaryPanel` | `combat_summary` | Victory/escape stats, count-up animations, XP |
+| `EventPanel` | `event` | Raider ambush, chem stash, checkpoint, etc. |
+| `TravelSplash` | `traveling` | Transit quote shown before event resolution |
+| `SettlementMap` | settlement / travel tab | SVG map; desktop wraps it in `MapPanel`, mobile uses it directly |
+
+`GameOverScreen` (defined inside `Game.tsx`) is also effectively shared — it renders before the `isMobile` check, so the same screen appears on both.
+
+### Desktop-only components
+
+These implement the 3-column desktop layout and are not used by `MobileGame.tsx`:
+
+| Component | Location in layout | Notes |
+|---|---|---|
+| `PlayerStats` | Left column (w-52) | Always visible; shows HP, turn, XP, debt, equipment |
+| `MarketPanel` | Center — market tab | Buy/sell table |
+| `MapPanel` | Center — travel tab | Wraps `SettlementMap` + travel buttons |
+| `ServicesPanel` | Center — services tab | Doctor, bank, guards, guns, armor |
+| `InventoryPanel` | Right column | Current holdings with cost basis + price delta |
+| `GameLog` | Right column | Append-only run log, scrollable |
+
+### What MobileGame re-implements internally
+
+`MobileGame.tsx` is a single large component (~650 lines) that re-implements all of the desktop-only panel logic inline as **render functions** (plain functions, not React components). This is by design — see hooks note below.
+
+| Tab | Equivalent desktop component(s) |
+|---|---|
+| Stats | `PlayerStats` |
+| Market | `MarketPanel` |
+| Travel | `MapPanel` + `SettlementMap` + travel buttons |
+| Pack | `InventoryPanel` |
+| Log | `GameLog` |
+
+Services (doctor, bank, guards, etc.) are accessible within the Travel tab on mobile rather than a dedicated tab.
+
+Settlement background images are **not shown on mobile** — `MobileGame.tsx` does not render them.
+
+### The render-function pattern and hooks rule
+
+MobileGame tabs are implemented as plain functions called inline, not as React components:
+
+```tsx
+// Inside MobileGame() component
+function renderStatsTab() {
+  // This is NOT a React component — it's a plain function.
+  // It can use variables from MobileGame's closure but CANNOT call hooks.
+  return <div>...</div>
+}
+
+// All hooks are declared at the TOP of MobileGame():
+const { flashKey: capsFlash } = useValueFlash(player.caps)
+const { flashMap: invFlash }  = useMapFlash(player.inventory)
+// ... then passed into render functions via closure
+```
+
+**Critical rule:** All `useValueFlash`, `useMapFlash`, and any other hooks must be declared unconditionally at the top of the `MobileGame` function body, not inside tab render functions. Calling hooks inside `renderStatsTab()` etc. violates the Rules of Hooks and will either throw at runtime or produce subtle bugs. If you need a new flash effect for a tab, add the hook call at the component top and access the result inside the render function via closure.
+
+### When to add to shared vs. separate
+
+| Scenario | What to do |
+|---|---|
+| New game phase (new `GamePhase` value) | Create a new shared component; import it in both `Game.tsx` and `MobileGame.tsx` |
+| New settlement-level panel (desktop) | Create a component, add it to Game.tsx's tab bar; re-implement the same UI inline in MobileGame.tsx |
+| New player stat or UI element | Add to `PlayerStats.tsx` for desktop AND to `renderStatsTab()` inside `MobileGame.tsx` |
+| Bug fix in a shared component | Fix once — automatically applies to both |
+| New service in ServicesPanel | Add to `ServicesPanel.tsx` AND to the services section in `MobileGame.tsx` |
 
 ---
 
