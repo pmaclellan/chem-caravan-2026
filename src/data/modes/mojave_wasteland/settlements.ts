@@ -182,6 +182,7 @@ export const ROADS: Road[] = [
     to: 'goodsprings',
     dangerLevel: 0.28,
     description: "Quiet desert road. Relatively light traffic — and threats.",
+    enemyWeights: { fiend: 2, radscorpion: 1 },
   },
   {
     id: 'goodsp_fre',
@@ -199,6 +200,7 @@ export const ROADS: Road[] = [
     to: 'camp_mccarran',
     dangerLevel: 0.48,
     description: "Down from the mountain, through desolate desert.",
+    enemyWeights: { radscorpion: 2, fiend: 1 },
   },
   {
     id: 'jacobstown_novac',
@@ -207,7 +209,7 @@ export const ROADS: Road[] = [
     to: 'novac',
     dangerLevel: 0.72,
     description: "Through the old quarry. Deathclaws everywhere. Not recommended.",
-    enemyWeights: { deathclaw: 2, fiend: 1 },
+    enemyWeights: { deathclaw: 3, radscorpion: 1 },
   },
   {
     id: 'fort_bouldr',

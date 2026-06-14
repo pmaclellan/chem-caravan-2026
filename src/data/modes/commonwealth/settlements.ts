@@ -194,6 +194,7 @@ export const ROADS: Road[] = [
     to: 'sanctuary_hills',
     dangerLevel: 0.40,
     description: "Long haul north on pre-war Route 3.",
+    enemyWeights: { raider: 4, yao_guai: 1 },
   },
   {
     id: 'bh_gg',
@@ -219,6 +220,7 @@ export const ROADS: Road[] = [
     to: 'vault_81',
     dangerLevel: 0.48,
     description: "Western wilderness route. Gunners patrol this stretch.",
+    enemyWeights: { raider: 4, yao_guai: 1 },
   },
   {
     id: 'v81_tc',

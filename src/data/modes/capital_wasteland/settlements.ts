@@ -215,6 +215,7 @@ export const ROADS: Road[] = [
     to: 'tenpenny_tower',
     dangerLevel: 0.40,
     description: "Open wasteland between Megaton and Tenpenny. Raider camps along the road.",
+    enemyWeights: { raider: 3, radscorpion: 1 },
   },
   {
     id: 'meg_and',
@@ -231,6 +232,7 @@ export const ROADS: Road[] = [
     to: 'andale',
     dangerLevel: 0.25,
     description: "Past the old Robco factory. Raiders thin out, but the road is rough.",
+    enemyWeights: { raider: 3, radscorpion: 1 },
   },
   {
     id: 'ten_gird',
@@ -247,15 +249,17 @@ export const ROADS: Road[] = [
     from: 'little_lamplight',
     to: 'girdershade',
     dangerLevel: 0.35,
-    description: "TBD???",
+    description: "Remote cave country south of Lamplight. Yao Guai territory.",
+    enemyWeights: { yao_guai: 3, radscorpion: 1 },
   },
   {
     id: 'll_big',
-    name: 'Unknown Road',
+    name: 'Lamplight Trail',
     from: 'little_lamplight',
     to: 'big_town',
     dangerLevel: 0.35,
-    description: "TBD???",
+    description: "Wilderness trail east of Lamplight. Watch for Yao Guai in the rocks.",
+    enemyWeights: { yao_guai: 2, raider: 2, radscorpion: 1 },
   },
   {
     id: 'll_pf',
