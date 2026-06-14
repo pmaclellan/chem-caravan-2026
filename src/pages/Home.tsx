@@ -71,13 +71,13 @@ export default function Home() {
           <img src="/assets/main_menu_background.png" alt="" className="w-full h-full object-cover object-center" />
         </picture>
       </div>
-      {/* Tint overlay for readability */}
-      <div className="absolute inset-0 bg-pip-bg opacity-20" />
+      {/* Mode-tinted color wash — sits on top of image so mode changes are visible */}
+      <div className="absolute inset-0 bg-pip-bg opacity-30" />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
-      <div className="relative max-w-2xl w-full pip-panel">
+      <div className="relative max-w-2xl w-full pip-panel" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 75%, transparent)' }}>
         {!user ? (
           /* ── Logged out ─────────────────────────────────────────────────── */
           <div className="space-y-3">
