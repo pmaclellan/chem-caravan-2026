@@ -1,12 +1,14 @@
 import type { PlayerState } from '../types/game'
 
-export enum XpEventType {
-  RoadTravel          = 'road_travel',
-  CombatVictory       = 'combat_victory',
-  SettlementDiscovery = 'settlement_discovery',
-  DebtSurvival        = 'debt_survival',
-  TradeProfit         = 'trade_profit',
-}
+export const XpEventType = {
+  RoadTravel:          'road_travel',
+  CombatVictory:       'combat_victory',
+  SettlementDiscovery: 'settlement_discovery',
+  DebtSurvival:        'debt_survival',
+  TradeProfit:         'trade_profit',
+} as const
+
+export type XpEventType = typeof XpEventType[keyof typeof XpEventType]
 
 const XP_CONFIG = {
   ROAD_TRAVEL_FACTOR:   100,  // floor(dangerLevel × scaleFactor × 100)
