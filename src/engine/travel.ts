@@ -79,6 +79,9 @@ const AMBUSH_LINES: Record<string, (n: number) => string> = {
   legionnaire:  (n) => n === 1 ? "A Legionnaire steps from the shadows. Blade drawn." : `${n} Legion Assassins step out of the shadows. Blades drawn.`,
   deathclaw:    (n) => n === 1 ? "A Deathclaw rounds the bend. You might want to run." : `${n} Deathclaws emerge from the ruins. Run.`,
   fiend:        (n) => n === 1 ? "A wild-eyed Fiend rushes from cover, screaming." : `${n} Fiends pour out of a wrecked vehicle, wild-eyed and armed.`,
+  feral_ghoul:  (n) => n === 1 ? "A Feral Ghoul lurches out of the dark, moaning." : `${n} Feral Ghouls close in from the shadows. They're fast.`,
+  radscorpion:  (n) => n === 1 ? "The ground ruptures — a Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand, tails raised.`,
+  yao_guai:     (n) => n === 1 ? "A Yao Guai crashes out of the brush, snarling." : `${n} Yao Guai surge from cover. They're hunting.`,
 }
 
 function buildEventPayload(

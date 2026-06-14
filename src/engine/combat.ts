@@ -55,7 +55,18 @@ export function initiateCombat(
     }
   }
 
-  const description = `${count} ${enemyType.name}${count > 1 ? 's' : ''} block the road ahead.`
+  const COMBAT_INTRO: Record<string, (n: number) => string> = {
+    raider:       (n) => n === 1 ? "A Raider blocks the road ahead." : `${n} Raiders block the road ahead.`,
+    feral_ghoul:  (n) => n === 1 ? "A Feral Ghoul lurches toward you." : `${n} Feral Ghouls close in from the darkness.`,
+    radscorpion:  (n) => n === 1 ? "A Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand.`,
+    yao_guai:     (n) => n === 1 ? "A Yao Guai charges, roaring." : `${n} Yao Guai surge from cover.`,
+    super_mutant: (n) => n === 1 ? "A Super Mutant charges from the rubble." : `${n} Super Mutants block the road ahead.`,
+    deathclaw:    (n) => n === 1 ? "A Deathclaw rounds the bend. Run or fight." : `${n} Deathclaws emerge from the ruins.`,
+    fiend:        (n) => n === 1 ? "A Fiend rushes from cover, screaming." : `${n} Fiends pour out of cover.`,
+    great_khan:   (n) => n === 1 ? "A Great Khan rides out of the dust." : `${n} Great Khans block the road ahead.`,
+    legionnaire:  (n) => n === 1 ? "A Legionnaire steps from the shadows, blade drawn." : `${n} Legionnaires step from the shadows.`,
+  }
+  const description = COMBAT_INTRO[enemyType.id]?.(count) ?? (count === 1 ? `A ${enemyType.name} blocks the road ahead.` : `${count} ${enemyType.name}s block the road ahead.`)
 
   return {
     enemies,
