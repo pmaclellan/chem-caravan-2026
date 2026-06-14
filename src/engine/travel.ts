@@ -72,6 +72,18 @@ export function selectTravelEvent(
   return null
 }
 
+const AMBUSH_TITLES: Record<string, string> = {
+  raider:       '!! RAIDER AMBUSH !!',
+  super_mutant: '!! SUPER MUTANT ATTACK !!',
+  great_khan:   '!! GREAT KHAN AMBUSH !!',
+  legionnaire:  '!! LEGION AMBUSH !!',
+  deathclaw:    '!! DEATHCLAW !!',
+  fiend:        '!! FIEND ATTACK !!',
+  feral_ghoul:  '!! GHOUL ATTACK !!',
+  radscorpion:  '!! RADSCORPION !!',
+  yao_guai:     '!! YAO GUAI !!',
+}
+
 // Enemy-specific ambush lines — functions of count so description reads naturally
 const AMBUSH_LINES: Record<string, (n: number) => string> = {
   raider:       (n) => n === 1 ? "A lone Raider steps out from cover, weapon raised." : `${n} Raiders emerge from cover. They want your caps.`,
@@ -111,8 +123,9 @@ function buildEventPayload(
       const picked = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
       const maxCount = Math.max(2, Math.ceil((road?.dangerLevel ?? 0.5) * 4))
       const count = rngInt(1, maxCount)
-      const ambushDesc = AMBUSH_LINES[picked.id]?.(count) ?? description
-      return { type, title, description: ambushDesc, payload: { enemyTypeId: picked.id, count } }
+      const ambushTitle = AMBUSH_TITLES[picked.id] ?? title
+      const ambushDesc  = AMBUSH_LINES[picked.id]?.(count) ?? description
+      return { type, title: ambushTitle, description: ambushDesc, payload: { enemyTypeId: picked.id, count } }
     }
     case 'brotherhood_checkpoint':
       return { type, title, description, payload: { toll: brotherhoodToll, enemyTypeId: getCheckpointEnemyTypeId(modeConfig) } }
