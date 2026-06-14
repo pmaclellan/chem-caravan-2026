@@ -132,14 +132,18 @@ export default function MobileGame() {
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="pip-label">Turn</span>
-              <span className="text-xs text-pip-green-dim">{world.turn} / {world.maxTurns}</span>
+              <span className="text-xs text-pip-green-dim">
+                {world.turn}{world.maxTurns !== null ? ` / ${world.maxTurns}` : ' ∞'}
+              </span>
             </div>
-            <div className="h-2 bg-pip-border-dim rounded overflow-hidden">
-              <div
-                className="h-full bg-pip-amber transition-all duration-300"
-                style={{ width: `${(world.turn / world.maxTurns) * 100}%` }}
-              />
-            </div>
+            {world.maxTurns !== null && (
+              <div className="h-2 bg-pip-border-dim rounded overflow-hidden">
+                <div
+                  className="h-full bg-pip-amber transition-all duration-300"
+                  style={{ width: `${(world.turn / world.maxTurns) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         </div>
 

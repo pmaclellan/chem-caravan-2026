@@ -14,6 +14,7 @@ export function initiateCombat(
   roadEnemyWeights?: Partial<Record<string, number>>,
   forcedEnemyTypeId?: string,
   forcedCount?: number,
+  scaleFactor = 1,
 ): CombatState {
   // Pick enemy type first so countMultiplier can scale the base count
   const weightedPool = modeConfig.enemies
@@ -27,7 +28,7 @@ export function initiateCombat(
     : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
 
   const baseCount = Math.max(1, Math.round(dangerLevel * 5))
-  const count = forcedCount ?? Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1)))
+  const count = forcedCount ?? Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1) * scaleFactor))
 
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 

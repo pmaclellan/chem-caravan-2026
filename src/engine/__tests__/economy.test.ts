@@ -31,6 +31,8 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     inventory: {},
     gun: null,
     armor: null,
+    xp: 0,
+    visitedSettlements: [],
     ...overrides,
   }
 }

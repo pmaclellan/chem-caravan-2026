@@ -3,7 +3,7 @@ import { useValueFlash } from '../../hooks/useValueFlash'
 import { FlashText } from '../ui/FlashText'
 import { CapsIcon } from '../ui/CapsIcon'
 
-interface Props { player: PlayerState; turn: number; maxTurns: number }
+interface Props { player: PlayerState; turn: number; maxTurns: number | null }
 
 export default function PlayerStats({ player, turn, maxTurns }: Props) {
   const hpPct = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
@@ -42,7 +42,17 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
 
       <div>
         <div className="pip-label">Turn</div>
-        <div className="pip-value">{turn} <span className="text-pip-green-dim text-sm">/ {maxTurns}</span></div>
+        <div className="pip-value">
+          {turn}
+          {maxTurns !== null
+            ? <span className="text-pip-green-dim text-sm"> / {maxTurns}</span>
+            : <span className="text-pip-amber text-sm"> ∞</span>}
+        </div>
+      </div>
+
+      <div>
+        <div className="pip-label">XP</div>
+        <div className="font-display text-lg text-pip-amber">{(player.xp ?? 0).toLocaleString()}</div>
       </div>
 
       <div className="border-t border-pip-border pt-2">
