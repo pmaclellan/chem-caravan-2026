@@ -335,7 +335,7 @@ export default function MobileGame() {
           const services = [
             dest.hasDoctor && 'Doctor',
             dest.hasLoanshark && 'Loans',
-            dest.hasGunShop && 'Guns',
+            dest.hasArmory && 'Guns',
             dest.hasFollowers && 'Followers',
           ].filter(Boolean).join(' · ')
 
@@ -373,7 +373,7 @@ export default function MobileGame() {
     const servicesTabs = [
       { key: 'doctor',    icon: '/assets/icons/bandage-svgrepo-com.svg',          label: 'DOCTOR',    avail: settlement.hasDoctor },
       { key: 'loanshark', icon: '/assets/icons/briefcase-dollar-svgrepo-com.svg', label: 'LOANS',     avail: settlement.hasLoanshark },
-      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      avail: settlement.hasGunShop },
+      { key: 'gunshop',   icon: '/assets/icons/crosshair-svgrepo-com.svg',        label: 'GUNS',      avail: settlement.hasArmory },
       { key: 'followers', icon: '/assets/icons/followers-svgrepo-com.svg',        label: 'FOLLOWERS', avail: settlement.hasFollowers },
     ].filter(t => t.avail)
 
