@@ -11,7 +11,16 @@ function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntr
   return { turn, message, type }
 }
 
-export function initializeGame(characterName: string, modeId: GameModeId = 'commonwealth'): GameState {
+export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play'): number {
+  if (gameType !== 'free_play') return 1
+  return 1 + turn / 60
+}
+
+export function initializeGame(
+  characterName: string,
+  modeId: GameModeId = 'commonwealth',
+  gameType: 'standard' | 'free_play' = 'standard',
+): GameState {
   const mc = GAME_MODES[modeId]
 
   const player: PlayerState = {
@@ -27,6 +36,8 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
     inventory: {},
     gun: null,
     armor: null,
+    xp: 0,
+    visitedSettlements: [mc.startingLocation],
     debtPaidThisCycle: 0,
     debtWarnings: 0,
     debtWindowCapsPaid: 0,
@@ -47,7 +58,7 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
 
   const world: WorldState = {
     turn: 1,
-    maxTurns: mc.maxTurns,
+    maxTurns: gameType === 'free_play' ? null : mc.maxTurns,
     settlements,
     activeMarketEvents: events,
   }
@@ -55,7 +66,9 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
   const log: LogEntry[] = [
     makeLog(1, `Welcome to the ${mc.name}, ${characterName}.`, 'system'),
     makeLog(1, `You start with ${mc.startingCaps} caps and a ${mc.startingDebt} cap debt.`, 'system'),
-    makeLog(1, `You have ${mc.maxTurns} turns to pay it off and make your fortune.`, 'system'),
+    gameType === 'free_play'
+      ? makeLog(1, 'FREE PLAY: No turn limit. Danger scales with time. Earn XP — survive as long as you can.', 'system')
+      : makeLog(1, `You have ${mc.maxTurns} turns to pay it off and make your fortune.`, 'system'),
   ]
 
   if (events.length > 0) {
@@ -66,6 +79,7 @@ export function initializeGame(characterName: string, modeId: GameModeId = 'comm
 
   return {
     mode: modeId,
+    gameType,
     player,
     world,
     phase: 'settlement',
@@ -136,8 +150,16 @@ export function continueTravel(state: GameState): GameState {
     }
   }
 
+  // Award XP for taking a road (scales with danger and free play ramp)
+  const sf = getScaleFactor(state.world.turn, state.gameType)
+  const travelXp = Math.floor(road.dangerLevel * sf * 100)
+  if (travelXp > 0) {
+    player = { ...player, xp: (player.xp ?? 0) + travelXp }
+    log.push(makeLog(state.world.turn, `+${travelXp} XP — road taken.`, 'profit'))
+  }
+
   // Select a travel event
-  const event = selectTravelEvent(road, player, mc)
+  const event = selectTravelEvent(road, player, mc, sf)
   if (event) {
     return {
       ...state,
@@ -176,13 +198,23 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   const destName = mc.settlements[destinationId]?.name ?? destinationId
   const log = [...state.log, makeLog(turn, `Arrived at ${destName}.`, 'info')]
 
+  // Settlement discovery XP (first visit per run)
+  const visited = player.visitedSettlements ?? []
+  if (!visited.includes(destinationId)) {
+    const discoveryXp = 50
+    player = { ...player, xp: (player.xp ?? 0) + discoveryXp, visitedSettlements: [...visited, destinationId] }
+    log.push(makeLog(turn, `+${discoveryXp} XP — first visit to ${destName}!`, 'profit'))
+  } else {
+    player = { ...player, visitedSettlements: visited }
+  }
+
   // Announce any active market events
   for (const e of world.activeMarketEvents) {
     log.push(makeLog(turn, `[MARKET] ${e.message} (${e.turnsRemaining} turn${e.turnsRemaining > 1 ? 's' : ''} remaining)`, 'danger'))
   }
 
-  // Check win condition
-  if (turn > world.maxTurns) {
+  // Check win condition (standard mode only — free play has no turn limit)
+  if (world.maxTurns !== null && turn > world.maxTurns) {
     const score = calculateFinalScore(player)
     log.push(makeLog(turn, `Time's up. Final score: ${score} caps.`, 'system'))
     return {
@@ -232,7 +264,7 @@ function consumeTurnInPlace(state: GameState, message: string, logType: LogEntry
   world = updateWorldMarkets(world, mc)
   const log = [...state.log, makeLog(turn, message, logType)]
 
-  if (turn > world.maxTurns) {
+  if (world.maxTurns !== null && turn > world.maxTurns) {
     const score = calculateFinalScore(state.player)
     log.push(makeLog(turn, `Time's up. Final score: ${score} caps.`, 'system'))
     return {
@@ -330,6 +362,11 @@ export function resolveDebtCollector(state: GameState): GameState {
     }
   }
 
+  // Survived debt enforcement — award XP for high-risk play
+  const survivalXp = 100
+  player = { ...player, xp: (player.xp ?? 0) + survivalXp }
+  log.push(makeLog(turn, `+${survivalXp} XP — survived debt enforcement.`, 'profit'))
+
   return completeTravel({ ...state, player, log }, dest ?? state.player.location)
 }
 
@@ -346,7 +383,8 @@ export function startCombat(state: GameState): GameState {
   const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number } | undefined
   const forcedTypeId = payload?.enemyTypeId
   const forcedCount  = payload?.count
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount)
+  const sf = getScaleFactor(state.world.turn, state.gameType)
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf)
   return {
     ...state,
     phase: 'combat',
@@ -359,7 +397,7 @@ export function startCombat(state: GameState): GameState {
 const SECOND_WAVE_MIN_DANGER = 0.65
 
 export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
-  const { player, combat } = result
+  let { player, combat } = result
   const dest = state.pendingDestination
   const turn = state.world.turn
   const newLogs = combat.log.slice(state.combat?.log.length ?? 0).map(m => makeLog(turn, m, 'danger'))
@@ -378,6 +416,14 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
       endReason: `Killed by ${killerName}s on the road`,
       log: [...state.log, ...newLogs],
     }
+  }
+
+  // Award XP on combat victory
+  if (combat.phase === 'won') {
+    const sf = getScaleFactor(turn, state.gameType)
+    const combatXp = Math.floor(50 * sf) + 20 * combat.enemies.length
+    player = { ...player, xp: (player.xp ?? 0) + combatXp }
+    newLogs.push(makeLog(turn, `+${combatXp} XP — combat victory!`, 'profit'))
   }
 
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }

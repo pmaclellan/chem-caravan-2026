@@ -62,6 +62,8 @@ export interface PlayerState {
   inventory: Record<string, InventoryEntry>
   gun: GunState | null
   armor: ArmorState | null
+  xp: number                    // accumulated XP across all activities
+  visitedSettlements: string[]  // settlement ids visited this run (for discovery bonus)
   debtPaidThisCycle?: number    // caps paid toward debt since last turn tick; resets each tick
   debtWarnings?: number         // times enforcement has triggered; drives damage escalation
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window
@@ -133,7 +135,7 @@ export type GameOverReason = 'turns' | 'debt' | 'combat' | 'bankrupt'
 
 export interface WorldState {
   turn: number
-  maxTurns: number
+  maxTurns: number | null  // null in free play (no turn limit)
   settlements: Record<string, SettlementMarket>
   activeMarketEvents: MarketEvent[]
 }
@@ -145,6 +147,7 @@ export interface TransitQuote {
 
 export interface GameState {
   mode: GameModeId
+  gameType: 'standard' | 'free_play'
   player: PlayerState
   world: WorldState
   phase: GamePhase
@@ -167,8 +170,9 @@ export interface GameRow {
   final_score: number | null
   current_location: string | null
   is_traveling: boolean
-  mode: GameModeId | null        // null for pre-v2 rows (migration 003)
-  turns_reached: number | null   // set on game over
+  mode: GameModeId | null              // null for pre-v2 rows (migration 003)
+  turns_reached: number | null         // set on game over
+  game_type: 'standard' | 'free_play' // defaults to 'standard' (migration 005)
   created_at: string
   updated_at: string
 }

@@ -5,6 +5,7 @@ import type { GameModeId } from '../types/game'
 import { GAME_MODES } from '../data/modes'
 
 type LbTab = GameModeId | 'global'
+type GameTypeFilter = 'standard' | 'free_play'
 
 interface LeaderboardRow {
   id: string
@@ -27,6 +28,7 @@ const TABS: { id: LbTab; label: string }[] = [
 
 export default function Leaderboard() {
   const navigate  = useNavigate()
+  const [gameTypeFilter, setGameTypeFilter] = useState<GameTypeFilter>('standard')
   const [tab,     setTab]     = useState<LbTab>('global')
   const [rows,    setRows]    = useState<LeaderboardRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,10 +42,17 @@ export default function Leaderboard() {
       let query = supabase
         .from('games')
         .select('id, character_name, final_score, status, mode, turns_reached, created_at, state')
-        .in('status', ['won', 'dead'])
+        .eq('game_type', gameTypeFilter)
         .not('final_score', 'is', null)
         .order('final_score', { ascending: false })
         .limit(20)
+
+      if (gameTypeFilter === 'standard') {
+        query = query.in('status', ['won', 'dead'])
+      } else {
+        // Free play games end in 'dead' or 'bankrupt' (never 'won')
+        query = query.in('status', ['dead', 'bankrupt'])
+      }
 
       if (tab !== 'global') {
         query = query.eq('mode', tab)
@@ -59,10 +68,11 @@ export default function Leaderboard() {
       setLoading(false)
     }
     load()
-  }, [tab])
+  }, [tab, gameTypeFilter])
 
   const displayed = rows.slice(0, 10)
   const activeMode = tab === 'global' ? 'commonwealth' : tab
+  const isFreePlay = gameTypeFilter === 'free_play'
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 bg-pip-bg" data-mode={activeMode}>
@@ -72,13 +82,39 @@ export default function Leaderboard() {
           <button className="pip-btn" onClick={() => navigate('/')}>BACK</button>
         </div>
 
+        {/* Standard | Free Play toggle */}
+        <div className="flex gap-1 mb-4">
+          <button
+            className={gameTypeFilter === 'standard'
+              ? 'pip-btn bg-pip-green text-pip-bg-light px-4 py-1'
+              : 'pip-btn px-4 py-1'}
+            onClick={() => { setGameTypeFilter('standard'); setTab('global') }}
+          >
+            STANDARD
+          </button>
+          <button
+            className={gameTypeFilter === 'free_play'
+              ? 'pip-btn bg-pip-amber text-pip-bg-light px-4 py-1'
+              : 'pip-btn px-4 py-1'}
+            onClick={() => { setGameTypeFilter('free_play'); setTab('global') }}
+          >
+            FREE PLAY
+          </button>
+        </div>
+
+        {isFreePlay && (
+          <div className="text-pip-amber text-xs font-mono mb-3 opacity-70">
+            Score = XP earned · danger scales with turns · no turn limit
+          </div>
+        )}
+
         {/* Tab bar */}
         <div className="flex gap-1 mb-4 flex-wrap">
           {TABS.map(t => (
             <button
               key={t.id}
               className={tab === t.id
-                ? 'pip-btn bg-pip-green text-pip-bg-light text-sm px-3 py-1'
+                ? `pip-btn ${isFreePlay ? 'bg-pip-amber' : 'bg-pip-green'} text-pip-bg-light text-sm px-3 py-1`
                 : 'pip-btn text-sm px-3 py-1'}
               onClick={() => setTab(t.id)}
             >
@@ -108,7 +144,7 @@ export default function Leaderboard() {
             <div className={`grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2 ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <div>#</div>
               <div className="col-span-2">Name</div>
-              <div>Score</div>
+              <div>{isFreePlay ? 'XP' : 'Score'}</div>
               {tab === 'global' && <div>Region</div>}
               <div>Turns</div>
             </div>
@@ -118,7 +154,7 @@ export default function Leaderboard() {
               const score    = row.final_score ?? 0
               const modeName = row.mode ? GAME_MODES[row.mode]?.name.split(' ')[0] : '—'
               const outcome  = row.state?.endReason ?? (
-                row.status === 'won' ? 'Turn limit reached' : 'Unknown'
+                row.status === 'won' ? 'Turn limit reached' : 'Killed on the road'
               )
 
               return (
@@ -135,8 +171,10 @@ export default function Leaderboard() {
                     <div className="text-pip-green font-mono truncate">{row.character_name}</div>
                     <div className="text-pip-green-dim text-xs italic truncate">{outcome}</div>
                   </div>
-                  <div className={`font-display text-lg ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                    {score.toLocaleString()} ¤
+                  <div className={`font-display text-lg ${
+                    isFreePlay ? 'text-pip-amber' : (score >= 0 ? 'text-pip-amber' : 'text-pip-red')
+                  }`}>
+                    {score.toLocaleString()}{isFreePlay ? ' XP' : ' ¤'}
                   </div>
                   {tab === 'global' && (
                     <div className="text-xs text-pip-green-dim self-center">{modeName}</div>

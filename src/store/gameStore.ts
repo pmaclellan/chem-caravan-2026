@@ -53,12 +53,13 @@ interface GameStore {
   gameId: string | null
   gameState: GameState | null
   activeGameSummaries: Record<GameModeId, ActiveGameSummary | null> | null
+  freePlaySummary: ActiveGameSummary | null
   isSaving: boolean
   saveError: string | null
   toast: string | null
 
   // Lifecycle
-  startNewGame: (characterName: string, userId: string, modeId?: GameModeId) => Promise<void>
+  startNewGame: (characterName: string, userId: string, modeId?: GameModeId, gameType?: 'standard' | 'free_play') => Promise<void>
   loadActiveGame: (userId: string, modeId?: GameModeId) => Promise<void>
   loadActiveGames: (userId: string) => Promise<void>
   loadGameById: (gameId: string) => Promise<void>
@@ -99,15 +100,18 @@ interface GameStore {
 
 const VALID_MODES = new Set<GameModeId>(['commonwealth', 'capital_wasteland', 'mojave_wasteland'])
 
-// Old v1.0 saves have no mode field. Coerce to 'commonwealth' so GAME_MODES[mode] is never undefined.
+// Coerce missing or invalid fields for backward compatibility with old saves.
 function normalizeState(state: GameState): GameState {
   const mode = VALID_MODES.has(state.mode) ? state.mode : 'commonwealth'
   return {
     ...state,
     mode,
+    gameType: state.gameType ?? 'standard',
     player: {
       ...state.player,
       armor: state.player.armor ?? null,
+      xp: state.player.xp ?? 0,
+      visitedSettlements: state.player.visitedSettlements ?? [],
     },
   }
 }
@@ -131,10 +135,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       current_location: state.player.location,
       is_traveling: state.phase === 'traveling' || state.phase === 'event',
       mode: state.mode,
+      game_type: state.gameType,
       ...(isGameOver
         ? {
             status:        resolveEndStatus(state),
-            final_score:   calculateFinalScore(state.player),
+            final_score:   state.gameType === 'free_play'
+              ? (state.player.xp ?? 0)
+              : calculateFinalScore(state.player),
             turns_reached: state.world.turn,
           }
         : {}),
@@ -173,24 +180,40 @@ export const useGameStore = create<GameStore>((set, get) => {
     gameId: null,
     gameState: null,
     activeGameSummaries: null,
+    freePlaySummary: null,
     isSaving: false,
     saveError: null,
     toast: null,
 
-    startNewGame: async (characterName, userId, modeId = 'commonwealth') => {
-      // Archive the existing active game for this mode only
-      const { data: existing } = await supabase
-        .from('games')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .eq('mode', modeId)
+    startNewGame: async (characterName, userId, modeId = 'commonwealth', gameType = 'standard') => {
+      if (gameType === 'free_play') {
+        // One active free play slot total — archive any existing free play games
+        const { data: existing } = await supabase
+          .from('games')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .eq('game_type', 'free_play')
 
-      if (existing && existing.length > 0) {
-        await supabase.from('games').update({ status: 'bankrupt' }).in('id', existing.map(r => r.id))
+        if (existing && existing.length > 0) {
+          await supabase.from('games').update({ status: 'bankrupt' }).in('id', existing.map(r => r.id))
+        }
+      } else {
+        // Archive the existing active standard game for this mode only
+        const { data: existing } = await supabase
+          .from('games')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .eq('mode', modeId)
+          .eq('game_type', 'standard')
+
+        if (existing && existing.length > 0) {
+          await supabase.from('games').update({ status: 'bankrupt' }).in('id', existing.map(r => r.id))
+        }
       }
 
-      const newState = initializeGame(characterName, modeId)
+      const newState = initializeGame(characterName, modeId, gameType)
 
       const { data, error } = await supabase
         .from('games')
@@ -200,6 +223,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           state: newState,
           status: 'active',
           mode: modeId,
+          game_type: gameType,
           current_location: newState.player.location,
           is_traveling: false,
         })
@@ -239,13 +263,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     loadActiveGames: async (userId) => {
       const { data, error } = await supabase
         .from('games')
-        .select('id, character_name, state, mode')
+        .select('id, character_name, state, mode, game_type')
         .eq('user_id', userId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
 
       if (error || !data) {
-        set({ activeGameSummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null } })
+        set({ activeGameSummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null }, freePlaySummary: null })
         return
       }
 
@@ -254,19 +278,34 @@ export const useGameStore = create<GameStore>((set, get) => {
         capital_wasteland: null,
         mojave_wasteland: null,
       }
+      let freePlaySummary: ActiveGameSummary | null = null
 
       for (const row of data as GameRow[]) {
         const modeId = (row.mode ?? row.state?.mode) as GameModeId | undefined
-        if (!modeId || summaries[modeId] !== null) continue
-        summaries[modeId] = {
-          id: row.id,
-          characterName: row.character_name,
-          turn: row.state?.world?.turn ?? 0,
-          modeId,
+        if (!modeId) continue
+
+        if ((row.game_type ?? 'standard') === 'free_play') {
+          if (!freePlaySummary) {
+            freePlaySummary = {
+              id: row.id,
+              characterName: row.character_name,
+              turn: row.state?.world?.turn ?? 0,
+              modeId,
+            }
+          }
+        } else {
+          if (summaries[modeId] === null) {
+            summaries[modeId] = {
+              id: row.id,
+              characterName: row.character_name,
+              turn: row.state?.world?.turn ?? 0,
+              modeId,
+            }
+          }
         }
       }
 
-      set({ activeGameSummaries: summaries })
+      set({ activeGameSummaries: summaries, freePlaySummary })
     },
 
     loadGameById: async (gameId) => {
@@ -387,8 +426,9 @@ export const useGameStore = create<GameStore>((set, get) => {
     sell: (chemId, quantity) => {
       mutate(state => {
         const market = currentMarket(state)
-        const { player, profit, error } = sellChems(state.player, market, chemId, quantity)
+        const { player: sold, profit, error } = sellChems(state.player, market, chemId, quantity)
         if (error) { set({ toast: error }); return state }
+        let player = sold
         const loc = state.player.location
         const world = updateSettlementStock(state.world, loc, chemId, +quantity)
         const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
@@ -397,6 +437,13 @@ export const useGameStore = create<GameStore>((set, get) => {
           message: `Sold ${quantity} ${chemId} for ${market.prices[chemId] * quantity} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
+        if (profit > 0) {
+          const tradeXp = Math.floor(profit / 5)
+          if (tradeXp > 0) {
+            player = { ...player, xp: (player.xp ?? 0) + tradeXp }
+            log.push({ turn: state.world.turn, message: `+${tradeXp} XP — trade profit.`, type: 'profit' as const })
+          }
+        }
         return { ...state, player, world, log }
       })
     },
@@ -436,7 +483,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         const inventory = { ...state.player.inventory }
         if (newQty === 0) delete inventory[chemId]
         else inventory[chemId] = { ...existing, quantity: newQty }
-        const player = { ...state.player, caps: state.player.caps + revenue, inventory }
+        let player = { ...state.player, caps: state.player.caps + revenue, inventory }
         const newPayload = { ...payload, demand: { ...payload.demand, [chemId]: remaining - quantity } }
         const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
         const log = [...state.log, {
@@ -444,6 +491,13 @@ export const useGameStore = create<GameStore>((set, get) => {
           message: `Sold ${quantity} ${chemId} to buyer for ${revenue} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
+        if (profit > 0) {
+          const tradeXp = Math.floor(profit / 5)
+          if (tradeXp > 0) {
+            player = { ...player, xp: (player.xp ?? 0) + tradeXp }
+            log.push({ turn: state.world.turn, message: `+${tradeXp} XP — trade profit.`, type: 'profit' as const })
+          }
+        }
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
     },

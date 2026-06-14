@@ -25,6 +25,7 @@ export function selectTravelEvent(
   road: Road,
   player: PlayerState,
   modeConfig: GameModeConfig,
+  scaleFactor = 1,
 ): TravelEvent | null {
   // Debt collector — window-based payment check.
   // Fires once the current payment window has closed without meeting the 15% threshold.
@@ -53,8 +54,8 @@ export function selectTravelEvent(
     }
   }
 
-  // Combat roll — dangerLevel is the direct probability of a combat encounter.
-  if (rng() < road.dangerLevel) {
+  // Combat roll — dangerLevel scaled by free play difficulty ramp.
+  if (rng() < Math.min(1, road.dangerLevel * scaleFactor)) {
     const def = modeConfig.travelEvents.find(e => e.type === 'raider_ambush')
     if (def) return buildEventPayload('raider_ambush', def.title, def.description, modeConfig, road)
   }

@@ -3,6 +3,7 @@ import pkg from '../../package.json'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
+import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
 import type { GameModeId } from '../types/game'
 import AuthModal from '../components/auth/AuthModal'
@@ -24,7 +25,7 @@ export default function Home() {
   const navigate  = useNavigate()
   const { user, signOut } = useAuthStore()
   const store     = useGameStore()
-  const { activeGameSummaries, loadActiveGames, startNewGame, loadGameById, clearGame } = store
+  const { activeGameSummaries, freePlaySummary, loadActiveGames, startNewGame, loadGameById, clearGame } = store
 
   const [showAuth,     setShowAuth]     = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
@@ -34,9 +35,37 @@ export default function Home() {
   const [confirmAbandon, setConfirmAbandon] = useState(false)
   const [starting,     setStarting]     = useState(false)
 
+  // Free Play state
+  const [freePlayUnlocked, setFreePlayUnlocked] = useState(false)
+  const [showFreePlayNew,  setShowFreePlayNew]  = useState(false)
+  const [freePlayMode,     setFreePlayMode]     = useState<GameModeId>('commonwealth')
+  const [freePlayName,     setFreePlayName]     = useState('')
+  const [freePlayStarting, setFreePlayStarting] = useState(false)
+
   useEffect(() => {
     if (user) loadActiveGames(user.id)
   }, [user, loadActiveGames])
+
+  // Check if free play is unlocked (won at least one game in each of the 3 modes)
+  useEffect(() => {
+    if (!user) return
+    async function checkUnlock() {
+      const { data } = await supabase
+        .from('games')
+        .select('mode')
+        .eq('user_id', user!.id)
+        .eq('status', 'won')
+        .eq('game_type', 'standard')
+      if (!data) return
+      const wonModes = new Set(data.map((r: { mode: string | null }) => r.mode).filter(Boolean))
+      setFreePlayUnlocked(
+        wonModes.has('commonwealth') &&
+        wonModes.has('capital_wasteland') &&
+        wonModes.has('mojave_wasteland')
+      )
+    }
+    checkUnlock()
+  }, [user])
 
   async function handleContinue(gameId: string) {
     await loadGameById(gameId)
@@ -48,6 +77,14 @@ export default function Home() {
     setStarting(true)
     clearGame()
     await startNewGame(charName.trim(), user.id, selectedMode)
+    navigate('/game')
+  }
+
+  async function handleStartFreePlay() {
+    if (!user || !freePlayName.trim()) return
+    setFreePlayStarting(true)
+    clearGame()
+    await startNewGame(freePlayName.trim(), user.id, freePlayMode, 'free_play')
     navigate('/game')
   }
 
@@ -203,6 +240,73 @@ export default function Home() {
                 >
                   {activeGameSummaries?.[selectedMode] ? 'ABANDON & NEW GAME' : 'NEW GAME'}
                 </button>
+              )}
+            </div>
+
+            {/* Free Play */}
+            <div className="border-t border-pip-border pt-4">
+              <div className="flex justify-between items-center mb-2">
+                <div className="pip-label tracking-widest">FREE PLAY</div>
+                {freePlayUnlocked && (
+                  <span className="text-pip-green-dim text-xs">No turn limit · danger scales with time</span>
+                )}
+              </div>
+
+              {!freePlayUnlocked ? (
+                <div className="border border-pip-border-dim rounded p-3 text-center opacity-60">
+                  <div className="text-pip-green-dim text-sm">Complete all 3 difficulties to unlock</div>
+                </div>
+              ) : showFreePlayNew ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    {MODE_IDS.map(id => (
+                      <button
+                        key={id}
+                        onClick={() => setFreePlayMode(id)}
+                        className={`pip-btn flex-1 text-xs ${freePlayMode === id ? 'bg-pip-green text-pip-bg-light' : ''}`}
+                      >
+                        {GAME_MODES[id].name.split(' ')[0].toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={freePlayName}
+                    onChange={e => setFreePlayName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleStartFreePlay()}
+                    className="pip-input w-full"
+                    placeholder="Enter your name, Wanderer"
+                    autoFocus
+                  />
+                  <button
+                    className="pip-btn w-full"
+                    disabled={!freePlayName.trim() || freePlayStarting}
+                    onClick={handleStartFreePlay}
+                  >
+                    {freePlayStarting ? 'LOADING...' : 'START FREE PLAY'}
+                  </button>
+                  <button className="pip-btn w-full text-sm" onClick={() => setShowFreePlayNew(false)}>
+                    CANCEL
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {freePlaySummary && (
+                    <button
+                      className="pip-btn w-full"
+                      onClick={() => handleContinue(freePlaySummary.id)}
+                    >
+                      CONTINUE FREE PLAY — {GAME_MODES[freePlaySummary.modeId].name.split(' ')[0]} (T{freePlaySummary.turn})
+                    </button>
+                  )}
+                  <button
+                    className="pip-btn w-full"
+                    onClick={() => { setShowFreePlayNew(true); setFreePlayName('') }}
+                  >
+                    {freePlaySummary ? 'ABANDON & NEW FREE PLAY' : 'START FREE PLAY'}
+                  </button>
+                </div>
               )}
             </div>
 
