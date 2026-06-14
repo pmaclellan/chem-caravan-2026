@@ -5,15 +5,13 @@ import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets,
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
 import { initiateCombat } from './combat'
+import { awardXp, getScaleFactor, XpEventType } from './xp'
 import { rng } from './rng'
+
+export { getScaleFactor } from './xp'
 
 function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntry {
   return { turn, message, type }
-}
-
-export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play'): number {
-  if (gameType !== 'free_play') return 1
-  return 1 + turn / 60
 }
 
 export function initializeGame(
@@ -150,13 +148,10 @@ export function continueTravel(state: GameState): GameState {
     }
   }
 
-  // Award XP for taking a road (scales with danger and free play ramp)
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const travelXp = Math.floor(road.dangerLevel * sf * 100)
-  if (travelXp > 0) {
-    player = { ...player, xp: (player.xp ?? 0) + travelXp }
-    log.push(makeLog(state.world.turn, `+${travelXp} XP — road taken.`, 'profit'))
-  }
+  const { player: p1, logMessage: xpMsg1 } = awardXp(player, { type: XpEventType.RoadTravel, dangerLevel: road.dangerLevel, scaleFactor: sf })
+  player = p1
+  if (xpMsg1) log.push(makeLog(state.world.turn, xpMsg1, 'profit'))
 
   // Select a travel event
   const event = selectTravelEvent(road, player, mc, sf)
@@ -201,9 +196,9 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   // Settlement discovery XP (first visit per run)
   const visited = player.visitedSettlements ?? []
   if (!visited.includes(destinationId)) {
-    const discoveryXp = 50
-    player = { ...player, xp: (player.xp ?? 0) + discoveryXp, visitedSettlements: [...visited, destinationId] }
-    log.push(makeLog(turn, `+${discoveryXp} XP — first visit to ${destName}!`, 'profit'))
+    const { player: p2, logMessage: xpMsg2 } = awardXp(player, { type: XpEventType.SettlementDiscovery, settlementName: destName })
+    player = { ...p2, visitedSettlements: [...visited, destinationId] }
+    if (xpMsg2) log.push(makeLog(turn, xpMsg2, 'profit'))
   } else {
     player = { ...player, visitedSettlements: visited }
   }
@@ -362,10 +357,9 @@ export function resolveDebtCollector(state: GameState): GameState {
     }
   }
 
-  // Survived debt enforcement — award XP for high-risk play
-  const survivalXp = 100
-  player = { ...player, xp: (player.xp ?? 0) + survivalXp }
-  log.push(makeLog(turn, `+${survivalXp} XP — survived debt enforcement.`, 'profit'))
+  const { player: p3, logMessage: xpMsg3 } = awardXp(player, { type: XpEventType.DebtSurvival })
+  player = p3
+  if (xpMsg3) log.push(makeLog(turn, xpMsg3, 'profit'))
 
   return completeTravel({ ...state, player, log }, dest ?? state.player.location)
 }
@@ -418,12 +412,11 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     }
   }
 
-  // Award XP on combat victory
   if (combat.phase === 'won') {
     const sf = getScaleFactor(turn, state.gameType)
-    const combatXp = Math.floor(50 * sf) + 20 * combat.enemies.length
-    player = { ...player, xp: (player.xp ?? 0) + combatXp }
-    newLogs.push(makeLog(turn, `+${combatXp} XP — combat victory!`, 'profit'))
+    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, enemyCount: combat.enemies.length, scaleFactor: sf })
+    player = p4
+    if (xpMsg4) newLogs.push(makeLog(turn, xpMsg4, 'profit'))
   }
 
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
