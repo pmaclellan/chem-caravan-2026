@@ -235,7 +235,7 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
           {isFreePlay ? (
             <div className="flex justify-between border-t border-pip-border pt-2">
               <span className="pip-label">XP EARNED</span>
-              <span className="font-display text-2xl text-pip-amber">{(player.xp ?? 0).toLocaleString()} XP</span>
+              <span className="font-display text-2xl text-pip-blue">{(player.xp ?? 0).toLocaleString()} XP</span>
             </div>
           ) : (
             <>
@@ -248,7 +248,7 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
               {(player.xp ?? 0) > 0 && (
                 <div className="flex justify-between">
                   <span className="pip-label">XP earned</span>
-                  <span className="text-pip-amber text-sm">{(player.xp ?? 0).toLocaleString()} XP</span>
+                  <span className="text-pip-blue text-sm">{(player.xp ?? 0).toLocaleString()} XP</span>
                 </div>
               )}
             </>
