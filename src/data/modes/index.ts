@@ -55,7 +55,12 @@ export interface GameModeConfig {
   guardHealth: number       // HP absorbed per guard per attack as mitigation
   guardAccuracy: number     // hit chance for each guard's attack roll
   guardDamage: [number, number]
+  maxGuards: number
+  powerArmorGuardCost: number
+  powerArmorGuardHealth: number
+  maxPowerArmorGuards: number
   brahminCost: number
+  maxBrahmin: number
   doctorCost: number
   doctorCostCheap: number
   // events
@@ -112,10 +117,15 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     { age: 12, damage: 999, message: "The last thing you see is the caps logo on a Triggerman's ring." },
   ],
   guardCost: 400,
-  guardHealth: 40,
+  guardHealth: 50,
   guardAccuracy: 0.55,
   guardDamage: [20, 35],
+  maxGuards: 5,
+  powerArmorGuardCost: 2500,
+  powerArmorGuardHealth: 150,
+  maxPowerArmorGuards: 3,
   brahminCost: 250,
+  maxBrahmin: 5,
   doctorCost: 200,
   doctorCostCheap: 100,
   nonCombatEventProb: 0.30,

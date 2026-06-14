@@ -119,16 +119,46 @@ export function repayDebt(player: PlayerState, amount: number): { player: Player
   }
 }
 
-export function hireGuards(player: PlayerState, count: number, guardCost: number): { player: PlayerState; error?: string } {
-  const cost = count * guardCost
+export function hireGuards(
+  player: PlayerState,
+  count: number,
+  guardCost: number,
+  maxGuards: number,
+): { player: PlayerState; error?: string } {
+  const available = Math.max(0, maxGuards - player.guards)
+  const actual = Math.min(count, available)
+  if (actual === 0) return { player, error: `Guard limit is ${maxGuards}.` }
+  const cost = actual * guardCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
-  return { player: { ...player, caps: player.caps - cost, guards: player.guards + count } }
+  return { player: { ...player, caps: player.caps - cost, guards: player.guards + actual } }
 }
 
-export function buyBrahmin(player: PlayerState, count: number, brahminCost: number): { player: PlayerState; error?: string } {
-  const cost = count * brahminCost
+export function buyPowerArmorGuard(
+  player: PlayerState,
+  count: number,
+  paGuardCost: number,
+  maxPAGuards: number,
+): { player: PlayerState; error?: string } {
+  const available = Math.max(0, maxPAGuards - (player.powerArmorGuards ?? 0))
+  const actual = Math.min(count, available)
+  if (actual === 0) return { player, error: `Power armor guard limit is ${maxPAGuards}.` }
+  const cost = actual * paGuardCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
-  return { player: { ...player, caps: player.caps - cost, brahmin: player.brahmin + count } }
+  return { player: { ...player, caps: player.caps - cost, powerArmorGuards: (player.powerArmorGuards ?? 0) + actual } }
+}
+
+export function buyBrahmin(
+  player: PlayerState,
+  count: number,
+  brahminCost: number,
+  maxBrahmin: number,
+): { player: PlayerState; error?: string } {
+  const available = Math.max(0, maxBrahmin - player.brahmin)
+  const actual = Math.min(count, available)
+  if (actual === 0) return { player, error: `Brahmin limit is ${maxBrahmin}.` }
+  const cost = actual * brahminCost
+  if (player.caps < cost) return { player, error: "Not enough caps." }
+  return { player: { ...player, caps: player.caps - cost, brahmin: player.brahmin + actual } }
 }
 
 export function buyGun(
@@ -208,9 +238,9 @@ export function calculateFinalScore(player: PlayerState): number {
 
 export function resolveGameStatus(
   _player: PlayerState,
-  reason: 'turns' | 'debt' | 'combat' | 'bankrupt',
+  reason: 'turns' | 'debt' | 'combat' | 'bankrupt' | 'retired',
 ): 'won' | 'dead' | 'bankrupt' {
-  if (reason === 'turns') return 'won'
+  if (reason === 'turns' || reason === 'retired') return 'won'
   if (reason === 'bankrupt') return 'bankrupt'
   return 'dead'
 }

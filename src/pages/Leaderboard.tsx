@@ -50,8 +50,8 @@ export default function Leaderboard() {
       if (gameTypeFilter === 'standard') {
         query = query.in('status', ['won', 'dead'])
       } else {
-        // Free play games end in 'dead' or 'bankrupt' (never 'won')
-        query = query.in('status', ['dead', 'bankrupt'])
+        // Free play games end in 'dead', 'bankrupt', or 'won' (retired)
+        query = query.in('status', ['dead', 'bankrupt', 'won'])
       }
 
       if (tab !== 'global') {

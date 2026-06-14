@@ -51,6 +51,7 @@ export function initializeGame(
     health: mc.startingHealth,
     maxHealth: mc.startingHealth,
     guards: 0,
+    powerArmorGuards: 0,
     brahmin: mc.startingBrahmin,
     location: mc.startingLocation,
     ageOfDebt: 0,
@@ -399,7 +400,7 @@ export function startCombat(state: GameState): GameState {
 }
 
 // Danger threshold above which a second enemy wave can spawn.
-const SECOND_WAVE_MIN_DANGER = 0.65
+const SECOND_WAVE_MIN_DANGER = 0.55
 
 export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
   let { player, combat } = result
@@ -477,4 +478,24 @@ export function dismissCombatSummary(state: GameState): GameState {
 
 export function endGame(state: GameState): GameState {
   return { ...state, phase: 'game_over' }
+}
+
+export function retireGame(state: GameState): GameState {
+  const score = calculateFinalScore(state.player)
+  const turn = state.world.turn
+  const log = [
+    ...state.log,
+    makeLog(turn, 'You hang up your pack and retire from the caravan trade.', 'system'),
+    makeLog(turn, `Final XP: ${(state.player.xp ?? 0).toLocaleString()} · Caps on hand: ${state.player.caps.toLocaleString()} · Score: ${score >= 0 ? '+' : ''}${score}`, 'system'),
+  ]
+  return {
+    ...state,
+    phase: 'game_over',
+    gameOverReason: 'retired',
+    endReason: 'Retired from the caravan trade',
+    pendingEvent: null,
+    pendingDestination: null,
+    combat: null,
+    log,
+  }
 }

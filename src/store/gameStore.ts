@@ -13,6 +13,7 @@ import {
   startCombat,
   afterCombat,
   dismissCombatSummary,
+  retireGame as retireGameFn,
 } from '../engine/gameLoop'
 import { resolveFight, resolveRun } from '../engine/combat'
 import { loseBrahmin } from '../engine/travel'
@@ -24,6 +25,7 @@ import {
   takeLoan,
   repayDebt,
   hireGuards,
+  buyPowerArmorGuard,
   buyBrahmin,
   buyGun,
   buyAmmo,
@@ -89,11 +91,13 @@ interface GameStore {
   borrow: (amount: number) => void
   payDebt: (amount: number) => void
   hireguards: (count: number) => void
+  purchasePowerArmorGuard: (count: number) => void
   purchaseBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
   purchaseAmmo: (rounds: number) => void
   purchaseArmor: (armorId: string) => void
   repairArmor: () => void
+  retire: () => void
 
   // Internal
   _setToast: (msg: string | null) => void
@@ -113,6 +117,7 @@ function normalizeState(state: GameState): GameState {
       armor: state.player.armor ?? null,
       xp: state.player.xp ?? 0,
       visitedSettlements: state.player.visitedSettlements ?? [],
+      powerArmorGuards: state.player.powerArmorGuards ?? 0,
     },
   }
 }
@@ -535,9 +540,19 @@ export const useGameStore = create<GameStore>((set, get) => {
     hireguards: (count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = hireGuards(state.player, count, mc.guardCost)
+        const { player, error } = hireGuards(state.player, count, mc.guardCost, mc.maxGuards)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Hired ${count} guard${count > 1 ? 's' : ''}.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    purchasePowerArmorGuard: (count) => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.maxPowerArmorGuards)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Fitted ${count} guard${count > 1 ? 's' : ''} with power armor.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
@@ -545,7 +560,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     purchaseBrahmin: (count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = buyBrahmin(state.player, count, mc.brahminCost)
+        const { player, error } = buyBrahmin(state.player, count, mc.brahminCost, mc.maxBrahmin)
         if (error) { set({ toast: error }); return state }
         const capacity = mc.baseCapacity + player.brahmin * mc.capacityPerBrahmin
         const log = [...state.log, { turn: state.world.turn, message: `Bought ${count} brahmin. Capacity now ${capacity}.`, type: 'info' as const }]
@@ -594,6 +609,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         const log = [...state.log, { turn: state.world.turn, message: `Armor repaired to full condition.`, type: 'info' as const }]
         return { ...state, player, log }
       })
+    },
+
+    retire: () => {
+      mutate(state => retireGameFn(state))
     },
 
     _setToast: (msg) => set({ toast: msg }),

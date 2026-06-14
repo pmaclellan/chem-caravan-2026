@@ -56,6 +56,7 @@ export interface PlayerState {
   health: number
   maxHealth: number
   guards: number
+  powerArmorGuards: number
   brahmin: number
   location: string   // settlement id
   ageOfDebt: number  // turns elapsed since debt was first taken
@@ -132,7 +133,7 @@ export type GamePhase =
   | 'merchant'
   | 'game_over'
 
-export type GameOverReason = 'turns' | 'debt' | 'combat' | 'bankrupt'
+export type GameOverReason = 'turns' | 'debt' | 'combat' | 'bankrupt' | 'retired'
 
 export interface WorldState {
   turn: number
