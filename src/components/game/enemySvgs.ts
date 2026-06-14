@@ -62,8 +62,46 @@ const FIEND = `
   <rect x="22" y="34" width="6" height="13" rx="1" fill="currentColor"/>
 `
 
+const FERAL_GHOUL = `
+  <ellipse cx="24" cy="9" rx="7" ry="8" fill="currentColor"/>
+  <path d="M18 17 L13 40 L19 40 L22 27 L26 27 L29 40 L35 40 L30 17 Z" fill="currentColor"/>
+  <ellipse cx="29" cy="19" rx="5" ry="4" fill="currentColor"/>
+  <rect x="4" y="15" width="11" height="4" rx="2" fill="currentColor"/>
+  <rect x="33" y="15" width="11" height="4" rx="2" fill="currentColor"/>
+  <path d="M4 17 L0 13 M4 17 L1 18 M4 17 L2 21" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M44 17 L48 13 M44 17 L47 18 M44 17 L46 21" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+`
+
+const RADSCORPION = `
+  <ellipse cx="22" cy="33" rx="13" ry="9" fill="currentColor"/>
+  <ellipse cx="19" cy="21" rx="8" ry="6" fill="currentColor"/>
+  <path d="M11 19 L3 13 L4 18 L11 23 Z" fill="currentColor"/>
+  <path d="M11 23 L3 27 L4 31 L11 27 Z" fill="currentColor"/>
+  <path d="M27 19 L33 12 L35 17 L27 23 Z" fill="currentColor"/>
+  <path d="M27 23 L34 27 L33 31 L27 27 Z" fill="currentColor"/>
+  <rect x="10" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-20 12 30)"/>
+  <rect x="20" y="31" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-5 22 32)"/>
+  <rect x="28" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(20 30 30)"/>
+  <path d="M32 30 C38 26 44 18 42 9 C40 3 35 1 32 5" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <polygon points="32,5 28,1 36,1" fill="currentColor"/>
+`
+
+const YAO_GUAI = `
+  <circle cx="24" cy="16" r="11" fill="currentColor"/>
+  <circle cx="15" cy="8" r="5" fill="currentColor"/>
+  <circle cx="33" cy="8" r="5" fill="currentColor"/>
+  <ellipse cx="24" cy="34" rx="14" ry="12" fill="currentColor"/>
+  <rect x="8" y="28" width="8" height="14" rx="4" fill="currentColor"/>
+  <rect x="32" y="28" width="8" height="14" rx="4" fill="currentColor"/>
+  <path d="M8 42 L5 47 M10 43 L8 48 M14 43 L13 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M38 42 L41 47 M36 43 L38 48 M32 43 L33 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+`
+
 export const ENEMY_SVGS: Record<string, string> = {
   raider:       RAIDER,
+  feral_ghoul:  FERAL_GHOUL,
+  radscorpion:  RADSCORPION,
+  yao_guai:     YAO_GUAI,
   super_mutant: SUPER_MUTANT,
   great_khan:   GREAT_KHAN,
   legionnaire:  LEGIONNAIRE,
