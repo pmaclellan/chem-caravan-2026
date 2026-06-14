@@ -594,7 +594,7 @@ otherwise            →  muted green (#4a6a20)   — combat < 33%
 ```
 The `DangerBars` indicator in TravelPanel and MobileGame uses `Math.round(level * 5)` bars; bars ≥ 3 shows red, bars ≥ 2 amber, below shows green — which aligns with the same thresholds.
 
-**Service icons** (`✚ ¤ ⚙ ⚔`) are assembled from the settlement's boolean flags (`hasDoctor`, `hasBank`, `hasGunShop`, `hasGuards`) and placed as a second text row below (or above) the settlement name, 10–11px further in the same direction as the label.
+**Service icons** (`✚ ¤ ⚙ ⚔`) are assembled from the settlement's boolean flags (`hasDoctor`, `hasBank`, `hasArmory`, `hasGuards`) and placed as a second text row below (or above) the settlement name, 10–11px further in the same direction as the label.
 
 **Mobile vs. desktop sizing:** The same component handles both. On mobile, `compact={true}` scales the `viewBox` contents down by 0.58× using `width="100%"` on the SVG element and an explicit pixel height (~360px). On desktop the SVG fills its container with `className="absolute inset-0 w-full h-full"`.
 
