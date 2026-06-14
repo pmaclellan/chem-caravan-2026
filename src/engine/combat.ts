@@ -76,6 +76,7 @@ export function initiateCombat(
     totalDamageTaken: 0,
     enemyLoot,
     capsLooted: 0,
+    xpGained: 0,
     phase: 'player_choice',
     log: [description],
   }
