@@ -193,6 +193,7 @@ export default function Game() {
 
 function GameOverScreen({ gameState, onHome }: { gameState: import('../types/game').GameState; onHome: () => void }) {
   const { player, gameOverReason, endReason, log } = gameState
+  const isFreePlay = gameState.gameType === 'free_play'
   const score = player.caps - player.debt
   const isWin = gameOverReason === 'turns'
   const [logOpen, setLogOpen] = useState(false)
@@ -207,15 +208,20 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-pip-bg" data-mode={gameState.mode}>
       <div className="pip-panel max-w-md w-full text-center space-y-4">
-        <div className={`font-display text-5xl ${isWin ? 'text-pip-amber' : 'text-pip-red'}`}>
-          {isWin ? 'GAME OVER' : 'YOU DIED'}
+        <div className="font-display text-5xl text-pip-red">
+          {isFreePlay ? 'RUN ENDED' : (isWin ? 'GAME OVER' : 'YOU DIED')}
         </div>
+        {isFreePlay && <div className="text-pip-amber text-xs font-mono tracking-widest">FREE PLAY</div>}
         <div className="text-pip-green-dim text-sm">{subtitle}</div>
 
         <div className="border border-pip-border rounded p-4 space-y-2 text-left">
           <div className="flex justify-between">
             <span className="pip-label">Character</span>
             <span className="text-pip-green">{player.name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="pip-label">Turns survived</span>
+            <span className="text-pip-green">{gameState.world.turn}</span>
           </div>
           <div className="flex justify-between">
             <span className="pip-label">Caps on hand</span>
@@ -225,12 +231,28 @@ function GameOverScreen({ gameState, onHome }: { gameState: import('../types/gam
             <span className="pip-label">Debt owed</span>
             <span className="text-pip-red">-{player.debt.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between border-t border-pip-border pt-2">
-            <span className="pip-label">FINAL SCORE</span>
-            <span className={`font-display text-2xl ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-              {score.toLocaleString()} ¤
-            </span>
-          </div>
+
+          {isFreePlay ? (
+            <div className="flex justify-between border-t border-pip-border pt-2">
+              <span className="pip-label">XP EARNED</span>
+              <span className="font-display text-2xl text-pip-amber">{(player.xp ?? 0).toLocaleString()} XP</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between border-t border-pip-border pt-2">
+                <span className="pip-label">FINAL SCORE</span>
+                <span className={`font-display text-2xl ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                  {score.toLocaleString()} ¤
+                </span>
+              </div>
+              {(player.xp ?? 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="pip-label">XP earned</span>
+                  <span className="text-pip-amber text-sm">{(player.xp ?? 0).toLocaleString()} XP</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="flex gap-3">
