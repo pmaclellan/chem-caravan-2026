@@ -25,6 +25,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     health: 100,
     maxHealth: 100,
     guards: 0,
+    powerArmorGuards: 0,
     brahmin: 1,
     location: 'diamond_city',
     ageOfDebt: 0,
@@ -195,21 +196,21 @@ describe('calculateFinalScore', () => {
 describe('hireGuards', () => {
   it('deducts caps and adds guards', () => {
     const player = makePlayer({ caps: 500, guards: 1 })
-    const { player: result, error } = hireGuards(player, 2, 150)
+    const { player: result, error } = hireGuards(player, 2, 150, 10)
     expect(error).toBeUndefined()
     expect(result.caps).toBe(500 - 300) // 2 * 150
     expect(result.guards).toBe(3)
   })
 
   it('rejects when not enough caps', () => {
-    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 150)
+    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 150, 10)
     expect(error).toBeTruthy()
   })
 
   it('uses mode-specific guard cost', () => {
     const player = makePlayer({ caps: 500 })
     // Mode with guard cost 200 — hiring 2 costs 400
-    const { player: result } = hireGuards(player, 2, 200)
+    const { player: result } = hireGuards(player, 2, 200, 10)
     expect(result.caps).toBe(100)
   })
 })
