@@ -67,6 +67,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     health: 100,
     maxHealth: 100,
     guards: 0,
+    powerArmorGuards: 0,
     brahmin: 0,
     location: 'diamond_city',
     ageOfDebt: 0,
