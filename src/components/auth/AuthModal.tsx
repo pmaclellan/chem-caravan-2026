@@ -21,8 +21,15 @@ export default function AuthModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-pip-bg bg-opacity-90 flex items-center justify-center z-50 p-4">
-      <div className="pip-panel w-full max-w-sm">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-hidden">
+      <div className="absolute inset-0">
+        <picture>
+          <source media="(max-width: 639px)" srcSet="/assets/main_menu_background_mobile.png" />
+          <img src="/assets/main_menu_background.png" alt="" className="w-full h-full object-cover object-center" />
+        </picture>
+      </div>
+      <div className="absolute inset-0 bg-pip-bg opacity-30" />
+      <div className="relative pip-panel w-full max-w-sm">
         <div className="pip-section-title mb-4">
           {mode === 'signin' ? 'ENTER THE WASTELAND' : 'CREATE ACCOUNT'}
         </div>
