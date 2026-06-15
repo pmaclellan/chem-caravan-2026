@@ -133,8 +133,12 @@ export default function CombatPanel({ player, combat }: Props) {
       })
     : combat.enemies
 
-  const displayGuards   = anim.isAnimating ? anim.displayGuards   : player.guards
-  const displayPAGuards = anim.isAnimating ? anim.displayPAGuards : paGuards
+  // Alive counts — used to determine which cards are greyed out
+  const aliveGuards   = anim.isAnimating ? anim.displayGuards   : player.guards
+  const alivePAGuards = anim.isAnimating ? anim.displayPAGuards : paGuards
+  // Total cards to render — stays at pre-fight count so dead guards show as grey
+  const totalGuards   = Math.max(anim.initialGuards,   player.guards)
+  const totalPAGuards = Math.max(anim.initialPAGuards, paGuards)
 
   // Player HP/AP bars animate down during retaliation, snap to real values after
   const displayHealth = anim.isAnimating ? anim.displayPlayerHealth : player.health
@@ -222,7 +226,7 @@ export default function CombatPanel({ player, combat }: Props) {
       </div>
 
       {/* Protectors — player card + guards + brahmin */}
-      {(displayGuards > 0 || displayPAGuards > 0 || player.brahmin > 0) && (
+      {(totalGuards > 0 || totalPAGuards > 0 || player.brahmin > 0) && (
         <div className="border border-pip-border rounded p-3">
           <div className="pip-label mb-2">Protectors</div>
           <div className="flex gap-2 flex-wrap">
@@ -248,29 +252,41 @@ export default function CombatPanel({ player, combat }: Props) {
               )
             })()}
 
-            {Array.from({ length: displayGuards }).map((_, i) => (
-              <div key={`g-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
-                <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
-                  <GuardGlow flashKey={anim.guardFireKeys[i] ?? 0} isPAGuard={false} />
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
-                    <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
-                  </svg>
-                </div>
-                <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-green)' }} />
-                <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-green)', opacity: 0.7 }}>GUARD</div>
-              </div>
-            ))}
-            {Array.from({ length: displayPAGuards }).map((_, i) => {
-              const globalIdx = displayGuards + i
+            {Array.from({ length: totalGuards }).map((_, i) => {
+              const dead = i >= aliveGuards
               return (
-                <div key={`pa-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                <div
+                  key={`g-${i}`}
+                  className="flex flex-col items-center gap-1"
+                  style={{ width: '3rem', opacity: dead ? 0.35 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
+                >
+                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
+                    {!dead && <GuardGlow flashKey={anim.guardFireKeys[i] ?? 0} isPAGuard={false} />}
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
+                      <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
+                    </svg>
+                  </div>
+                  <div className="h-1 rounded w-full" style={{ backgroundColor: dead ? 'var(--pip-border)' : 'var(--pip-green)', transition: 'background-color 400ms' }} />
+                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-green)', opacity: 0.7 }}>GUARD</div>
+                </div>
+              )
+            })}
+            {Array.from({ length: totalPAGuards }).map((_, i) => {
+              const globalIdx = totalGuards + i
+              const dead = i >= alivePAGuards
+              return (
+                <div
+                  key={`pa-${i}`}
+                  className="flex flex-col items-center gap-1"
+                  style={{ width: '3rem', opacity: dead ? 0.35 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
+                >
                   <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-blue)' }}>
-                    <GuardGlow flashKey={anim.guardFireKeys[globalIdx] ?? 0} isPAGuard={true} />
+                    {!dead && <GuardGlow flashKey={anim.guardFireKeys[globalIdx] ?? 0} isPAGuard={true} />}
                     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
                       <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
                     </svg>
                   </div>
-                  <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-blue)' }} />
+                  <div className="h-1 rounded w-full" style={{ backgroundColor: dead ? 'var(--pip-border)' : 'var(--pip-blue)', transition: 'background-color 400ms' }} />
                   <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-blue)', opacity: 0.7 }}>PA</div>
                 </div>
               )
@@ -288,8 +304,8 @@ export default function CombatPanel({ player, combat }: Props) {
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
-            {displayGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
-            {displayPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
+            {totalGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
+            {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}
           </div>
         </div>
