@@ -112,7 +112,7 @@ export default function Home() {
 
   return (
     <div
-      className="relative min-h-screen flex flex-col items-center justify-center gap-4 p-4 transition-colors duration-300 overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden"
       data-mode={selectedMode}
     >
       {/* Background */}
@@ -128,10 +128,11 @@ export default function Home() {
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
       <h1
-        className="relative font-display text-pip-green text-center tracking-widest"
+        className="absolute left-0 right-0 text-center font-display text-pip-green tracking-widest pointer-events-none"
         style={{
-          fontSize: 'clamp(2.5rem, 10vw, 5rem)',
-          textShadow: '0 2px 16px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.9)',
+          top: 'clamp(12px, 3vh, 32px)',
+          fontSize: 'clamp(2.5rem, 9vw, 5.5rem)',
+          textShadow: '0 2px 16px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.75)',
         }}
       >
         CHEM CARAVAN
