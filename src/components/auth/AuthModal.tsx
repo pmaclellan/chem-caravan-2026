@@ -40,7 +40,7 @@ export default function AuthModal({ onClose }: Props) {
       >
         CHEM CARAVAN
       </h1>
-      <div className="relative pip-panel w-full max-w-sm">
+      <div className="relative pip-panel w-full max-w-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 75%, transparent)' }}>
         <div className="pip-section-title mb-4">
           {mode === 'signin' ? 'ENTER THE WASTELAND' : 'CREATE ACCOUNT'}
         </div>
