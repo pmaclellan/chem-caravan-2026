@@ -1,4 +1,4 @@
-import type { CombatState, EnemyUnit, PlayerState } from '../types/game'
+import type { AnimStep, CombatState, EnemyUnit, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
@@ -89,15 +89,16 @@ export function resolveFight(
   player: PlayerState,
   combat: CombatState,
   modeConfig: GameModeConfig,
-): { player: PlayerState; combat: CombatState } {
+): { player: PlayerState; combat: CombatState; animSteps: AnimStep[] } {
   if (!player.gun) {
-    return { player, combat: { ...combat, log: [...combat.log, "You have no weapon!"] } }
+    return { player, combat: { ...combat, log: [...combat.log, "You have no weapon!"] }, animSteps: [] }
   }
   if (player.gun.ammo === 0) {
-    return { player, combat: { ...combat, log: [...combat.log, "You squeeze the trigger — click. No ammo."] } }
+    return { player, combat: { ...combat, log: [...combat.log, "You squeeze the trigger — click. No ammo."] }, animSteps: [] }
   }
 
   const log: string[] = []
+  const animSteps: AnimStep[] = []
   const updatedEnemies = combat.enemies.map(e => ({ ...e }))
   let { capsPool } = combat
   let { health, guards } = player
@@ -116,14 +117,16 @@ export function resolveFight(
         const dealt = Math.min(gun.damage, target.health)
         damageDealt += dealt
         target.health = Math.max(0, target.health - gun.damage)
-        if (target.health <= 0) {
-          target.dead = true
-          log.push(`You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`)
-        } else {
-          log.push(`You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage)`)
-        }
+        target.dead = target.health <= 0
+        const logLine = target.dead
+          ? `You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`
+          : `You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage)`
+        log.push(logLine)
+        animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
       } else {
-        log.push(`You fire the ${gun.name} at ${target.name}. Missed.`)
+        const logLine = `You fire the ${gun.name} at ${target.name}. Missed.`
+        log.push(logLine)
+        animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
       }
     }
   } else {
@@ -144,14 +147,16 @@ export function resolveFight(
       const dealt = Math.min(guardDmg, target.health)
       damageDealt += dealt
       target.health = Math.max(0, target.health - guardDmg)
-      if (target.health <= 0) {
-        target.dead = true
-        log.push(`${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`)
-      } else {
-        log.push(`${label} fires. Hit! (${guardDmg} damage)`)
-      }
+      target.dead = target.health <= 0
+      const logLine = target.dead
+        ? `${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`
+        : `${label} fires. Hit! (${guardDmg} damage)`
+      log.push(logLine)
+      animSteps.push({ kind: 'shot', by: isPAGuard ? 'pa_guard' : 'guard', guardIdx: g, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
     } else {
-      log.push(`${label} fires. Missed.`)
+      const logLine = `${label} fires. Missed.`
+      log.push(logLine)
+      animSteps.push({ kind: 'shot', by: isPAGuard ? 'pa_guard' : 'guard', guardIdx: g, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
     }
   }
 
@@ -166,7 +171,7 @@ export function resolveFight(
       totalIncoming += stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
     }
 
-    // PA guards absorb incoming first (each absorbs powerArmorGuardHealth before regular guards)
+    // PA guards absorb incoming first
     const paAbsorb = Math.min(powerArmorGuards, Math.floor(totalIncoming / modeConfig.powerArmorGuardHealth))
     const paAbsorbed = paAbsorb * modeConfig.powerArmorGuardHealth
     powerArmorGuards = Math.max(0, powerArmorGuards - paAbsorb)
@@ -188,10 +193,13 @@ export function resolveFight(
     health = Math.max(0, health - finalDamage)
     damageTaken = finalDamage + armorAbsorb
 
-    if (paAbsorb > 0) log.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
-    if (guardAbsorb > 0) log.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
-    if (armorAbsorb > 0) log.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
-    if (finalDamage > 0) log.push(`Enemies hit you for ${finalDamage} damage.`)
+    const retaliationLogLines: string[] = []
+    if (paAbsorb > 0) retaliationLogLines.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
+    if (guardAbsorb > 0) retaliationLogLines.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
+    if (armorAbsorb > 0) retaliationLogLines.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
+    if (finalDamage > 0) retaliationLogLines.push(`Enemies hit you for ${finalDamage} damage.`)
+    log.push(...retaliationLogLines)
+    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage, logLines: retaliationLogLines })
   }
 
   // ── Determine outcome ─────────────────────────────────────────────────────
@@ -227,6 +235,7 @@ export function resolveFight(
       phase,
       log: [...combat.log, ...log],
     },
+    animSteps,
   }
 }
 

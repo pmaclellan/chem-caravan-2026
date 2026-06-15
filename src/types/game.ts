@@ -101,6 +101,27 @@ export interface CombatState {
   log: string[]
 }
 
+export type AnimStep =
+  | {
+      kind: 'shot'
+      by: 'player' | 'guard' | 'pa_guard'
+      guardIdx: number          // -1 for player, 0-based index among all guards/PA guards
+      hit: boolean
+      damage: number
+      targetId: string | null
+      targetDied: boolean
+      targetHealthAfter: number
+      logLine: string
+    }
+  | {
+      kind: 'retaliation'
+      paGuardsLost: number
+      guardsLost: number
+      armorAbsorb: number
+      hpDamage: number
+      logLines: string[]
+    }
+
 export type LogType = 'info' | 'danger' | 'profit' | 'system'
 
 export interface LogEntry {
