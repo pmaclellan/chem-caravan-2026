@@ -26,6 +26,11 @@ const KEYFRAMES = `
     25%  { background: rgba(196,100,26,0.15); }
     100% { background: transparent; }
   }
+  @keyframes playerDamage {
+    0%   { background: transparent; box-shadow: none; }
+    20%  { background: rgba(180,40,40,0.22); box-shadow: inset 0 0 14px rgba(180,40,40,0.25); }
+    100% { background: transparent; box-shadow: none; }
+  }
 `
 
 // Overlay that pulses when a guard fires — remounts on each new flashKey to restart the CSS animation
@@ -58,6 +63,21 @@ function PlayerGlow({ flashKey }: { flashKey: number }) {
   )
 }
 
+// Red flash on the "You" panel when enemies land a hit
+function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
+  if (flashKey === 0) return null
+  return (
+    <div
+      key={flashKey}
+      style={{
+        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+        animation: 'playerDamage 520ms ease-out forwards',
+        zIndex: 1,
+      }}
+    />
+  )
+}
+
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
@@ -80,6 +100,8 @@ export default function CombatPanel({ player, combat }: Props) {
     combat.enemies,
     player.guards,
     paGuards,
+    player.health,
+    player.armor?.armorPoints ?? 0,
     completeCombatAnim,
   )
 
@@ -94,7 +116,10 @@ export default function CombatPanel({ player, combat }: Props) {
   const displayGuards   = anim.isAnimating ? anim.displayGuards   : player.guards
   const displayPAGuards = anim.isAnimating ? anim.displayPAGuards : paGuards
 
-  const playerHpPct = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
+  // Player HP/AP bars animate down during retaliation, snap to real values after
+  const displayHealth = anim.isAnimating ? anim.displayPlayerHealth : player.health
+  const displayAP     = anim.isAnimating ? anim.displayPlayerAP     : (player.armor?.armorPoints ?? 0)
+  const playerHpPct   = Math.max(0, Math.round((displayHealth / player.maxHealth) * 100))
 
   // Real-state flashes (fire when game state updates after animation completes)
   const { flashKey: hpFlash }      = useValueFlash(player.health)
@@ -143,6 +168,7 @@ export default function CombatPanel({ player, combat }: Props) {
                 }
                 isHit={anim.isAnimating && animEntry?.type === 'hit'}
                 isDodge={anim.isAnimating && animEntry?.type === 'miss'}
+                isAttacking={anim.isAnimating && animEntry?.type === 'attack'}
               />
             )
           })}
@@ -152,24 +178,25 @@ export default function CombatPanel({ player, combat }: Props) {
       {/* Player status */}
       <div className="relative border border-pip-border rounded p-3">
         <PlayerGlow flashKey={anim.playerFireKey} />
+        <PlayerDamageGlow flashKey={anim.playerDamageKey} />
         <div className="pip-label mb-1">You</div>
         <div className="h-2.5 bg-pip-border-dim rounded overflow-hidden mb-1">
-          <div className="h-full bg-pip-green transition-all duration-300" style={{ width: `${playerHpPct}%` }} />
+          <div className="h-full bg-pip-green transition-all duration-500" style={{ width: `${playerHpPct}%` }} />
         </div>
         {player.armor && (() => {
-          const apPct = Math.max(0, Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * 100))
+          const apPct = Math.max(0, Math.round((displayAP / player.armor.maxArmorPoints) * 100))
           return (
             <div className="h-2 bg-pip-border-dim rounded overflow-hidden mb-2">
-              <div className="h-full bg-pip-blue transition-all duration-300" style={{ width: `${apPct}%` }} />
+              <div className="h-full bg-pip-blue transition-all duration-500" style={{ width: `${apPct}%` }} />
             </div>
           )
         })()}
         {!player.armor && <div className="mb-2" />}
         <div className="text-xs text-pip-green-dim flex gap-3 flex-wrap">
-          <FlashText flashKey={hpFlash} variant="red">{player.health} HP</FlashText>
+          <FlashText flashKey={hpFlash} variant="red">{displayHealth} HP</FlashText>
           {player.armor && (
             <FlashText flashKey={apFlash} variant="amber">
-              <span className="text-pip-blue">{player.armor.armorPoints} AP</span>
+              <span className="text-pip-blue">{displayAP} AP</span>
             </FlashText>
           )}
           {player.gun && (

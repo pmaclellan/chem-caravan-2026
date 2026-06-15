@@ -4,42 +4,50 @@ import { ENEMY_SVGS, ENEMY_FALLBACK_SVG } from './enemySvgs'
 
 const ENEMY_ANIM_CSS = `
   @keyframes enemyStagger {
-    0%   { transform: translateX(0)     rotate(0deg);   }
-    18%  { transform: translateX(-7px)  rotate(-3deg);  }
-    40%  { transform: translateX(5px)   rotate(2deg);   }
-    62%  { transform: translateX(-3px)  rotate(-1deg);  }
-    82%  { transform: translateX(2px)   rotate(0.5deg); }
-    100% { transform: translateX(0)     rotate(0deg);   }
+    0%   { transform: translateX(0);   }
+    18%  { transform: translateX(-7px) rotate(-3deg); }
+    40%  { transform: translateX(5px)  rotate(2deg);  }
+    62%  { transform: translateX(-3px) rotate(-1deg); }
+    82%  { transform: translateX(2px); }
+    100% { transform: translateX(0);   }
   }
   @keyframes enemyDodge {
-    0%   { transform: translateX(0)    rotate(0deg);   }
-    25%  { transform: translateX(9px)  rotate(4deg);   }
-    55%  { transform: translateX(-3px) rotate(-1deg);  }
-    80%  { transform: translateX(1px)  rotate(0.5deg); }
-    100% { transform: translateX(0)    rotate(0deg);   }
+    0%   { transform: translateX(0);    }
+    30%  { transform: translateX(12px); }
+    65%  { transform: translateX(-3px); }
+    85%  { transform: translateX(1px);  }
+    100% { transform: translateX(0);    }
+  }
+  @keyframes enemyAttack {
+    0%   { transform: scale(1)    translateY(0);   }
+    22%  { transform: scale(1.14) translateY(5px); }
+    55%  { transform: scale(0.97) translateY(1px); }
+    100% { transform: scale(1)    translateY(0);   }
   }
 `
 
 interface Props {
   unit: EnemyUnit
   flashKey: number
-  isHit?: boolean    // play stagger on mount when true
-  isDodge?: boolean  // play dodge on mount when true
+  isHit?: boolean        // quick left-right stagger
+  isDodge?: boolean      // smooth slide right
+  isAttacking?: boolean  // brief scale-up lunge
 }
 
-export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge }: Props) {
+export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttacking }: Props) {
   const hpPct = unit.maxHealth > 0
     ? Math.max(0, Math.round((unit.health / unit.maxHealth) * 100))
     : 0
   const svgContent = ENEMY_SVGS[unit.typeId] ?? ENEMY_FALLBACK_SVG
 
-  const animation = isHit   ? 'enemyStagger 380ms ease-out'
-                  : isDodge ? 'enemyDodge 300ms ease-out'
+  const animation = isHit       ? 'enemyStagger 380ms ease-out'
+                  : isDodge     ? 'enemyDodge 480ms ease-out'
+                  : isAttacking ? 'enemyAttack 420ms ease-out'
                   : 'none'
 
   return (
     <>
-      {(isHit || isDodge) && <style>{ENEMY_ANIM_CSS}</style>}
+      {(isHit || isDodge || isAttacking) && <style>{ENEMY_ANIM_CSS}</style>}
       <div
         className="flex flex-col items-center gap-1 min-w-0"
         style={{
