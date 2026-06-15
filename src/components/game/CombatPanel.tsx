@@ -2,7 +2,6 @@ import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
 import { useValueFlash } from '../../hooks/useValueFlash'
-import { useMapFlash } from '../../hooks/useMapFlash'
 import { useCombatAnimation } from '../../hooks/useCombatAnimation'
 import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
@@ -129,10 +128,6 @@ export default function CombatPanel({ player, combat }: Props) {
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }      = useValueFlash(player.armor?.armorPoints ?? 0)
 
-  // Real-state enemy flashes (after animation, when the real state is applied)
-  const realEnemyHpMap    = Object.fromEntries(combat.enemies.map(e => [e.id, e.health]))
-  const realEnemyFlashes  = useMapFlash(realEnemyHpMap)
-
   const logRef = (el: HTMLDivElement | null) => {
     if (el) el.scrollTop = el.scrollHeight
   }
@@ -161,11 +156,7 @@ export default function CombatPanel({ player, combat }: Props) {
               <EnemyUnitCard
                 key={cardKey}
                 unit={unit}
-                flashKey={
-                  anim.isAnimating
-                    ? (anim.enemyHitKeys[unit.id] ?? 0)
-                    : (realEnemyFlashes[unit.id]?.key ?? 0)
-                }
+                flashKey={anim.enemyHitKeys[unit.id] ?? 0}
                 isHit={anim.isAnimating && animEntry?.type === 'hit'}
                 isDodge={anim.isAnimating && animEntry?.type === 'miss'}
                 isAttacking={anim.isAnimating && animEntry?.type === 'attack'}
