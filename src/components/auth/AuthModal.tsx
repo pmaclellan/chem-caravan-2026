@@ -21,7 +21,7 @@ export default function AuthModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-hidden">
+    <div className="fixed inset-0 flex items-end justify-center pb-10 sm:items-center sm:pb-0 px-4 pt-4 z-50 overflow-hidden">
       <div className="absolute inset-0">
         <picture>
           <source media="(max-width: 639px)" srcSet="/assets/main_menu_background_mobile.png" />
@@ -29,6 +29,17 @@ export default function AuthModal({ onClose }: Props) {
         </picture>
       </div>
       <div className="absolute inset-0 bg-pip-bg opacity-30" />
+      <h1
+        className="absolute left-0 right-0 text-center font-display tracking-widest pointer-events-none"
+        style={{
+          top: 'clamp(12px, 3vh, 32px)',
+          fontSize: 'clamp(2.5rem, 9vw, 5.5rem)',
+          color: '#1a2d0e',
+          WebkitTextStroke: '0.75px #1a2d0e',
+        }}
+      >
+        CHEM CARAVAN
+      </h1>
       <div className="relative pip-panel w-full max-w-sm">
         <div className="pip-section-title mb-4">
           {mode === 'signin' ? 'ENTER THE WASTELAND' : 'CREATE ACCOUNT'}

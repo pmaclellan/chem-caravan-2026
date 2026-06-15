@@ -112,7 +112,7 @@ export default function Home() {
 
   return (
     <div
-      className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-end pb-10 sm:justify-center sm:pb-4 px-4 pt-4 transition-colors duration-300 overflow-hidden"
       data-mode={selectedMode}
     >
       {/* Background */}
