@@ -178,9 +178,10 @@ export function useCombatAnimation(
       setState(s => ({ ...s, activeShooterIdx: null, activeTargetId: null }))
     }, offset))
 
-    // Signal completion
+    // Signal completion — reset hit keys to 0 so FlashOverlay is null when
+    // EnemyUnitCard remounts on the key change from animated-key → unit.id
     timersRef.current.push(setTimeout(() => {
-      setState(s => ({ ...s, isAnimating: false }))
+      setState(s => ({ ...s, isAnimating: false, enemyHitKeys: {} }))
       onCompleteRef.current()
     }, offset + SHOOTER_FLASH_MS))
 
