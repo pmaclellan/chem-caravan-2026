@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
-import type { GameState, GameRow, GameModeId, ActiveGameSummary } from '../types/game'
+import type { AnimStep, GameState, GameRow, GameModeId, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
 import {
   initializeGame,
   startTravel,
@@ -61,6 +61,10 @@ interface GameStore {
   saveError: string | null
   toast: string | null
 
+  // Combat animation — lives outside gameState so it doesn't trigger Supabase saves
+  combatAnimSteps: AnimStep[] | null
+  pendingFightResult: { player: PlayerState; combat: CombatState } | null
+
   // Lifecycle
   startNewGame: (characterName: string, userId: string, modeId?: GameModeId, gameType?: 'standard' | 'free_play') => Promise<void>
   loadActiveGame: (userId: string, modeId?: GameModeId) => Promise<void>
@@ -78,6 +82,7 @@ interface GameStore {
   // Combat
   fight: () => void
   run: () => void
+  completeCombatAnim: () => void
   dismissCombatSummary: () => void
 
   // Market
@@ -190,6 +195,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     isSaving: false,
     saveError: null,
     toast: null,
+    combatAnimSteps: null,
+    pendingFightResult: null,
 
     startNewGame: async (characterName, userId, modeId = 'commonwealth', gameType = 'standard') => {
       if (gameType === 'free_play') {
@@ -425,8 +432,17 @@ export const useGameStore = create<GameStore>((set, get) => {
       const state = get().gameState
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
-      const result = resolveFight(state.player, state.combat, mc)
-      mutate(s => afterCombat(s, result))
+      const { player, combat, animSteps } = resolveFight(state.player, state.combat, mc)
+      // Store the final result for later, set combat to 'resolving' to disable buttons during animation
+      set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
+      mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
+    },
+
+    completeCombatAnim: () => {
+      const { pendingFightResult } = get()
+      if (!pendingFightResult) return
+      set({ combatAnimSteps: null, pendingFightResult: null })
+      mutate(s => afterCombat(s, pendingFightResult))
     },
 
     run: () => {
