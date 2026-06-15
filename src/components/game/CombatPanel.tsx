@@ -20,6 +20,12 @@ const KEYFRAMES = `
     65%  { opacity: 0.7; box-shadow: 0 0 10px var(--pip-blue); transform: scale(1.04); }
     100% { opacity: 0; box-shadow: none; transform: scale(1); }
   }
+  @keyframes playerCardFire {
+    0%   { opacity: 0; box-shadow: none; }
+    20%  { opacity: 1; box-shadow: 0 0 16px var(--pip-amber), inset 0 0 8px rgba(196,100,26,0.4); transform: scale(1.12); }
+    65%  { opacity: 0.7; box-shadow: 0 0 8px var(--pip-amber); transform: scale(1.04); }
+    100% { opacity: 0; box-shadow: none; transform: scale(1); }
+  }
   @keyframes playerFire {
     0%   { background: transparent; }
     25%  { background: rgba(196,100,26,0.15); }
@@ -41,6 +47,21 @@ function GuardGlow({ flashKey, isPAGuard }: { flashKey: number; isPAGuard: boole
       style={{
         position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
         animation: `${isPAGuard ? 'paGuardFire' : 'guardFire'} 400ms ease-out forwards`,
+        zIndex: 2,
+      }}
+    />
+  )
+}
+
+// Amber glow on the player icon card when the player fires
+function PlayerCardFire({ flashKey }: { flashKey: number }) {
+  if (flashKey === 0) return null
+  return (
+    <div
+      key={flashKey}
+      style={{
+        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+        animation: 'playerCardFire 400ms ease-out forwards',
         zIndex: 2,
       }}
     />
@@ -202,11 +223,33 @@ export default function CombatPanel({ player, combat }: Props) {
         </div>
       </div>
 
-      {/* Protectors */}
+      {/* Protectors — player card + guards + brahmin */}
       {(displayGuards > 0 || displayPAGuards > 0 || player.brahmin > 0) && (
         <div className="border border-pip-border rounded p-3">
           <div className="pip-label mb-2">Protectors</div>
           <div className="flex gap-2 flex-wrap">
+
+            {/* Player icon card */}
+            {(() => {
+              const hpPct = Math.max(0, Math.round((displayHealth / player.maxHealth) * 100))
+              const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
+              return (
+                <div className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
+                    <PlayerCardFire flashKey={anim.playerFireKey} />
+                    <FlashOverlay flashKey={anim.playerDamageKey} variant="damage" />
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
+                      <path d="M6.02958 19.4012C5.97501 19.9508 6.3763 20.4405 6.92589 20.4951C7.47547 20.5497 7.96523 20.1484 8.01979 19.5988L6.02958 19.4012ZM15.9802 19.5988C16.0348 20.1484 16.5245 20.5497 17.0741 20.4951C17.6237 20.4405 18.025 19.9508 17.9704 19.4012L15.9802 19.5988ZM20 12C20 16.4183 16.4183 20 12 20V22C17.5228 22 22 17.5228 22 12H20ZM12 20C7.58172 20 4 16.4183 4 12H2C2 17.5228 6.47715 22 12 22V20ZM4 12C4 7.58172 7.58172 4 12 4V2C6.47715 2 2 6.47715 2 12H4ZM12 4C16.4183 4 20 7.58172 20 12H22C22 6.47715 17.5228 2 12 2V4ZM13 10C13 10.5523 12.5523 11 12 11V13C13.6569 13 15 11.6569 15 10H13ZM12 11C11.4477 11 11 10.5523 11 10H9C9 11.6569 10.3431 13 12 13V11ZM11 10C11 9.44772 11.4477 9 12 9V7C10.3431 7 9 8.34315 9 10H11ZM12 9C12.5523 9 13 9.44772 13 10H15C15 8.34315 13.6569 7 12 7V9ZM8.01979 19.5988C8.22038 17.5785 9.92646 16 12 16V14C8.88819 14 6.33072 16.3681 6.02958 19.4012L8.01979 19.5988ZM12 16C14.0735 16 15.7796 17.5785 15.9802 19.5988L17.9704 19.4012C17.6693 16.3681 15.1118 14 12 14V16Z" />
+                    </svg>
+                  </div>
+                  <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
+                    <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
+                  </div>
+                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>YOU</div>
+                </div>
+              )
+            })()}
+
             {Array.from({ length: displayGuards }).map((_, i) => (
               <div key={`g-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                 <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
