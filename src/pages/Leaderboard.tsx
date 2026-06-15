@@ -148,7 +148,7 @@ export default function Leaderboard() {
         )}
 
         {!loading && displayed.length > 0 && (
-          <div className="pip-panel">
+          <div className="pip-panel" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 82%, transparent)' }}>
             {/* Header */}
             <div className={`grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2 ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <div>#</div>
