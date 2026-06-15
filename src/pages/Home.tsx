@@ -112,7 +112,7 @@ export default function Home() {
 
   return (
     <div
-      className="relative min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center gap-4 p-4 transition-colors duration-300 overflow-hidden"
       data-mode={selectedMode}
     >
       {/* Background */}
@@ -126,6 +126,16 @@ export default function Home() {
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
+
+      <h1
+        className="relative font-display text-pip-green text-center tracking-widest"
+        style={{
+          fontSize: 'clamp(2.5rem, 10vw, 5rem)',
+          textShadow: '0 2px 16px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.9)',
+        }}
+      >
+        CHEM CARAVAN
+      </h1>
 
       <div
         className="relative max-w-2xl w-full pip-panel"
