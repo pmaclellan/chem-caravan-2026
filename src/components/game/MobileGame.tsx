@@ -192,6 +192,14 @@ export default function MobileGame() {
           )}
         </div>
 
+        {/* Retire — free play only */}
+        {gameState.gameType === 'free_play' && (
+          <div className="rounded-lg border border-pip-border p-4" style={PANEL_STYLE}>
+            <div className="pip-label mb-2">End Run</div>
+            <button className="pip-btn-amber w-full" onClick={() => store.retire()}>RETIRE</button>
+          </div>
+        )}
+
         {/* Pack inventory */}
         <div className="rounded-lg border border-pip-border p-4 space-y-2" style={PANEL_STYLE}>
           <div className="pip-label mb-1">Pack — {used}/{capacity} units</div>
@@ -717,9 +725,6 @@ export default function MobileGame() {
               <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-amber text-sm">
                 {player.caps.toLocaleString()} <CapsIcon size={13} />
               </FlashText>
-              {gameState.gameType === 'free_play' && (
-                <button className="pip-btn-amber text-xs px-2 py-1" onClick={() => store.retire()}>RETIRE</button>
-              )}
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>
             </div>
           </div>
