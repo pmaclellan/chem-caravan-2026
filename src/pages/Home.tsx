@@ -128,11 +128,12 @@ export default function Home() {
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
 
       <h1
-        className="absolute left-0 right-0 text-center font-display text-pip-green tracking-widest pointer-events-none"
+        className="absolute left-0 right-0 text-center font-display tracking-widest pointer-events-none"
         style={{
           top: 'clamp(12px, 3vh, 32px)',
           fontSize: 'clamp(2.5rem, 9vw, 5.5rem)',
-          textShadow: '0 2px 16px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.75)',
+          color: '#1a2d0e',
+          WebkitTextStroke: '0.75px #1a2d0e',
         }}
       >
         CHEM CARAVAN
