@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AnimStep, EnemyUnit } from '../types/game'
 
-const INTER_SHOT_MS      = 420   // gap between each shot starting
-const SHOOTER_FLASH_MS   = 220   // how long the shooter glows before the bullet lands
-const TARGET_FLASH_DELAY = 160   // after shooter flash, when the enemy gets hit
-const RETALIATION_PAUSE  = 650   // extra pause before enemies strike back
+const INTER_SHOT_MS      = 620   // gap between each shot starting
+const SHOOTER_FLASH_MS   = 280   // how long the shooter glows before the bullet lands
+const TARGET_FLASH_DELAY = 220   // after shooter flash, when the enemy reacts (hit or dodge)
+const RETALIATION_PAUSE  = 900   // extra pause before enemies strike back
+
+export interface EnemyAnimEntry { key: number; type: 'hit' | 'miss' }
 
 export interface CombatAnimState {
   isAnimating: boolean
@@ -15,7 +17,8 @@ export interface CombatAnimState {
   displayPAGuards: number
   playerFireKey: number                   // increments when player fires — drives PlayerGlow
   guardFireKeys: Record<number, number>   // increments when guard[idx] fires — used to trigger CSS anim
-  enemyHitKeys: Record<string, number>   // increments when enemy is hit — drives FlashOverlay
+  enemyHitKeys: Record<string, number>   // increments on hits only — drives red FlashOverlay
+  enemyAnimInfo: Record<string, EnemyAnimEntry>  // hit OR miss — drives stagger/dodge animation
 }
 
 export function useCombatAnimation(
@@ -35,6 +38,7 @@ export function useCombatAnimation(
     playerFireKey: 0,
     guardFireKeys: {},
     enemyHitKeys: {},
+    enemyAnimInfo: {},
   })
 
   const timersRef    = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -50,9 +54,10 @@ export function useCombatAnimation(
     timersRef.current = []
 
     const initialHealth = Object.fromEntries(enemies.map(e => [e.id, e.health]))
-    const workingHealth  = { ...initialHealth }
-    const workingFireKeys: Record<number, number> = {}
-    const workingHitKeys: Record<string, number>  = {}
+    const workingHealth    = { ...initialHealth }
+    const workingFireKeys: Record<number, number>                      = {}
+    const workingHitKeys:  Record<string, number>                      = {}
+    const workingAnimInfo: Record<string, EnemyAnimEntry>              = {}
 
     setState(s => ({
       ...s,
@@ -65,6 +70,7 @@ export function useCombatAnimation(
       playerFireKey: 0,
       guardFireKeys: {},
       enemyHitKeys: {},
+      enemyAnimInfo: {},
     }))
 
     let offset = 80
@@ -97,17 +103,24 @@ export function useCombatAnimation(
           }
         }, t1))
 
-        // Land the hit on the enemy
-        if (hit && targetId) {
+        // Land the hit or trigger a dodge on the enemy
+        if (targetId) {
           const t2 = offset + TARGET_FLASH_DELAY
           timersRef.current.push(setTimeout(() => {
-            workingHealth[targetId]  = healthAfter
-            workingHitKeys[targetId] = (workingHitKeys[targetId] ?? 0) + 1
+            if (hit) {
+              workingHealth[targetId]  = healthAfter
+              workingHitKeys[targetId] = (workingHitKeys[targetId] ?? 0) + 1
+            }
+            workingAnimInfo[targetId] = {
+              key: (workingAnimInfo[targetId]?.key ?? 0) + 1,
+              type: hit ? 'hit' : 'miss',
+            }
             setState(s => ({
               ...s,
-              activeTargetId: targetId,
-              displayEnemyHealth: { ...workingHealth },
-              enemyHitKeys: { ...workingHitKeys },
+              activeTargetId: hit ? targetId : null,
+              displayEnemyHealth: hit ? { ...workingHealth } : s.displayEnemyHealth,
+              enemyHitKeys: hit ? { ...workingHitKeys } : s.enemyHitKeys,
+              enemyAnimInfo: { ...workingAnimInfo },
             }))
           }, t2))
         }

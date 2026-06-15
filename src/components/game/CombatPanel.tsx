@@ -126,17 +126,26 @@ export default function CombatPanel({ player, combat }: Props) {
           Enemies — {displayEnemies.filter(e => !e.dead).length} alive · {combat.capsPool} ¤ on them
         </div>
         <div className="flex gap-3 flex-wrap">
-          {displayEnemies.map(unit => (
-            <EnemyUnitCard
-              key={unit.id}
-              unit={unit}
-              flashKey={
-                anim.isAnimating
-                  ? (anim.enemyHitKeys[unit.id] ?? 0)
-                  : (realEnemyFlashes[unit.id]?.key ?? 0)
-              }
-            />
-          ))}
+          {displayEnemies.map(unit => {
+            const animEntry = anim.enemyAnimInfo[unit.id]
+            // Key change causes EnemyUnitCard to remount → CSS animation restarts cleanly
+            const cardKey = anim.isAnimating && animEntry
+              ? `${unit.id}-${animEntry.key}`
+              : unit.id
+            return (
+              <EnemyUnitCard
+                key={cardKey}
+                unit={unit}
+                flashKey={
+                  anim.isAnimating
+                    ? (anim.enemyHitKeys[unit.id] ?? 0)
+                    : (realEnemyFlashes[unit.id]?.key ?? 0)
+                }
+                isHit={anim.isAnimating && animEntry?.type === 'hit'}
+                isDodge={anim.isAnimating && animEntry?.type === 'miss'}
+              />
+            )
+          })}
         </div>
       </div>
 
