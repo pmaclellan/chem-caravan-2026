@@ -144,8 +144,6 @@ export default function CombatPanel({ player, combat }: Props) {
   // Real-state flashes (fire when game state updates after animation completes)
   const { flashKey: hpFlash }      = useValueFlash(player.health)
   const { flashKey: guardsFlash }  = useValueFlash(player.guards)
-  const { flashKey: paFlash }      = useValueFlash(paGuards)
-  const { flashKey: brahminFlash } = useValueFlash(player.brahmin)
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }      = useValueFlash(player.armor?.armorPoints ?? 0)
 
@@ -254,7 +252,6 @@ export default function CombatPanel({ player, combat }: Props) {
               <div key={`g-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                 <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
                   <GuardGlow flashKey={anim.guardFireKeys[i] ?? 0} isPAGuard={false} />
-                  <FlashOverlay flashKey={guardsFlash} variant="damage" />
                   <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
                     <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
                   </svg>
@@ -269,7 +266,6 @@ export default function CombatPanel({ player, combat }: Props) {
                 <div key={`pa-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                   <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-blue)' }}>
                     <GuardGlow flashKey={anim.guardFireKeys[globalIdx] ?? 0} isPAGuard={true} />
-                    <FlashOverlay flashKey={paFlash} variant="damage" />
                     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
                       <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
                     </svg>
@@ -282,7 +278,6 @@ export default function CombatPanel({ player, combat }: Props) {
             {Array.from({ length: player.brahmin }).map((_, i) => (
               <div key={`b-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                 <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
-                  <FlashOverlay flashKey={brahminFlash} variant="damage" />
                   <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ color: 'var(--pip-amber)' }}>
                     <path d="M5 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M12 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M3 18h18M7 18v2.5M10 18v2.5M14 18v2.5M17 18v2.5" />
                   </svg>
