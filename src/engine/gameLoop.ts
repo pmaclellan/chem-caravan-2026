@@ -451,11 +451,23 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
         const warningMsg = combat.phase === 'won'
           ? 'You push forward — only to find another pack closing in.'
           : 'Still running — and you sprint right into a second ambush.'
+        const sf = getScaleFactor(turn, state.gameType)
+        const preview = initiateCombat(road.dangerLevel, mc, road.enemyWeights, undefined, undefined, sf)
+        const previewTypeId = preview.enemies[0]?.typeId
+        const previewCount  = preview.enemies.length
+        const previewName   = mc.enemies.find(e => e.id === previewTypeId)?.name ?? 'enemies'
         const secondWave: TravelEvent = {
           type: 'raider_ambush',
           title: 'SECOND WAVE!',
-          description: 'More enemies emerge from cover. This road earns its reputation.',
-          payload: { isSecondEncounter: true },
+          description: preview.log[0],
+          payload: {
+            isSecondEncounter: true,
+            enemyTypeId: previewTypeId,
+            count: previewCount,
+            enemyName: previewName,
+            forfeitCaps: combat.capsLooted,
+            forfeitChems: combat.enemyLoot,
+          },
         }
         return {
           ...resolvedState,
