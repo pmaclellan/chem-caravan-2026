@@ -72,7 +72,7 @@ export default function MobileGame() {
   if (!gameState) return null
 
   const mc = GAME_MODES[gameState.mode]
-  const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log } = gameState
+  const { player, world, pendingEvent, pendingQuote, pendingDestination, combat, log, gameType } = gameState
   const settlement = mc.settlements[player.location]
   const rawMarket = world.settlements[player.location]
   const market = rawMarket
@@ -193,7 +193,7 @@ export default function MobileGame() {
         </div>
 
         {/* Retire — free play only */}
-        {gameState.gameType === 'free_play' && (
+        {gameType === 'free_play' && (
           <div className="rounded-lg border border-pip-border p-4" style={PANEL_STYLE}>
             <div className="pip-label mb-2">End Run</div>
             <button className="pip-btn-amber w-full" onClick={() => store.retire()}>RETIRE</button>
