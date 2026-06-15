@@ -16,8 +16,10 @@ export interface CombatAnimState {
   displayEnemyHealth: Record<string, number>
   displayPlayerHealth: number
   displayPlayerAP: number
-  displayGuards: number
+  displayGuards: number      // alive count during animation; use to determine which cards are greyed
   displayPAGuards: number
+  initialGuards: number      // pre-fight count; use as total cards to render (including grey dead)
+  initialPAGuards: number
   playerFireKey: number
   playerDamageKey: number
   guardFireKeys: Record<number, number>
@@ -43,6 +45,8 @@ export function useCombatAnimation(
     displayPlayerAP: initialPlayerAP,
     displayGuards: initialGuards,
     displayPAGuards: initialPAGuards,
+    initialGuards,
+    initialPAGuards,
     playerFireKey: 0,
     playerDamageKey: 0,
     guardFireKeys: {},
@@ -78,6 +82,8 @@ export function useCombatAnimation(
       displayPlayerAP: initialPlayerAP,
       displayGuards: initialGuards,
       displayPAGuards: initialPAGuards,
+      initialGuards,
+      initialPAGuards,
       playerFireKey: 0,
       playerDamageKey: 0,
       guardFireKeys: {},
