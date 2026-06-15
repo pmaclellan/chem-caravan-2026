@@ -186,7 +186,7 @@ export function resolveFight(
     }
     const finalDamage = Math.max(0, postGuardDamage - armorAbsorb)
     health = Math.max(0, health - finalDamage)
-    damageTaken = finalDamage
+    damageTaken = finalDamage + armorAbsorb
 
     if (paAbsorb > 0) log.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (guardAbsorb > 0) log.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
@@ -270,7 +270,7 @@ export function resolveRun(
     }
     const finalDamage = Math.max(0, totalDamage - armorAbsorb)
     updatedPlayer = { ...updatedPlayer, health: Math.max(0, updatedPlayer.health - finalDamage), armor }
-    damageTaken = finalDamage
+    damageTaken = finalDamage + armorAbsorb
     log.push(`You try to run but the enemies catch you! They hit you for ${totalDamage} damage.${armorAbsorb > 0 ? ` Armor absorbed ${armorAbsorb}.` : ''}`)
     if (updatedPlayer.health <= 0) {
       phase = 'lost'

@@ -1,14 +1,18 @@
 import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
+import { GAME_MODES } from '../../data/modes'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { useMapFlash } from '../../hooks/useMapFlash'
 import { FlashText } from '../ui/FlashText'
+import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
 
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
   const { fight, run } = useGameStore()
+  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mc   = GAME_MODES[mode]
 
   const aliveEnemies = combat.enemies.filter(e => !e.dead)
   const canFight     = !!player.gun && player.gun.ammo > 0
@@ -17,6 +21,7 @@ export default function CombatPanel({ player, combat }: Props) {
     0.40 + player.guards * 0.10 - player.brahmin * 0.05
   )) * 100)
   const playerHpPct = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
+  const paGuards     = player.powerArmorGuards ?? 0
 
   // Per-enemy HP flash (fires when health decreases)
   const enemyHpMap = Object.fromEntries(combat.enemies.map(e => [e.id, e.health]))
@@ -24,6 +29,8 @@ export default function CombatPanel({ player, combat }: Props) {
 
   const { flashKey: hpFlash }     = useValueFlash(player.health)
   const { flashKey: guardsFlash } = useValueFlash(player.guards)
+  const { flashKey: paFlash }     = useValueFlash(paGuards)
+  const { flashKey: brahminFlash }= useValueFlash(player.brahmin)
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }     = useValueFlash(player.armor?.armorPoints ?? 0)
 
@@ -91,6 +98,56 @@ export default function CombatPanel({ player, combat }: Props) {
           )}
         </div>
       </div>
+
+      {/* Protectors */}
+      {(player.guards > 0 || paGuards > 0 || player.brahmin > 0) && (
+        <div className="border border-pip-border rounded p-3">
+          <div className="pip-label mb-2">Protectors</div>
+          <div className="flex gap-2 flex-wrap">
+            {Array.from({ length: player.guards }).map((_, i) => (
+              <div key={`g-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
+                  <FlashOverlay flashKey={guardsFlash} variant="damage" />
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
+                    <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
+                  </svg>
+                </div>
+                <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-green)' }} />
+                <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-green)', opacity: 0.7 }}>GUARD</div>
+              </div>
+            ))}
+            {Array.from({ length: paGuards }).map((_, i) => (
+              <div key={`pa-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-blue)' }}>
+                  <FlashOverlay flashKey={paFlash} variant="damage" />
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
+                    <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
+                  </svg>
+                </div>
+                <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-blue)' }} />
+                <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-blue)', opacity: 0.7 }}>PA</div>
+              </div>
+            ))}
+            {Array.from({ length: player.brahmin }).map((_, i) => (
+              <div key={`b-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
+                  <FlashOverlay flashKey={brahminFlash} variant="damage" />
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ color: 'var(--pip-amber)' }}>
+                    <path d="M5 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M12 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M3 18h18M7 18v2.5M10 18v2.5M14 18v2.5M17 18v2.5" />
+                  </svg>
+                </div>
+                <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-amber)' }} />
+                <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>BRAHMIN</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
+            {player.guards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
+            {paGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
+            {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}
+          </div>
+        </div>
+      )}
 
       {/* Combat log */}
       <div

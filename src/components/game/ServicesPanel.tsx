@@ -132,7 +132,10 @@ export default function ServicesPanel({ player }: Props) {
           {/* Ammo */}
           {player.gun && (
             <div className="border-t border-pip-border pt-2">
-              <div className="pip-label">AMMO — {mc.ammoPrice} ¤/round</div>
+              <div className="flex items-baseline justify-between">
+                <div className="pip-label">AMMO — {mc.ammoPrice} ¤/round</div>
+                <div className="text-xs text-pip-green-dim">{player.gun.ammo} rounds loaded</div>
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <input type="number" min={1} value={ammoQty} onChange={e => setAmmoQty(Math.max(1, parseInt(e.target.value) || 1))} className="pip-input w-16" />
                 <button className="pip-btn" disabled={player.caps < ammoQty * mc.ammoPrice} onClick={() => store.purchaseAmmo(ammoQty)}>

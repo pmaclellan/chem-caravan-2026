@@ -349,13 +349,41 @@ export const useGameStore = create<GameStore>((set, get) => {
           case 'raider_ambush': {
             if (choice === 'fight') return startCombat(state)
             // Run before combat: roll escape chance
+            const payload = (event.payload ?? {}) as {
+              isSecondEncounter?: boolean
+              forfeitCaps?: number
+              forfeitChems?: Record<string, number>
+            }
             const runChance = Math.min(0.9, Math.max(0.1,
               0.40 + state.player.guards * 0.10 - state.player.brahmin * 0.05
             ))
             const dest = state.pendingDestination ?? state.player.location
             if (rng() < runChance) {
-              const escapeLogs = [...state.log, { turn: state.world.turn, message: "You dodge the ambush and keep moving!", type: 'profit' as const }]
-              return completeTravel({ ...state, log: escapeLogs, pendingEvent: null, pendingDestination: null }, dest)
+              let escapedPlayer = state.player
+              const extraLogs: { turn: number; message: string; type: 'profit' | 'danger' }[] = []
+              if (payload.isSecondEncounter) {
+                const forfeitCaps  = payload.forfeitCaps  ?? 0
+                const forfeitChems = payload.forfeitChems ?? {}
+                if (forfeitCaps > 0 || Object.keys(forfeitChems).length > 0) {
+                  const newInventory = { ...escapedPlayer.inventory }
+                  for (const [chemId, qty] of Object.entries(forfeitChems)) {
+                    if (newInventory[chemId]) {
+                      const newQty = Math.max(0, newInventory[chemId].quantity - qty)
+                      if (newQty === 0) delete newInventory[chemId]
+                      else newInventory[chemId] = { ...newInventory[chemId], quantity: newQty }
+                    }
+                  }
+                  escapedPlayer = { ...escapedPlayer, caps: Math.max(0, escapedPlayer.caps - forfeitCaps), inventory: newInventory }
+                  const chemCount = Object.values(forfeitChems).reduce((s, n) => s + n, 0)
+                  const forfeitDesc = [
+                    forfeitCaps > 0 ? `${forfeitCaps} ¤` : '',
+                    chemCount > 0 ? `${chemCount} chem${chemCount > 1 ? 's' : ''}` : '',
+                  ].filter(Boolean).join(' and ')
+                  extraLogs.push({ turn: state.world.turn, message: `No time to loot — you fled leaving ${forfeitDesc} behind.`, type: 'danger' })
+                }
+              }
+              const escapeLogs = [...state.log, { turn: state.world.turn, message: "You dodge the ambush and keep moving!", type: 'profit' as const }, ...extraLogs]
+              return completeTravel({ ...state, player: escapedPlayer, log: escapeLogs, pendingEvent: null, pendingDestination: null }, dest)
             } else {
               const caughtState = {
                 ...state,

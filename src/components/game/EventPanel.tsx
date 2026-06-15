@@ -35,15 +35,34 @@ export default function EventPanel({ event, player }: Props) {
       </div>
 
       {event.type === 'raider_ambush' && (() => {
-        const { count } = event.payload as { enemyTypeId?: string; count?: number }
+        const { count, enemyName, isSecondEncounter, forfeitCaps, forfeitChems } = (event.payload ?? {}) as {
+          enemyTypeId?: string; count?: number; enemyName?: string
+          isSecondEncounter?: boolean; forfeitCaps?: number; forfeitChems?: Record<string, number>
+        }
+        const fightLabel = count != null && enemyName
+          ? `FIGHT — ${count} ${count === 1 ? enemyName : `${enemyName}s`}`
+          : `FIGHT (${count ?? '?'} ${count === 1 ? 'enemy' : 'enemies'})`
+        const hasForfeit = isSecondEncounter && ((forfeitCaps ?? 0) > 0 || Object.keys(forfeitChems ?? {}).length > 0)
+        const chemCount = Object.values(forfeitChems ?? {}).reduce((s, n) => s + n, 0)
+        const forfeitDesc = [
+          (forfeitCaps ?? 0) > 0 ? `${forfeitCaps} ¤` : '',
+          chemCount > 0 ? `${chemCount} chem${chemCount > 1 ? 's' : ''}` : '',
+        ].filter(Boolean).join(' and ')
         return (
-          <div className="flex gap-3">
-            <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
-              FIGHT ({count ?? '?'} {count === 1 ? 'enemy' : 'enemies'})
-            </button>
-            <button className="pip-btn-amber flex-1" onClick={() => resolveEvent('run')}>
-              RUN ({runChance}% chance)
-            </button>
+          <div className="flex flex-col gap-3">
+            {hasForfeit && (
+              <div className="border border-pip-red rounded px-3 py-2 text-xs text-pip-red">
+                Running forfeits first wave loot: {forfeitDesc}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
+                {fightLabel}
+              </button>
+              <button className="pip-btn-amber flex-1" onClick={() => resolveEvent('run')}>
+                RUN ({runChance}% chance)
+              </button>
+            </div>
           </div>
         )
       })()}
