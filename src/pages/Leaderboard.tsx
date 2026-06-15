@@ -15,7 +15,7 @@ interface LeaderboardRow {
   mode: GameModeId | null
   turns_reached: number | null
   created_at: string
-  state?: { endReason?: string | null }
+  state?: { endReason?: string | null; player?: { caps?: number } }
 }
 
 
@@ -75,8 +75,17 @@ export default function Leaderboard() {
   const isFreePlay = gameTypeFilter === 'free_play'
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 bg-pip-bg" data-mode={activeMode}>
-      <div className="max-w-2xl w-full">
+    <div className="relative min-h-screen flex flex-col items-center p-4 overflow-hidden" data-mode={activeMode}>
+      {/* Background art */}
+      <div className="absolute inset-0">
+        <picture>
+          <source media="(max-width: 639px)" srcSet="/assets/leaderboard_background_art.png" />
+          <img src="/assets/leaderboard_background_art_horizontal.png" alt="" className="w-full h-full object-cover object-center" />
+        </picture>
+      </div>
+      <div className="absolute inset-0 bg-pip-bg opacity-30" />
+
+      <div className="relative max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h1 className="font-display text-4xl text-pip-green tracking-widest">LEADERBOARD</h1>
           <button className="pip-btn" onClick={() => navigate('/')}>BACK</button>
@@ -104,7 +113,7 @@ export default function Leaderboard() {
 
         {isFreePlay && (
           <div className="text-pip-amber text-xs font-mono mb-3 opacity-70">
-            Score = XP earned · danger scales with turns · no turn limit
+            Score = XP earned · caps on hand shown below · no turn limit
           </div>
         )}
 
@@ -144,7 +153,7 @@ export default function Leaderboard() {
             <div className={`grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2 ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <div>#</div>
               <div className="col-span-2">Name</div>
-              <div>{isFreePlay ? 'XP' : 'Score'}</div>
+              <div>{isFreePlay ? 'XP / Caps' : 'Score'}</div>
               {tab === 'global' && <div>Region</div>}
               <div>Turns</div>
             </div>
@@ -171,10 +180,17 @@ export default function Leaderboard() {
                     <div className="text-pip-green font-mono truncate">{row.character_name}</div>
                     <div className="text-pip-green-dim text-xs italic truncate">{outcome}</div>
                   </div>
-                  <div className={`font-display text-lg ${
-                    isFreePlay ? 'text-pip-amber' : (score >= 0 ? 'text-pip-amber' : 'text-pip-red')
-                  }`}>
-                    {score.toLocaleString()}{isFreePlay ? ' XP' : ' ¤'}
+                  <div>
+                    <div className={`font-display text-lg ${
+                      isFreePlay ? 'text-pip-blue' : (score >= 0 ? 'text-pip-amber' : 'text-pip-red')
+                    }`}>
+                      {score.toLocaleString()}{isFreePlay ? ' XP' : ' ¤'}
+                    </div>
+                    {isFreePlay && row.state?.player?.caps != null && (
+                      <div className="text-xs text-pip-amber font-mono">
+                        {row.state.player.caps.toLocaleString()} ¤
+                      </div>
+                    )}
                   </div>
                   {tab === 'global' && (
                     <div className="text-xs text-pip-green-dim self-center">{modeName}</div>
