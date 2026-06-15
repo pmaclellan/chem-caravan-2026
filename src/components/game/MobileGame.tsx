@@ -470,7 +470,10 @@ export default function MobileGame() {
                 })}
                 {player.gun && (
                   <div className="border-t border-pip-border-dim pt-2">
-                    <div className="pip-label">Ammo — {mc.ammoPrice} ¤/round</div>
+                    <div className="flex items-baseline justify-between">
+                      <div className="pip-label">Ammo — {mc.ammoPrice} ¤/round</div>
+                      <div className="text-xs text-pip-green-dim">{player.gun.ammo} rounds loaded</div>
+                    </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <input
                         type="number" min={1} value={ammoQty}
