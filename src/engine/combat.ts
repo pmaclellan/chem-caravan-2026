@@ -105,6 +105,7 @@ export function resolveFight(
   let powerArmorGuards = player.powerArmorGuards ?? 0
   let gun = { ...player.gun }
   let armor = player.armor ? { ...player.armor } : null
+  let mount = player.mount ? { ...player.mount } : null
   let damageDealt = 0
 
   // ── Player fires ─────────────────────────────────────────────────────────
@@ -160,6 +161,29 @@ export function resolveFight(
     }
   }
 
+  // ── Mount attacks (after guards, no ammo cost) ───────────────────────────
+  if (mount && mount.health > 0) {
+    const target = updatedEnemies.find(e => !e.dead)
+    if (target) {
+      if (rng() < mount.accuracy) {
+        const mountDmg = rngInt(mount.damage[0], mount.damage[1])
+        const dealt = Math.min(mountDmg, target.health)
+        damageDealt += dealt
+        target.health = Math.max(0, target.health - mountDmg)
+        target.dead = target.health <= 0
+        const logLine = target.dead
+          ? `${mount.name} lunges at ${target.name}. Hit! (${mountDmg} damage) — ${target.name} is dead!`
+          : `${mount.name} lunges at ${target.name}. Hit! (${mountDmg} damage)`
+        log.push(logLine)
+        animSteps.push({ kind: 'mount_attack', hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+      } else {
+        const logLine = `${mount.name} lunges at ${target.name}. Missed.`
+        log.push(logLine)
+        animSteps.push({ kind: 'mount_attack', hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+      }
+    }
+  }
+
   // ── Surviving enemies attack ──────────────────────────────────────────────
   const aliveEnemies = updatedEnemies.filter(e => !e.dead)
   let damageTaken = 0
@@ -171,7 +195,19 @@ export function resolveFight(
       totalIncoming += stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
     }
 
-    // PA guards absorb incoming first
+    // Mount absorbs first (before PA guards)
+    let mountDamageTaken = 0
+    let mountDied = false
+    if (mount && mount.health > 0) {
+      const mountAbsorb = Math.min(mount.health, totalIncoming)
+      mountDamageTaken = mountAbsorb
+      mount = { ...mount, health: mount.health - mountAbsorb }
+      mountDied = mount.health <= 0
+      if (mountDied) mount = null
+      totalIncoming = Math.max(0, totalIncoming - mountAbsorb)
+    }
+
+    // PA guards absorb remaining
     const paAbsorb = Math.min(powerArmorGuards, Math.floor(totalIncoming / modeConfig.powerArmorGuardHealth))
     const paAbsorbed = paAbsorb * modeConfig.powerArmorGuardHealth
     powerArmorGuards = Math.max(0, powerArmorGuards - paAbsorb)
@@ -191,21 +227,23 @@ export function resolveFight(
     }
     const finalDamage = Math.max(0, postGuardDamage - armorAbsorb)
     health = Math.max(0, health - finalDamage)
-    damageTaken = finalDamage + armorAbsorb
+    damageTaken = finalDamage + armorAbsorb + mountDamageTaken
 
     const retaliationLogLines: string[] = []
+    if (mountDamageTaken > 0 && !mountDied) retaliationLogLines.push(`${player.mount!.name} takes ${mountDamageTaken} damage. (${mount!.health} HP remaining)`)
+    if (mountDied) retaliationLogLines.push(`${player.mount!.name} takes the full force and falls!`)
     if (paAbsorb > 0) retaliationLogLines.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (guardAbsorb > 0) retaliationLogLines.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (armorAbsorb > 0) retaliationLogLines.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
     if (finalDamage > 0) retaliationLogLines.push(`Enemies hit you for ${finalDamage} damage.`)
     log.push(...retaliationLogLines)
-    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage, logLines: retaliationLogLines })
+    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage, mountDamageTaken, mountDied, logLines: retaliationLogLines })
   }
 
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun, armor }
+  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun, armor, mount }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
@@ -234,6 +272,7 @@ export function resolveFight(
       totalDamageTaken: combat.totalDamageTaken + damageTaken,
       phase,
       log: [...combat.log, ...log],
+      enragedEnemyIds: [],
     },
     animSteps,
   }

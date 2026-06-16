@@ -6,8 +6,17 @@ import { useCombatAnimation } from '../../hooks/useCombatAnimation'
 import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
+import TamingMinigame from './TamingMinigame'
+import { ENEMY_SVGS } from './enemySvgs'
+import { TAMEABLE_ENEMY_IDS, TAME_HP_THRESHOLD } from '../../data/mounts'
 
 const KEYFRAMES = `
+  @keyframes mountFire {
+    0%   { opacity: 0; box-shadow: none; }
+    20%  { opacity: 1; box-shadow: 0 0 18px var(--pip-amber), inset 0 0 10px rgba(196,80,26,0.45); transform: scale(1.14); }
+    65%  { opacity: 0.7; box-shadow: 0 0 10px var(--pip-amber); transform: scale(1.05); }
+    100% { opacity: 0; box-shadow: none; transform: scale(1); }
+  }
   @keyframes guardFire {
     0%   { opacity: 0; box-shadow: none; }
     20%  { opacity: 1; box-shadow: 0 0 16px var(--pip-green), inset 0 0 8px rgba(74,112,24,0.35); transform: scale(1.12); }
@@ -68,6 +77,21 @@ function PlayerCardFire({ flashKey }: { flashKey: number }) {
   )
 }
 
+// Amber glow on the mount card when it attacks
+function MountGlow({ flashKey }: { flashKey: number }) {
+  if (flashKey === 0) return null
+  return (
+    <div
+      key={flashKey}
+      style={{
+        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+        animation: 'mountFire 420ms ease-out forwards',
+        zIndex: 2,
+      }}
+    />
+  )
+}
+
 // Amber flash on the "You" panel when the player fires
 function PlayerGlow({ flashKey }: { flashKey: number }) {
   if (flashKey === 0) return null
@@ -101,8 +125,9 @@ function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
-  const { fight, run, completeCombatAnim } = useGameStore()
-  const combatAnimSteps = useGameStore(s => s.combatAnimSteps)
+  const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame } = useGameStore()
+  const combatAnimSteps    = useGameStore(s => s.combatAnimSteps)
+  const showTamingMinigame = useGameStore(s => s.showTamingMinigame)
   const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const mc   = GAME_MODES[mode]
 
@@ -115,6 +140,14 @@ export default function CombatPanel({ player, combat }: Props) {
     0.40 + player.guards * 0.10 - player.brahmin * 0.05
   )) * 100)
 
+  const aliveEnemies = combat.enemies.filter(e => !e.dead)
+  const soloAlive    = aliveEnemies.length === 1 ? aliveEnemies[0] : null
+  const isTameableEnemy = soloAlive ? TAMEABLE_ENEMY_IDS.has(soloAlive.typeId) : false
+  const isCornerered    = soloAlive ? soloAlive.health / soloAlive.maxHealth <= TAME_HP_THRESHOLD : false
+  const canTame = isTameableEnemy && isCornerered && !!player.tamingTool && player.hasSaddle && !player.mount && !isResolving
+
+  const initialMountHealth = player.mount?.health ?? 0
+
   const anim = useCombatAnimation(
     combatAnimSteps,
     combat.enemies,
@@ -122,6 +155,7 @@ export default function CombatPanel({ player, combat }: Props) {
     paGuards,
     player.health,
     player.armor?.armorPoints ?? 0,
+    initialMountHealth,
     completeCombatAnim,
   )
 
@@ -139,6 +173,9 @@ export default function CombatPanel({ player, combat }: Props) {
   // Total cards to render — stays at pre-fight count so dead guards show as grey
   const totalGuards   = Math.max(anim.initialGuards,   player.guards)
   const totalPAGuards = Math.max(anim.initialPAGuards, paGuards)
+  // Mount health for display during animation
+  const displayMountHp = anim.isAnimating ? anim.displayMountHealth : (player.mount?.health ?? 0)
+  const mountIsDead    = anim.isAnimating ? anim.mountDied : (player.mount ? player.mount.health <= 0 : false)
 
   // Player HP/AP bars animate down during retaliation, snap to real values after
   const displayHealth = anim.isAnimating ? anim.displayPlayerHealth : player.health
@@ -291,6 +328,30 @@ export default function CombatPanel({ player, combat }: Props) {
                 </div>
               )
             })}
+            {/* Mount card */}
+            {player.mount && (() => {
+              const mountHpPct  = Math.max(0, Math.round((displayMountHp / player.mount.maxHealth) * 100))
+              const mountHpColor = mountHpPct > 50 ? 'var(--pip-green)' : mountHpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
+              const mountSvg = ENEMY_SVGS[player.mount.creatureTypeId] ?? ''
+              return (
+                <div
+                  className="flex flex-col items-center gap-1"
+                  style={{ width: '3rem', opacity: mountIsDead ? 0.35 : 1, filter: mountIsDead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
+                >
+                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
+                    {!mountIsDead && <MountGlow flashKey={anim.mountFireKey} />}
+                    <svg viewBox="0 0 48 48" className="w-7 h-7" style={{ color: 'var(--pip-amber)' }}
+                      dangerouslySetInnerHTML={{ __html: mountSvg }}
+                    />
+                  </div>
+                  <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
+                    <div className="h-full transition-all duration-500" style={{ width: `${mountHpPct}%`, backgroundColor: mountHpColor }} />
+                  </div>
+                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>MOUNT</div>
+                </div>
+              )
+            })()}
+
             {Array.from({ length: player.brahmin }).map((_, i) => (
               <div key={`b-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                 <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
@@ -304,6 +365,7 @@ export default function CombatPanel({ player, combat }: Props) {
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
+            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: absorbs {displayMountHp}/{player.mount.maxHealth} HP, then attacks</span>}
             {totalGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
             {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}
@@ -332,6 +394,17 @@ export default function CombatPanel({ player, combat }: Props) {
         ))}
       </div>
 
+      {/* Tame hint — creature is cornered but player lacks equipment */}
+      {isTameableEnemy && isCornerered && !canTame && !isResolving && !isResolved && (
+        <div className="text-xs font-mono border rounded p-2" style={{ color: 'var(--pip-amber)', borderColor: 'var(--pip-amber)', opacity: 0.8 }}>
+          {soloAlive!.name} is cornered!
+          {!player.tamingTool && !player.hasSaddle && ' Buy a taming tool + saddle at any Armory to attempt capture.'}
+          {!player.tamingTool && player.hasSaddle && ' Buy a taming tool (Lasso/Tranq Gun/Mesmetron) at any Armory.'}
+          {player.tamingTool && !player.hasSaddle && ' Buy a saddle at any Armory to ride it.'}
+          {player.mount && ' You already have a mount.'}
+        </div>
+      )}
+
       {!isResolved && (
         <div className="flex gap-3">
           <button className="pip-btn-danger flex-1" disabled={!canFight} onClick={fight}>
@@ -341,6 +414,11 @@ export default function CombatPanel({ player, combat }: Props) {
                 ? `FIGHT — ${player.gun!.name} (${player.gun!.ammo} ammo)`
                 : 'NO GUN / NO AMMO'}
           </button>
+          {canTame && (
+            <button className="pip-btn-amber" onClick={openTamingMinigame} style={{ flexShrink: 0, fontSize: '0.9rem', padding: '2px 12px' }}>
+              TAME
+            </button>
+          )}
           <button className="pip-btn-amber flex-1" disabled={isResolving} onClick={run}>
             RUN — {runChancePct}% chance
           </button>
@@ -354,6 +432,17 @@ export default function CombatPanel({ player, combat }: Props) {
         }`}>
           {combat.phase === 'won' ? 'VICTORY' : combat.phase === 'fled' ? 'ESCAPED' : 'DEFEATED'}
         </div>
+      )}
+
+      {/* Taming mini-game overlay */}
+      {showTamingMinigame && player.tamingTool && soloAlive && (
+        <TamingMinigame
+          tool={player.tamingTool}
+          creatureName={soloAlive.name}
+          creatureTypeId={soloAlive.typeId}
+          onSuccess={completeTame}
+          onAbandon={abandonTame}
+        />
       )}
     </div>
   )

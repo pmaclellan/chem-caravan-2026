@@ -9,6 +9,24 @@ export interface EnemyType {
   countMultiplier?: number   // scales danger-level-based spawn count (default 1)
 }
 
+export type TamingToolId = 'lasso' | 'tranq_gun' | 'mesmetron'
+
+export interface TamingToolState {
+  id: TamingToolId
+  name: string
+  greenWindowFraction: number
+  cursorSpeedMultiplier: number
+}
+
+export interface MountState {
+  creatureTypeId: string
+  name: string
+  health: number
+  maxHealth: number
+  damage: [number, number]
+  accuracy: number
+}
+
 export interface ArmorDefinition {
   id: string
   name: string
@@ -63,6 +81,9 @@ export interface PlayerState {
   inventory: Record<string, InventoryEntry>
   gun: GunState | null
   armor: ArmorState | null
+  tamingTool: TamingToolState | null
+  hasSaddle: boolean
+  mount: MountState | null
   xp: number                    // accumulated XP across all activities
   visitedSettlements: string[]  // settlement ids visited this run (for discovery bonus)
   debtPaidThisCycle?: number    // caps paid toward debt since last turn tick; resets each tick
@@ -99,6 +120,7 @@ export interface CombatState {
   xpGained: number                      // XP awarded on this combat's victory (for summary screen)
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
+  enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
 }
 
 export type AnimStep =
@@ -114,11 +136,22 @@ export type AnimStep =
       logLine: string
     }
   | {
+      kind: 'mount_attack'
+      hit: boolean
+      damage: number
+      targetId: string | null
+      targetDied: boolean
+      targetHealthAfter: number
+      logLine: string
+    }
+  | {
       kind: 'retaliation'
       paGuardsLost: number
       guardsLost: number
       armorAbsorb: number
       hpDamage: number
+      mountDamageTaken: number
+      mountDied: boolean
       logLines: string[]
     }
 

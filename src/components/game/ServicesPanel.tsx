@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { PlayerState } from '../../types/game'
 import { GAME_MODES } from '../../data/modes'
 import { useGameStore } from '../../store/gameStore'
+import { TAMING_TOOLS, TAMING_TOOL_IDS, SADDLE_PRICE } from '../../data/mounts'
 
 interface Props { player: PlayerState }
 
@@ -57,6 +58,18 @@ export default function ServicesPanel({ player }: Props) {
           >
             HEAL ({settlement.doctorCost} ¤)
           </button>
+          {player.mount && (() => {
+            const mountHealCost = settlement.doctorCost * 2
+            return (
+              <button
+                className="pip-btn w-full"
+                disabled={player.mount.health >= player.mount.maxHealth || player.caps < mountHealCost}
+                onClick={() => store.healMount()}
+              >
+                HEAL MOUNT — {player.mount.name} ({player.mount.health}/{player.mount.maxHealth} HP) · {mountHealCost} ¤
+              </button>
+            )
+          })()}
         </div>
       )}
 
@@ -187,6 +200,64 @@ export default function ServicesPanel({ player }: Props) {
                 </div>
               )
             })()}
+
+            {/* Taming gear */}
+            <div className="border-t border-pip-border pt-3 space-y-3">
+              <div className="pip-label">TAMING GEAR</div>
+              <div className="text-xs text-pip-green-dim">
+                Corner a creature in combat (≤30% HP) to attempt taming. Requires saddle + taming tool.
+              </div>
+
+              {/* Saddle */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-pip-green text-sm">Leather Saddle</div>
+                  <div className="text-xs text-pip-green-dim">Required to ride — permanent</div>
+                </div>
+                <button
+                  className={player.hasSaddle ? 'pip-btn text-xs' : 'pip-btn-amber text-xs'}
+                  disabled={player.hasSaddle || player.caps < SADDLE_PRICE}
+                  onClick={() => store.purchaseSaddle()}
+                >
+                  {player.hasSaddle ? 'OWNED' : `${SADDLE_PRICE} ¤`}
+                </button>
+              </div>
+
+              {/* Taming tools */}
+              {TAMING_TOOL_IDS.map(toolId => {
+                const tool    = TAMING_TOOLS[toolId]
+                const equipped = player.tamingTool?.id === toolId
+                const windowPct = Math.round(tool.greenWindowFraction * 100)
+                const speedLabel = tool.cursorSpeedMultiplier > 1 ? 'fast' : tool.cursorSpeedMultiplier < 1 ? 'slow' : 'normal'
+                return (
+                  <div key={toolId} className="flex justify-between items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-pip-green text-sm">{tool.name}</div>
+                      <div className="text-xs text-pip-green-dim truncate">
+                        {windowPct}% window · {speedLabel} cursor
+                      </div>
+                    </div>
+                    <button
+                      className={equipped ? 'pip-btn text-xs flex-shrink-0' : 'pip-btn-amber text-xs flex-shrink-0'}
+                      disabled={equipped || player.caps < tool.price}
+                      onClick={() => store.purchaseTamingTool(toolId)}
+                    >
+                      {equipped ? 'EQUIPPED' : `${tool.price} ¤`}
+                    </button>
+                  </div>
+                )
+              })}
+
+              {/* Current mount status */}
+              {player.mount && (
+                <div className="border border-pip-amber rounded p-2 space-y-0.5">
+                  <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
+                  <div className="text-xs text-pip-green-dim">
+                    {player.mount.health}/{player.mount.maxHealth} HP · DMG {player.mount.damage[0]}–{player.mount.damage[1]} · {Math.round(player.mount.accuracy * 100)}% acc
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

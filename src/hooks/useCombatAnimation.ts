@@ -20,6 +20,10 @@ export interface CombatAnimState {
   displayPAGuards: number
   initialGuards: number      // pre-fight count; use as total cards to render (including grey dead)
   initialPAGuards: number
+  displayMountHealth: number
+  initialMountHealth: number
+  mountFireKey: number
+  mountDied: boolean
   playerFireKey: number
   playerDamageKey: number
   guardFireKeys: Record<number, number>
@@ -34,6 +38,7 @@ export function useCombatAnimation(
   initialPAGuards: number,
   initialPlayerHealth: number,
   initialPlayerAP: number,
+  initialMountHealth: number,
   onComplete: () => void,
 ): CombatAnimState {
   const [state, setState] = useState<CombatAnimState>({
@@ -47,6 +52,10 @@ export function useCombatAnimation(
     displayPAGuards: initialPAGuards,
     initialGuards,
     initialPAGuards,
+    displayMountHealth: initialMountHealth,
+    initialMountHealth,
+    mountFireKey: 0,
+    mountDied: false,
     playerFireKey: 0,
     playerDamageKey: 0,
     guardFireKeys: {},
@@ -84,6 +93,10 @@ export function useCombatAnimation(
       displayPAGuards: initialPAGuards,
       initialGuards,
       initialPAGuards,
+      displayMountHealth: initialMountHealth,
+      initialMountHealth,
+      mountFireKey: 0,
+      mountDied: false,
       playerFireKey: 0,
       playerDamageKey: 0,
       guardFireKeys: {},
@@ -135,14 +148,51 @@ export function useCombatAnimation(
 
         offset += INTER_SHOT_MS
 
+      } else if (step.kind === 'mount_attack') {
+        // ── Mount attack — same timing pattern as a shot ────────────────────
+        const targetId    = step.targetId
+        const healthAfter = step.targetHealthAfter
+        const hit         = step.hit
+
+        // Mount card glows
+        timersRef.current.push(setTimeout(() => {
+          setState(s => ({ ...s, activeShooterIdx: null, activeTargetId: null, mountFireKey: s.mountFireKey + 1 }))
+        }, offset))
+
+        // Enemy reacts
+        if (targetId) {
+          const t2 = offset + TARGET_FLASH_DELAY
+          timersRef.current.push(setTimeout(() => {
+            if (hit) {
+              workingHealth[targetId]  = healthAfter
+              workingHitKeys[targetId] = (workingHitKeys[targetId] ?? 0) + 1
+            }
+            workingAnimInfo[targetId] = {
+              key:  (workingAnimInfo[targetId]?.key ?? 0) + 1,
+              type: hit ? 'hit' : 'miss',
+            }
+            setState(s => ({
+              ...s,
+              activeTargetId:     hit ? targetId : null,
+              displayEnemyHealth: hit ? { ...workingHealth } : s.displayEnemyHealth,
+              enemyHitKeys:       hit ? { ...workingHitKeys } : s.enemyHitKeys,
+              enemyAnimInfo:      { ...workingAnimInfo },
+            }))
+          }, t2))
+        }
+
+        offset += INTER_SHOT_MS
+
       } else {
         // ── Enemy retaliation — two sub-phases ──────────────────────────────
         offset += RETALIATION_PAUSE
 
-        const guardsLost   = step.guardsLost
-        const paGuardsLost = step.paGuardsLost
-        const hpDamage     = step.hpDamage
-        const armorAbsorb  = step.armorAbsorb
+        const guardsLost        = step.guardsLost
+        const paGuardsLost      = step.paGuardsLost
+        const hpDamage          = step.hpDamage
+        const armorAbsorb       = step.armorAbsorb
+        const mountDamageTaken  = step.mountDamageTaken
+        const mountDied         = step.mountDied
 
         // Phase 1: alive enemies lunge (attack animation)
         const attackAt = offset
@@ -163,7 +213,7 @@ export function useCombatAnimation(
           }))
         }, attackAt))
 
-        // Phase 2: damage lands on player — HP/AP bars animate, guards disappear
+        // Phase 2: damage lands on player — HP/AP bars animate, guards/mount update
         timersRef.current.push(setTimeout(() => {
           setState(s => ({
             ...s,
@@ -171,6 +221,8 @@ export function useCombatAnimation(
             displayPAGuards:     Math.max(0, s.displayPAGuards - paGuardsLost),
             displayPlayerHealth: Math.max(0, initialPlayerHealth - hpDamage),
             displayPlayerAP:     Math.max(0, initialPlayerAP   - armorAbsorb),
+            displayMountHealth:  Math.max(0, s.displayMountHealth - mountDamageTaken),
+            mountDied:           mountDied || s.mountDied,
             playerDamageKey:     (hpDamage > 0 || armorAbsorb > 0) ? s.playerDamageKey + 1 : s.playerDamageKey,
           }))
         }, attackAt + ATTACK_LAND_DELAY))
