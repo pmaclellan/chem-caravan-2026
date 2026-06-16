@@ -1,6 +1,7 @@
 import type { GunDefinition } from '../data/guns'
 import type { DebtEnforcementEntry } from '../data/modes'
 import type { ArmorDefinition, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
+import type { TamingToolDefinition } from '../data/mounts'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
 export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
@@ -216,6 +217,46 @@ export function repairArmor(player: PlayerState): { player: PlayerState; error?:
       caps: player.caps - cost,
       armor: { ...player.armor, armorPoints: player.armor.maxArmorPoints },
     },
+  }
+}
+
+export function buyTamingTool(
+  player: PlayerState,
+  toolDef: TamingToolDefinition,
+): { player: PlayerState; error?: string } {
+  if (player.caps < toolDef.price) return { player, error: "Not enough caps." }
+  return {
+    player: {
+      ...player,
+      caps: player.caps - toolDef.price,
+      tamingTool: {
+        id: toolDef.id,
+        name: toolDef.name,
+        greenWindowFraction: toolDef.greenWindowFraction,
+        cursorSpeedMultiplier: toolDef.cursorSpeedMultiplier,
+      },
+    },
+  }
+}
+
+export function buySaddle(
+  player: PlayerState,
+  price: number,
+): { player: PlayerState; error?: string } {
+  if (player.hasSaddle) return { player, error: "You already have a saddle." }
+  if (player.caps < price) return { player, error: "Not enough caps." }
+  return { player: { ...player, caps: player.caps - price, hasSaddle: true } }
+}
+
+export function healMount(
+  player: PlayerState,
+  cost: number,
+): { player: PlayerState; error?: string } {
+  if (!player.mount) return { player, error: "You don't have a mount." }
+  if (player.mount.health >= player.mount.maxHealth) return { player, error: "Mount is already at full health." }
+  if (player.caps < cost) return { player, error: "Not enough caps." }
+  return {
+    player: { ...player, caps: player.caps - cost, mount: { ...player.mount, health: player.mount.maxHealth } },
   }
 }
 

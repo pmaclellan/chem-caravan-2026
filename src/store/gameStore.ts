@@ -16,6 +16,7 @@ import {
   retireGame as retireGameFn,
 } from '../engine/gameLoop'
 import { resolveFight, resolveRun } from '../engine/combat'
+import { canAttemptTame, resolveTameSuccess, resolveFailedTame } from '../engine/taming'
 import { loseBrahmin } from '../engine/travel'
 import { rng } from '../engine/rng'
 import {
@@ -31,9 +32,14 @@ import {
   buyAmmo,
   buyArmor,
   repairArmor,
+  buyTamingTool,
+  buySaddle,
+  healMount as healMountFn,
   calculateFinalScore,
   resolveGameStatus,
 } from '../engine/economy'
+import { TAMING_TOOLS, SADDLE_PRICE } from '../data/mounts'
+import type { TamingToolId } from '../types/game'
 import { awardXp, XpEventType } from '../engine/xp'
 import type { SettlementMarket, WorldState } from '../types/game'
 import { applyMarketEvents } from '../engine/market'
@@ -64,6 +70,7 @@ interface GameStore {
   // Combat animation — lives outside gameState so it doesn't trigger Supabase saves
   combatAnimSteps: AnimStep[] | null
   pendingFightResult: { player: PlayerState; combat: CombatState } | null
+  showTamingMinigame: boolean
 
   // Lifecycle
   startNewGame: (characterName: string, userId: string, modeId?: GameModeId, gameType?: 'standard' | 'free_play') => Promise<void>
@@ -84,6 +91,12 @@ interface GameStore {
   run: () => void
   completeCombatAnim: () => void
   dismissCombatSummary: () => void
+  openTamingMinigame: () => void
+  completeTame: () => void
+  abandonTame: () => void
+  purchaseTamingTool: (toolId: TamingToolId) => void
+  purchaseSaddle: () => void
+  healMount: () => void
 
   // Market
   buy: (chemId: string, quantity: number) => void
@@ -123,6 +136,9 @@ function normalizeState(state: GameState): GameState {
       xp: state.player.xp ?? 0,
       visitedSettlements: state.player.visitedSettlements ?? [],
       powerArmorGuards: state.player.powerArmorGuards ?? 0,
+      tamingTool: state.player.tamingTool ?? null,
+      hasSaddle: state.player.hasSaddle ?? false,
+      mount: state.player.mount ?? null,
     },
   }
 }
@@ -197,6 +213,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     toast: null,
     combatAnimSteps: null,
     pendingFightResult: null,
+    showTamingMinigame: false,
 
     startNewGame: async (characterName, userId, modeId = 'commonwealth', gameType = 'standard') => {
       if (gameType === 'free_play') {
@@ -455,6 +472,65 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     dismissCombatSummary: () => {
       mutate(state => dismissCombatSummary(state))
+    },
+
+    openTamingMinigame: () => {
+      const state = get().gameState
+      if (!state?.combat) return
+      if (!canAttemptTame(state.player, state.combat)) return
+      set({ showTamingMinigame: true })
+    },
+
+    completeTame: () => {
+      const state = get().gameState
+      if (!state?.combat) return
+      set({ showTamingMinigame: false })
+      const { player, combat } = resolveTameSuccess(state.player, state.combat)
+      set({ pendingFightResult: { player, combat } })
+      mutate(s => afterCombat(s, { player, combat }))
+    },
+
+    abandonTame: () => {
+      const state = get().gameState
+      if (!state?.combat) return
+      set({ showTamingMinigame: false })
+      const mc = GAME_MODES[state.mode]
+      const { player, combat, animStep } = resolveFailedTame(state.player, state.combat, mc)
+      set({ pendingFightResult: { player, combat }, combatAnimSteps: [animStep] })
+      mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
+    },
+
+    purchaseTamingTool: (toolId) => {
+      mutate(state => {
+        const toolDef = TAMING_TOOLS[toolId]
+        if (!toolDef) return state
+        const { player, error } = buyTamingTool(state.player, toolDef)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Equipped ${toolDef.name}.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    purchaseSaddle: () => {
+      mutate(state => {
+        const { player, error } = buySaddle(state.player, SADDLE_PRICE)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Purchased leather saddle (${SADDLE_PRICE} ¤).`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    healMount: () => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const settlement = mc.settlements[state.player.location]
+        if (!settlement.hasDoctor) return state
+        const mountHealCost = settlement.doctorCost * 2
+        const { player, error } = healMountFn(state.player, mountHealCost)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Mount healed for ${mountHealCost} ¤.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
     },
 
     buy: (chemId, quantity) => {
