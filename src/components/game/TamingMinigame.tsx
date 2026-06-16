@@ -78,9 +78,9 @@ const TOOL_SVGS: Record<string, string> = {
 }
 
 const TOOL_FLAVOUR: Record<string, string> = {
-  lasso:     'SMALL TARGET · FAST NEEDLE — precision required',
-  tranq_gun: 'MEDIUM TARGET · STANDARD SPEED — steady hands',
-  mesmetron: 'WIDE TARGET · SLOW NEEDLE — neural pacifier engaged',
+  lasso:     'Stop the needle in the green zone 3 times in a row',
+  tranq_gun: 'Stop the needle in the green zone 3 times in a row',
+  mesmetron: 'Stop the needle in the green zone 3 times in a row',
 }
 
 interface TamingMinigameProps {
