@@ -13,27 +13,27 @@ const STYLES = `
     100% { opacity: 1; transform: scale(1) translateY(0); }
   }
   @keyframes meterHitFlash {
-    0%   { background: rgba(44,74,16,0); }
-    18%  { background: rgba(44,74,16,0.48); }
-    100% { background: rgba(44,74,16,0); }
+    0%   { background: rgba(34,197,94,0); }
+    18%  { background: rgba(34,197,94,0.35); }
+    100% { background: rgba(34,197,94,0); }
   }
   @keyframes meterMissFlash {
-    0%   { background: rgba(140,28,28,0); box-shadow: inset 0 0 0 0 var(--pip-red); }
-    18%  { background: rgba(140,28,28,0.38); box-shadow: inset 0 0 0 2px var(--pip-red); }
-    100% { background: rgba(140,28,28,0); box-shadow: inset 0 0 0 0 var(--pip-red); }
+    0%   { background: rgba(200,40,40,0); box-shadow: inset 0 0 0 0 #c82828; }
+    18%  { background: rgba(200,40,40,0.32); box-shadow: inset 0 0 0 2px #c82828; }
+    100% { background: rgba(200,40,40,0); box-shadow: inset 0 0 0 0 #c82828; }
   }
   @keyframes greenZonePulse {
-    0%   { background: rgba(44,74,16,0.28); }
-    35%  { background: rgba(44,74,16,0.62); box-shadow: 0 0 14px rgba(44,74,16,0.55); }
-    100% { background: rgba(44,74,16,0.28); box-shadow: none; }
+    0%   { background: rgba(34,197,94,0.30); }
+    35%  { background: rgba(34,197,94,0.60); box-shadow: 0 0 16px rgba(34,197,94,0.65); }
+    100% { background: rgba(34,197,94,0.30); box-shadow: none; }
   }
   @keyframes creatureThrob {
     0%, 100% { filter: drop-shadow(0 0 6px rgba(196,80,26,0.45)); }
     50%       { filter: drop-shadow(0 0 20px rgba(196,80,26,0.82)); }
   }
   @keyframes needleGlow {
-    0%, 100% { box-shadow: 0 0 4px var(--pip-amber), 0 0 10px rgba(196,80,26,0.28); }
-    50%       { box-shadow: 0 0 10px var(--pip-amber), 0 0 24px rgba(196,80,26,0.52); }
+    0%, 100% { box-shadow: 0 0 5px #f59e0b, 0 0 12px rgba(245,158,11,0.4); }
+    50%       { box-shadow: 0 0 12px #f59e0b, 0 0 28px rgba(245,158,11,0.65); }
   }
   @keyframes pipPop {
     0%   { transform: scale(1); }
@@ -339,9 +339,9 @@ export default function TamingMinigame({
                   left: `${greenStart * 100}%`,
                   width: `${tool.greenWindowFraction * 100}%`,
                   top: 0, bottom: 0,
-                  backgroundColor: 'rgba(44,74,16,0.28)',
-                  borderLeft: '1px solid rgba(44,74,16,0.65)',
-                  borderRight: '1px solid rgba(44,74,16,0.65)',
+                  backgroundColor: 'rgba(34,197,94,0.28)',
+                  borderLeft: '2px solid rgba(34,197,94,0.9)',
+                  borderRight: '2px solid rgba(34,197,94,0.9)',
                   animation: greenPulseKey > 0 ? 'greenZonePulse 520ms ease-out' : 'none',
                 }}
               />
@@ -366,7 +366,7 @@ export default function TamingMinigame({
                   left: `${cursorPos * 100}%`,
                   top: '3px', bottom: '3px',
                   width: '3px',
-                  backgroundColor: 'var(--pip-amber)',
+                  backgroundColor: '#f59e0b',
                   borderRadius: '1px',
                   transform: 'translateX(-50%)',
                   zIndex: 5,
