@@ -56,6 +56,9 @@ export const TAMING_TOOL_IDS: TamingToolId[] = ['lasso', 'tranq_gun', 'mesmetron
 
 export const SADDLE_PRICE = 400
 
+// Taming is a Free Play-only feature — the investment (caps + luck) doesn't pay off in a standard run.
+export const TAMING_FREE_PLAY_ONLY = true
+
 export function makeTamingToolState(def: TamingToolDefinition): TamingToolState {
   return {
     id: def.id,

@@ -8,7 +8,7 @@ import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
 import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS } from './enemySvgs'
-import { TAMEABLE_ENEMY_IDS, TAME_HP_THRESHOLD } from '../../data/mounts'
+import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
 
 const KEYFRAMES = `
   @keyframes mountFire {
@@ -128,7 +128,8 @@ export default function CombatPanel({ player, combat }: Props) {
   const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame } = useGameStore()
   const combatAnimSteps    = useGameStore(s => s.combatAnimSteps)
   const showTamingMinigame = useGameStore(s => s.showTamingMinigame)
-  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mode     = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const gameType = useGameStore(s => s.gameState?.gameType ?? 'standard')
   const mc   = GAME_MODES[mode]
 
   const paGuards    = player.powerArmorGuards ?? 0
@@ -143,8 +144,8 @@ export default function CombatPanel({ player, combat }: Props) {
   const aliveEnemies = combat.enemies.filter(e => !e.dead)
   const soloAlive    = aliveEnemies.length === 1 ? aliveEnemies[0] : null
   const isTameableEnemy = soloAlive ? TAMEABLE_ENEMY_IDS.has(soloAlive.typeId) : false
-  const isCornerered    = soloAlive ? soloAlive.health / soloAlive.maxHealth <= TAME_HP_THRESHOLD : false
-  const canTame = isTameableEnemy && isCornerered && !!player.tamingTool && player.hasSaddle && !player.mount && !isResolving
+  const soloCurrentHP   = soloAlive ? soloAlive.health : 0
+  const canTame = gameType === 'free_play' && isTameableEnemy && !!player.tamingTool && player.hasSaddle && !player.mount && !isResolving
 
   const initialMountHealth = player.mount?.health ?? 0
 
@@ -394,14 +395,14 @@ export default function CombatPanel({ player, combat }: Props) {
         ))}
       </div>
 
-      {/* Tame hint — creature is cornered but player lacks equipment */}
-      {isTameableEnemy && isCornerered && !canTame && !isResolving && !isResolved && (
+      {/* Tame hint — solo tameable creature but player lacks equipment or is in standard mode */}
+      {isTameableEnemy && !canTame && !isResolving && !isResolved && (
         <div className="text-xs font-mono border rounded p-2" style={{ color: 'var(--pip-amber)', borderColor: 'var(--pip-amber)', opacity: 0.8 }}>
-          {soloAlive!.name} is cornered!
-          {!player.tamingTool && !player.hasSaddle && ' Buy a taming tool + saddle at any Armory to attempt capture.'}
-          {!player.tamingTool && player.hasSaddle && ' Buy a taming tool (Lasso/Tranq Gun/Mesmetron) at any Armory.'}
-          {player.tamingTool && !player.hasSaddle && ' Buy a saddle at any Armory to ride it.'}
-          {player.mount && ' You already have a mount.'}
+          {gameType !== 'free_play' && 'Taming is only available in Free Play.'}
+          {gameType === 'free_play' && !player.tamingTool && !player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a saddle + taming tool at any Armory.`}
+          {gameType === 'free_play' && !player.tamingTool && player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a taming tool (Lasso/Tranq Gun/Mesmetron) at any Armory.`}
+          {gameType === 'free_play' && player.tamingTool && !player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a saddle at any Armory.`}
+          {gameType === 'free_play' && player.mount && 'You already have a mount.'}
         </div>
       )}
 
@@ -440,6 +441,7 @@ export default function CombatPanel({ player, combat }: Props) {
           tool={player.tamingTool}
           creatureName={soloAlive.name}
           creatureTypeId={soloAlive.typeId}
+          currentHP={soloCurrentHP}
           onSuccess={completeTame}
           onAbandon={abandonTame}
         />

@@ -9,7 +9,8 @@ interface Props { player: PlayerState }
 type Tab = 'doctor' | 'loanshark' | 'armory' | 'followers'
 
 export default function ServicesPanel({ player }: Props) {
-  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mode     = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const gameType = useGameStore(s => s.gameState?.gameType ?? 'standard')
   const mc = GAME_MODES[mode]
   const settlement = mc.settlements[player.location]
   const [activeTab, setActiveTab] = useState<Tab | null>(null)
@@ -201,11 +202,11 @@ export default function ServicesPanel({ player }: Props) {
               )
             })()}
 
-            {/* Taming gear */}
-            <div className="border-t border-pip-border pt-3 space-y-3">
+            {/* Taming gear — Free Play only */}
+            {gameType === 'free_play' && <div className="border-t border-pip-border pt-3 space-y-3">
               <div className="pip-label">TAMING GEAR</div>
               <div className="text-xs text-pip-green-dim">
-                Corner a creature in combat (≤30% HP) to attempt taming. Requires saddle + taming tool.
+                Encounter a solo tameable creature to attempt taming. Requires saddle + taming tool. Weaken it first — higher HP means a faster cursor.
               </div>
 
               {/* Saddle */}
@@ -255,7 +256,7 @@ export default function ServicesPanel({ player }: Props) {
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { tamingCursorSpeedScale } from '../../engine/tuning'
 
 const STYLES = `
   @keyframes feedbackFadeUp {
@@ -87,6 +88,7 @@ interface TamingMinigameProps {
   tool: { id: string; name: string; greenWindowFraction: number; cursorSpeedMultiplier: number }
   creatureName: string
   creatureTypeId: string
+  currentHP: number   // absolute HP; higher → faster cursor (deathclaws harder than yao guai)
   onSuccess: () => void
   onAbandon: () => void
 }
@@ -94,7 +96,7 @@ interface TamingMinigameProps {
 const BASE_ANGULAR = 2.15  // rad/s → ~1.5s to cross the full bar at 1× speed
 
 export default function TamingMinigame({
-  tool, creatureName, creatureTypeId, onSuccess, onAbandon,
+  tool, creatureName, creatureTypeId, currentHP, onSuccess, onAbandon,
 }: TamingMinigameProps) {
   // Green zone randomised once on mount; stays fixed for the whole attempt
   const [greenStart] = useState(() => {
@@ -127,9 +129,11 @@ export default function TamingMinigame({
   const rafRef     = useRef<number | null>(null)
   const angularRef = useRef(BASE_ANGULAR * tool.cursorSpeedMultiplier)
 
+  const hpSpeedScale = tamingCursorSpeedScale(currentHP)
+
   useEffect(() => {
-    angularRef.current = BASE_ANGULAR * tool.cursorSpeedMultiplier
-  }, [tool.cursorSpeedMultiplier])
+    angularRef.current = BASE_ANGULAR * tool.cursorSpeedMultiplier * hpSpeedScale
+  }, [tool.cursorSpeedMultiplier, hpSpeedScale])
 
   // rAF animation loop — runs for the lifetime of the component
   useEffect(() => {
