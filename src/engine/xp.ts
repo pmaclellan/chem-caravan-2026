@@ -1,4 +1,4 @@
-import type { PlayerState } from '../types/game'
+import type { GameType, PlayerState } from '../types/game'
 
 export const XpEventType = {
   RoadTravel:          'road_travel',
@@ -19,7 +19,7 @@ const XP_CONFIG = {
 } as const
 
 // scaleFactor = 1 in standard games; ramps up in Free Play as turns increase.
-export function getScaleFactor(turn: number, gameType: 'standard' | 'free_play'): number {
+export function getScaleFactor(turn: number, gameType: GameType): number {
   if (gameType !== 'free_play') return 1
   return 1 + turn / 60
 }

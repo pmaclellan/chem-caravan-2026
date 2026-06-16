@@ -1,4 +1,5 @@
 export type GameModeId = 'commonwealth' | 'capital_wasteland' | 'mojave_wasteland'
+export type GameType = 'standard' | 'free_play'
 
 export interface EnemyType {
   id: string
@@ -203,7 +204,7 @@ export interface TransitQuote {
 
 export interface GameState {
   mode: GameModeId
-  gameType: 'standard' | 'free_play'
+  gameType: GameType
   player: PlayerState
   world: WorldState
   phase: GamePhase
@@ -228,7 +229,7 @@ export interface GameRow {
   is_traveling: boolean
   mode: GameModeId | null              // null for pre-v2 rows (migration 003)
   turns_reached: number | null         // set on game over
-  game_type: 'standard' | 'free_play' // defaults to 'standard' (migration 005)
+  game_type: GameType // defaults to 'standard' (migration 005)
   created_at: string
   updated_at: string
 }
