@@ -567,9 +567,9 @@ export default function MobileGame() {
                     )
                   })()}
                 </div>
-                <div className="border-t border-pip-border-dim pt-2 space-y-2">
+                {gameType === 'free_play' && <div className="border-t border-pip-border-dim pt-2 space-y-2">
                   <div className="pip-label">TAMING GEAR</div>
-                  <div className="text-xs text-pip-green-dim">Corner a creature in combat (≤30% HP) to attempt taming. Requires saddle + tool.</div>
+                  <div className="text-xs text-pip-green-dim">Encounter a solo tameable creature to attempt taming. Requires saddle + tool.</div>
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-pip-green font-display">Leather Saddle</div>
@@ -610,7 +610,7 @@ export default function MobileGame() {
                       </div>
                     </div>
                   )}
-                </div>
+                </div>}
               </div>
             )}
 

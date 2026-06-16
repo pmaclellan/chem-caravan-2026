@@ -1,6 +1,6 @@
 import type { AnimStep, CombatState, MountState, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
-import { TAMEABLE_ENEMY_IDS, TAME_HP_THRESHOLD, TAMED_MOUNT_STATS, isTameable } from '../data/mounts'
+import { TAMEABLE_ENEMY_IDS, TAMED_MOUNT_STATS, isTameable } from '../data/mounts'
 import { rngInt } from './rng'
 
 export function canAttemptTame(player: PlayerState, combat: CombatState): boolean {
@@ -9,7 +9,6 @@ export function canAttemptTame(player: PlayerState, combat: CombatState): boolea
   const enemy = alive[0]
   return (
     TAMEABLE_ENEMY_IDS.has(enemy.typeId) &&
-    enemy.health / enemy.maxHealth <= TAME_HP_THRESHOLD &&
     !!player.tamingTool &&
     player.hasSaddle &&
     !player.mount
