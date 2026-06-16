@@ -51,6 +51,8 @@ src/
 
   data/
     chems.ts             ← Global chem registry (stats, prices, images)
+    armors.ts            ← Armor definitions (shared across all modes)
+    mounts.ts            ← Mount system: TameableEnemyId, taming tool defs, tamed creature stats
     config.ts            ← Legacy CONFIG constants (mostly superseded by GameModeConfig)
     modes/
       index.ts           ← GameModeConfig interface + GAME_MODES registry
@@ -67,10 +69,12 @@ src/
   engine/
     gameLoop.ts          ← Phase transitions: init, travel, events, combat, game over
     combat.ts            ← Fight and run resolution (pure functions)
+    taming.ts            ← Taming engine: resolveTameSuccess, resolveFailedTame, canAttemptTame
     economy.ts           ← All financial operations (pure functions)
     travel.ts            ← Road queries, event selection, capacity, brahmin loss
     market.ts            ← Market init, refresh, event application
     xp.ts                ← XP system: XpEventType, calculateXp, awardXp, getScaleFactor
+    tuning.ts            ← Gameplay balancing formulas (minEnemyCount, tamingCursorSpeedScale)
     rng.ts               ← Random number wrapper (swap to seeded PRNG here)
     __tests__/           ← Vitest unit tests for engine modules
 
@@ -81,20 +85,21 @@ src/
   components/
     game/
       MobileGame.tsx     ← Full mobile layout (5-tab, self-contained)
-      CombatPanel.tsx    ← Desktop combat UI
+      CombatPanel.tsx    ← Desktop combat UI (shared with mobile)
       CombatSummaryPanel.tsx
       EventPanel.tsx     ← Travel event UI (fight/run/pay choices)
+      TamingMinigame.tsx ← Bouncing-cursor taming skill game (rendered inside CombatPanel)
       MarketPanel.tsx
       MapPanel.tsx       ← Settlement map + travel buttons
       SettlementMap.tsx  ← SVG map renderer
-      ServicesPanel.tsx  ← Doctor, bank, loanshark, guards, brahmin, guns
+      ServicesPanel.tsx  ← Doctor, bank, loanshark, guards, brahmin, guns, taming gear
       InventoryPanel.tsx
       PlayerStats.tsx
       GameLog.tsx
       TravelSplash.tsx   ← Transit quote screen
       TravelPanel.tsx
       EnemyUnitCard.tsx
-      enemySvgs.ts       ← Inline SVG strings for enemy art
+      enemySvgs.ts       ← Inline SVG strings for enemy art (used by EnemyUnitCard + TamingMinigame)
     ui/
       FlashOverlay.tsx   ← Full-screen flash on damage/profit
       FlashText.tsx      ← Single value flash animation
@@ -175,6 +180,15 @@ game_over       → death/win screen
 - `debtWindowCapsPaid` — cumulative payment in the current enforcement window
 - `debtWindowStartAge` — ageOfDebt when the current payment window opened
 - `debtWarnings` — escalation counter (0 = first visit, 1 = second, 2+ = lethal)
+- `tamingTool: TamingToolState | null` — equipped taming tool (one slot, like a gun); consumed on successful tame
+- `hasSaddle: boolean` — permanent flag; required to ride a tamed creature
+- `mount: MountState | null` — active mount; has its own HP, damage, and accuracy
+
+**`MountState`** — `creatureTypeId` is typed as `TameableEnemyId` (a `const` tuple in `src/data/mounts.ts`), not `string`. This ensures any reference to a tameable creature ID is verified at compile time against the same tuple that defines `TAMED_MOUNT_STATS`.
+
+**`AnimStep`** — the union now includes `mount_attack` (same shape as `shot` but no `guardIdx`/`by` fields) and the `retaliation` variant has two extra fields: `mountDamageTaken: number` and `mountDied: boolean`.
+
+**`CombatState`** — has an optional `enragedEnemyIds?: string[]` field for enemies that deal +20% damage the turn after a failed tame attempt.
 
 **`SettlementMarket`** — market state stored in `WorldState.settlements[id]`. Prices have active market events applied when read via `applyMarketEvents()` in `engine/market.ts`. The raw (unadjusted) version is stored; the adjusted version is computed on demand.
 
@@ -255,13 +269,39 @@ Controls the game's state machine. All major phase transitions live here.
 `resolveFight(player, combat, modeConfig)`:
 - Player fires (1 shot, consumes `ammoPerShot`)
 - Each guard fires (1 ammo each from shared pool)
-- Surviving enemies attack; guards absorb `guardHealth` HP per guard before player takes damage
-- Returns updated `{ player, combat }`
+- Mount attacks (if present) — no ammo cost, after guards, before enemy retaliation
+- Surviving enemies attack; damage absorbed in cascade: PA Guards → Regular Guards → Armor → Mount → Player HP
+- Mount only takes damage if all earlier absorbers are exhausted; when mount HP hits 0 it is removed from player state
+- Returns updated `{ player, combat }` plus an `animSteps: AnimStep[]` array for the animation hook
 
 `resolveRun(player, combat, modeConfig)`:
 - Run chance = `0.40 + guards * 0.10 - brahmin * 0.05`, clamped to [0.1, 0.9]
 - Success: possibly lose a brahmin (30% chance if any owned), phase → `'fled'`
 - Failure: take reduced damage (50% of enemy damage range), potentially die
+
+### `engine/taming.ts` — Taming Engine
+
+All taming logic is isolated here. Nothing taming-related is inlined in `combat.ts`.
+
+| Function | What it does |
+|---|---|
+| `canAttemptTame(player, combat)` | Returns true when: solo alive enemy is tameable, player has taming tool + saddle, no existing mount |
+| `resolveTameSuccess(player, combat)` | Called on mini-game completion. Marks enemy dead (so XP/loot awards normally), sets `player.mount`, consumes `tamingTool`, transitions combat to `'won'` with `capsPool: 0` |
+| `resolveFailedTame(player, combat, modeConfig)` | Called when player abandons the mini-game. Applies an immediate enraged counter-attack (+20% damage) through the normal damage cascade, returns updated `{ player, combat, animStep }`. The `animStep` is a retaliation-type step so the existing animation hook plays it without changes |
+
+**Taming flow (store side):**
+- `openTamingMinigame()` — sets `showTamingMinigame: true` (transient, outside `gameState`)
+- `completeTame()` — calls `resolveTameSuccess`, then `afterCombat` which handles XP award and post-combat transition
+- `abandonTame()` — calls `resolveFailedTame`, puts the `animStep` into `combatAnimSteps`, sets `pendingFightResult`, sets combat phase to `'resolving'`. When `completeCombatAnim` fires, `afterCombat` sees `phase: 'player_choice'` and simply updates state without navigating away.
+
+### `engine/tuning.ts` — Balancing Formulas
+
+Centralised home for gameplay-balancing formulas that need to be tweaked independently of engine logic:
+
+| Function | Formula | Notes |
+|---|---|---|
+| `tamingCursorSpeedScale(currentHP)` | `0.4 + currentHP / 100` | Full-health deathclaw (140 HP) → 1.8×; near-dead (5 HP) → 0.45×. Uses absolute HP so heavier creatures are inherently harder |
+| `minEnemyCount(turn, dangerLevel, gameType)` | `min(floor(1 + turn/15), 3 + floor(dangerLevel * 4))` | Free Play only; floors enemy count so late-game roads stay challenging |
 
 ### `engine/economy.ts` — Financial Operations
 
@@ -273,6 +313,9 @@ All pure functions returning `{ player, error? }` or `{ player, profit?, error? 
 | `buyChems / sellChems` | Sell tracks P&L using `pricePaid` cost basis |
 | `repayDebt` | Adds payment to `debtPaidThisCycle`, resets `debtWarnings` on full payoff |
 | `addChemStash` | Capacity-aware free item add (stash finds, combat loot). `pricePaid = 0` for free items |
+| `buyTamingTool` | Deducts caps, sets `player.tamingTool` (one slot — replaces the previous tool) |
+| `buySaddle` | Deducts caps, sets `player.hasSaddle: true`. No-op if already owned |
+| `healMount` | Restores mount HP to max. Errors if no mount or mount is already full |
 | `calculateFinalScore` | `caps + bank - debt` |
 | `payBrotherhoodToll` | Returns `{ player, paid: boolean }` — `paid: false` if can't afford |
 
@@ -323,7 +366,7 @@ Engine functions return new state; `mutate` applies it and schedules a debounced
 
 **Toast errors** — actions that fail (not enough caps, no stock, etc.) call `set({ toast: error })`. The toast auto-clears after 3 seconds in `Game.tsx` via a `useEffect`.
 
-**`normalizeState(state)`** — old v1.0 saves have no `mode` field. This coerces them to `'commonwealth'` so `GAME_MODES[mode]` never fails with undefined.
+**`normalizeState(state)`** — old saves may be missing fields added in later versions. Always add `?? defaultValue` here for any new optional field on `PlayerState` or `CombatState`. Currently fills: `mode` (pre-v2 saves), `xp`, `visitedSettlements`, `powerArmorGuards`, `tamingTool`, `hasSaddle`, `mount`.
 
 **Save slot model** — one active game per mode per user. `startNewGame` archives any existing active game for that mode to `status: 'bankrupt'` before inserting the new one.
 
@@ -452,7 +495,7 @@ const { flashMap: invFlash }  = useMapFlash(player.inventory)
 | New settlement-level panel (desktop) | Create a component, add it to Game.tsx's tab bar; re-implement the same UI inline in MobileGame.tsx |
 | New player stat or UI element | Add to `PlayerStats.tsx` for desktop AND to `renderStatsTab()` inside `MobileGame.tsx` |
 | Bug fix in a shared component | Fix once — automatically applies to both |
-| New service in ServicesPanel | Add to `ServicesPanel.tsx` AND to the services section in `MobileGame.tsx` |
+| New service in ServicesPanel | Add to `ServicesPanel.tsx` AND to the corresponding `serviceOpen ===` block in `MobileGame.tsx`. Both must be updated — the mobile layout has its own inline implementations of every service panel. |
 
 ---
 
@@ -533,6 +576,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 **`consumeTurnInPlace`** — used when travel is aborted mid-road (can't afford toll, turns back from checkpoint). Increments the turn counter and ticks market events but leaves the player at their current location. This is distinct from completing travel.
 
 **Guards in combat.** Guards absorb damage as a group: `floor(totalIncoming / guardHealth)` guards are consumed, absorbing that many × `guardHealth` HP. Guards also fire once each per round, consuming 1 ammo each from the shared gun ammo pool.
+
+**Mounts in combat.** Mounts attack after guards each round (no ammo cost) and absorb damage last in the cascade — only after PA guards, regular guards, and armor are all exhausted. Mount HP is persistent and must be healed at a doctor. Mount stats are in `src/data/mounts.ts`; balancing formulas are in `src/engine/tuning.ts`.
+
+**Taming is Free Play only.** The `canTame` flag in `CombatPanel` and the taming gear section in `ServicesPanel`/`MobileGame` are all gated on `gameType === 'free_play'`. If adding other Free-Play-only features, follow this same pattern rather than embedding the check deep in engine functions.
+
+**The taming cursor speed scales with absolute HP, not HP fraction.** `tamingCursorSpeedScale(currentHP)` in `tuning.ts` means a deathclaw at 70 HP is harder to tame than a yao guai at 70 HP would hypothetically be — heavier creatures are inherently harder at the same percentage, which is intentional.
 
 **`rngWeightedPick`** — used for enemy type selection and event selection. Items need a `weight: number` property. Weight 0 means never selected (used for `debt_collector` events, which are only triggered by the engine explicitly, never randomly).
 
