@@ -91,7 +91,7 @@ interface TamingMinigameProps {
   onAbandon: () => void
 }
 
-const BASE_ANGULAR = 1.43  // rad/s → ~2.2s to cross the full bar at 1× speed
+const BASE_ANGULAR = 2.15  // rad/s → ~1.5s to cross the full bar at 1× speed
 
 export default function TamingMinigame({
   tool, creatureName, creatureTypeId, onSuccess, onAbandon,
