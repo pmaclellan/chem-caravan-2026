@@ -227,14 +227,12 @@ export default function ServicesPanel({ player }: Props) {
               {TAMING_TOOL_IDS.map(toolId => {
                 const tool    = TAMING_TOOLS[toolId]
                 const equipped = player.tamingTool?.id === toolId
-                const windowPct = Math.round(tool.greenWindowFraction * 100)
-                const speedLabel = tool.cursorSpeedMultiplier > 1 ? 'fast' : tool.cursorSpeedMultiplier < 1 ? 'slow' : 'normal'
                 return (
                   <div key={toolId} className="flex justify-between items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-pip-green text-sm">{tool.name}</div>
                       <div className="text-xs text-pip-green-dim truncate">
-                        {windowPct}% window · {speedLabel} cursor
+                        {tool.description}
                       </div>
                     </div>
                     <button
