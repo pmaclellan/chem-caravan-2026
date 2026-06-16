@@ -40,6 +40,7 @@ export function useCombatAnimation(
   initialPlayerAP: number,
   initialMountHealth: number,
   onComplete: () => void,
+  onLogLine?: (line: string) => void,
 ): CombatAnimState {
   const [state, setState] = useState<CombatAnimState>({
     isAnimating: false,
@@ -66,6 +67,8 @@ export function useCombatAnimation(
   const timersRef     = useRef<ReturnType<typeof setTimeout>[]>([])
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
+  const onLogLineRef  = useRef(onLogLine)
+  onLogLineRef.current = onLogLine
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout) }, [])
 
@@ -143,6 +146,7 @@ export function useCombatAnimation(
               enemyHitKeys:       hit ? { ...workingHitKeys } : s.enemyHitKeys,
               enemyAnimInfo:      { ...workingAnimInfo },
             }))
+            onLogLineRef.current?.(step.logLine)
           }, t2))
         }
 
@@ -178,6 +182,7 @@ export function useCombatAnimation(
               enemyHitKeys:       hit ? { ...workingHitKeys } : s.enemyHitKeys,
               enemyAnimInfo:      { ...workingAnimInfo },
             }))
+            onLogLineRef.current?.(step.logLine)
           }, t2))
         }
 
@@ -225,6 +230,7 @@ export function useCombatAnimation(
             mountDied:           mountDied || s.mountDied,
             playerDamageKey:     (hpDamage > 0 || armorAbsorb > 0) ? s.playerDamageKey + 1 : s.playerDamageKey,
           }))
+          for (const line of step.logLines) onLogLineRef.current?.(line)
         }, attackAt + ATTACK_LAND_DELAY))
 
         offset += ATTACK_LAND_DELAY + INTER_SHOT_MS
