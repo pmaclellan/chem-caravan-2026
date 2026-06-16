@@ -365,7 +365,7 @@ export default function CombatPanel({ player, combat }: Props) {
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
-            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: absorbs {displayMountHp}/{player.mount.maxHealth} HP, then attacks</span>}
+            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: attacks each turn, shields you if guards &amp; armor are gone ({displayMountHp}/{player.mount.maxHealth} HP)</span>}
             {totalGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
             {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}

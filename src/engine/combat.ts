@@ -199,19 +199,7 @@ export function resolveFight(
       totalIncoming += stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
     }
 
-    // Mount absorbs first (before PA guards)
-    let mountDamageTaken = 0
-    let mountDied = false
-    if (mount && mount.health > 0) {
-      const mountAbsorb = Math.min(mount.health, totalIncoming)
-      mountDamageTaken = mountAbsorb
-      mount = { ...mount, health: mount.health - mountAbsorb }
-      mountDied = mount.health <= 0
-      if (mountDied) mount = null
-      totalIncoming = Math.max(0, totalIncoming - mountAbsorb)
-    }
-
-    // PA guards absorb remaining
+    // PA guards absorb first
     const paAbsorb = Math.min(powerArmorGuards, Math.floor(totalIncoming / modeConfig.powerArmorGuardHealth))
     const paAbsorbed = paAbsorb * modeConfig.powerArmorGuardHealth
     powerArmorGuards = Math.max(0, powerArmorGuards - paAbsorb)
@@ -223,22 +211,34 @@ export function resolveFight(
     guards = Math.max(0, guards - guardAbsorb)
     const postGuardDamage = Math.max(0, postPADamage - absorbed)
 
-    // Armor absorbs remaining damage before HP
+    // Armor absorbs remaining
     let armorAbsorb = 0
     if (armor && postGuardDamage > 0) {
       armorAbsorb = Math.min(armor.armorPoints, postGuardDamage)
       armor = { ...armor, armorPoints: armor.armorPoints - armorAbsorb }
     }
-    const finalDamage = Math.max(0, postGuardDamage - armorAbsorb)
+    const postArmorDamage = Math.max(0, postGuardDamage - armorAbsorb)
+
+    // Mount absorbs last — only takes hits if guards and armor are exhausted
+    let mountDamageTaken = 0
+    let mountDied = false
+    if (mount && mount.health > 0 && postArmorDamage > 0) {
+      const mountAbsorb = Math.min(mount.health, postArmorDamage)
+      mountDamageTaken = mountAbsorb
+      mount = { ...mount, health: mount.health - mountAbsorb }
+      mountDied = mount.health <= 0
+      if (mountDied) mount = null
+    }
+    const finalDamage = Math.max(0, postArmorDamage - mountDamageTaken)
     health = Math.max(0, health - finalDamage)
     damageTaken = finalDamage + armorAbsorb + mountDamageTaken
 
     const retaliationLogLines: string[] = []
-    if (mountDamageTaken > 0 && !mountDied) retaliationLogLines.push(`${player.mount!.name} takes ${mountDamageTaken} damage. (${mount!.health} HP remaining)`)
-    if (mountDied) retaliationLogLines.push(`${player.mount!.name} takes the full force and falls!`)
     if (paAbsorb > 0) retaliationLogLines.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (guardAbsorb > 0) retaliationLogLines.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (armorAbsorb > 0) retaliationLogLines.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
+    if (mountDamageTaken > 0 && !mountDied) retaliationLogLines.push(`${player.mount!.name} shields you for ${mountDamageTaken} damage. (${mount!.health} HP remaining)`)
+    if (mountDied) retaliationLogLines.push(`${player.mount!.name} shields you and falls!`)
     if (finalDamage > 0) retaliationLogLines.push(`Enemies hit you for ${finalDamage} damage.`)
     log.push(...retaliationLogLines)
     animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage, mountDamageTaken, mountDied, logLines: retaliationLogLines })
