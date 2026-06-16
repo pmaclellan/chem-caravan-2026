@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
+import { TAMING_TOOLS, TAMING_TOOL_IDS, SADDLE_PRICE } from '../../data/mounts'
 import { applyMarketEvents } from '../../engine/market'
 import { getAdjacentRoads, getRoadDestination, calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
@@ -124,6 +125,22 @@ export default function MobileGame() {
                 </div>
                 <div className="h-3 bg-pip-border-dim rounded overflow-hidden">
                   <div className="h-full bg-pip-blue transition-all duration-300" style={{ width: `${apPct}%` }} />
+                </div>
+              </div>
+            )
+          })()}
+
+          {player.mount && (() => {
+            const mountHpPct = Math.max(0, Math.round((player.mount.health / player.mount.maxHealth) * 100))
+            const mountHpColor = mountHpPct > 60 ? 'bg-pip-green' : mountHpPct > 30 ? 'bg-pip-amber' : 'bg-pip-red'
+            return (
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="pip-label">Mount — {player.mount.name}</span>
+                  <span className="text-xs text-pip-amber">{player.mount.health} / {player.mount.maxHealth} HP</span>
+                </div>
+                <div className="h-3 bg-pip-border-dim rounded overflow-hidden">
+                  <div className={`h-full ${mountHpColor} transition-all duration-300`} style={{ width: `${mountHpPct}%` }} />
                 </div>
               </div>
             )
@@ -425,6 +442,18 @@ export default function MobileGame() {
                 >
                   HEAL ({settlement.doctorCost} ¤)
                 </button>
+                {player.mount && (() => {
+                  const mountHealCost = settlement.doctorCost * 2
+                  return (
+                    <button
+                      className="pip-btn w-full"
+                      disabled={player.mount.health >= player.mount.maxHealth || player.caps < mountHealCost}
+                      onClick={() => store.healMount()}
+                    >
+                      HEAL MOUNT — {player.mount.name} ({player.mount.health}/{player.mount.maxHealth} HP) · {mountHealCost} ¤
+                    </button>
+                  )
+                })()}
               </div>
             )}
 
@@ -537,6 +566,50 @@ export default function MobileGame() {
                       </div>
                     )
                   })()}
+                </div>
+                <div className="border-t border-pip-border-dim pt-2 space-y-2">
+                  <div className="pip-label">TAMING GEAR</div>
+                  <div className="text-xs text-pip-green-dim">Corner a creature in combat (≤30% HP) to attempt taming. Requires saddle + tool.</div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-pip-green font-display">Leather Saddle</div>
+                      <div className="text-xs text-pip-green-dim">Required to ride — permanent</div>
+                    </div>
+                    <button
+                      className={player.hasSaddle ? 'pip-btn text-xs px-2' : 'pip-btn-amber text-xs px-2'}
+                      disabled={player.hasSaddle || player.caps < SADDLE_PRICE}
+                      onClick={() => store.purchaseSaddle()}
+                    >
+                      {player.hasSaddle ? 'OWNED' : `${SADDLE_PRICE} ¤`}
+                    </button>
+                  </div>
+                  {TAMING_TOOL_IDS.map(toolId => {
+                    const tool = TAMING_TOOLS[toolId]
+                    const equipped = player.tamingTool?.id === toolId
+                    return (
+                      <div key={toolId} className="flex justify-between items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-pip-green font-display">{tool.name}</div>
+                          <div className="text-xs text-pip-green-dim truncate">{tool.description}</div>
+                        </div>
+                        <button
+                          className={equipped ? 'pip-btn text-xs px-2 flex-shrink-0' : 'pip-btn-amber text-xs px-2 flex-shrink-0'}
+                          disabled={equipped || player.caps < tool.price}
+                          onClick={() => store.purchaseTamingTool(tool.id)}
+                        >
+                          {equipped ? 'EQUIPPED' : `${tool.price} ¤`}
+                        </button>
+                      </div>
+                    )
+                  })}
+                  {player.mount && (
+                    <div className="border border-pip-amber rounded p-2 space-y-0.5">
+                      <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
+                      <div className="text-xs text-pip-green-dim">
+                        {player.mount.health}/{player.mount.maxHealth} HP · {player.mount.damage[0]}–{player.mount.damage[1]} dmg · {Math.round(player.mount.accuracy * 100)}% acc
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
