@@ -1,8 +1,9 @@
-import type { AnimStep, CombatState, EnemyUnit, PlayerState } from '../types/game'
+import type { AnimStep, CombatState, EnemyUnit, GameType, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
+import { minEnemyCount } from './tuning'
 
 const RUN_BASE_CHANCE      = 0.40
 const RUN_GUARD_BONUS      = 0.10  // per guard (regular or PA)
@@ -18,6 +19,8 @@ export function initiateCombat(
   forcedEnemyTypeId?: string,
   forcedCount?: number,
   scaleFactor = 1,
+  turn = 0,
+  gameType: GameType = 'standard',
 ): CombatState {
   // Pick enemy type first so countMultiplier can scale the base count
   const weightedPool = modeConfig.enemies
@@ -31,7 +34,8 @@ export function initiateCombat(
     : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
 
   const baseCount = Math.max(1, Math.round(dangerLevel * SPAWN_COUNT_FACTOR))
-  const count = forcedCount ?? Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1) * scaleFactor))
+  const formulaCount = Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1) * scaleFactor))
+  const count = forcedCount ?? Math.max(formulaCount, minEnemyCount(turn, dangerLevel, gameType))
 
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 

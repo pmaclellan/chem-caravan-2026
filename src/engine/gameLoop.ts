@@ -1,6 +1,6 @@
 import { GAME_MODES } from '../data/modes'
 import type { GameModeConfig } from '../data/modes'
-import type { GameModeId, GameState, LogEntry, MarketEvent, PlayerState, TravelEvent, WorldState } from '../types/game'
+import type { GameModeId, GameState, GameType, LogEntry, MarketEvent, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
@@ -15,7 +15,7 @@ function makeLog(turn: number, message: string, type: LogEntry['type']): LogEntr
 }
 
 // Each game type owns its own opening context line.
-const GAME_START_CONTEXT: Record<'standard' | 'free_play', (mc: GameModeConfig) => string> = {
+const GAME_START_CONTEXT: Record<GameType, (mc: GameModeConfig) => string> = {
   standard:  mc => `You have ${mc.maxTurns} turns to pay it off and make your fortune.`,
   free_play: ()  => 'FREE PLAY: No turn limit. Danger scales with time. Earn XP — survive as long as you can.',
 }
@@ -24,7 +24,7 @@ function buildStartLog(
   characterName: string,
   mc: GameModeConfig,
   events: MarketEvent[],
-  gameType: 'standard' | 'free_play',
+  gameType: GameType,
 ): LogEntry[] {
   const log: LogEntry[] = [
     makeLog(1, `Welcome to the ${mc.name}, ${characterName}.`, 'system'),
@@ -40,7 +40,7 @@ function buildStartLog(
 export function initializeGame(
   characterName: string,
   modeId: GameModeId = 'commonwealth',
-  gameType: 'standard' | 'free_play' = 'standard',
+  gameType: GameType = 'standard',
 ): GameState {
   const mc = GAME_MODES[modeId]
 
@@ -393,7 +393,7 @@ export function startCombat(state: GameState): GameState {
   const forcedTypeId = payload?.enemyTypeId
   const forcedCount  = payload?.count
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf)
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType)
   return {
     ...state,
     phase: 'combat',
@@ -455,7 +455,7 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
           ? 'You push forward — only to find another pack closing in.'
           : 'Still running — and you sprint right into a second ambush.'
         const sf = getScaleFactor(turn, state.gameType)
-        const preview = initiateCombat(road.dangerLevel, mc, road.enemyWeights, undefined, undefined, sf)
+        const preview = initiateCombat(road.dangerLevel, mc, road.enemyWeights, undefined, undefined, sf, turn, state.gameType)
         const previewTypeId = preview.enemies[0]?.typeId
         const previewCount  = preview.enemies.length
         const previewName   = mc.enemies.find(e => e.id === previewTypeId)?.name ?? 'enemies'

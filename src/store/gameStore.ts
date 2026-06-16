@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
-import type { AnimStep, GameState, GameRow, GameModeId, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
+import type { AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
 import {
   initializeGame,
   startTravel,
@@ -73,7 +73,7 @@ interface GameStore {
   showTamingMinigame: boolean
 
   // Lifecycle
-  startNewGame: (characterName: string, userId: string, modeId?: GameModeId, gameType?: 'standard' | 'free_play') => Promise<void>
+  startNewGame: (characterName: string, userId: string, modeId?: GameModeId, gameType?: GameType) => Promise<void>
   loadActiveGame: (userId: string, modeId?: GameModeId) => Promise<void>
   loadActiveGames: (userId: string) => Promise<void>
   loadGameById: (gameId: string) => Promise<void>
