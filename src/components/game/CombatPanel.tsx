@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
@@ -133,6 +134,12 @@ export default function CombatPanel({ player, combat }: Props) {
   const mc   = GAME_MODES[mode]
 
   const paGuards    = player.powerArmorGuards ?? 0
+
+  // Captured once at encounter start (CombatPanel mounts fresh per encounter).
+  // Used as the floor for totalGuards so dead guards stay visible across all fight rounds.
+  const [encounterInitialGuards]   = useState(player.guards)
+  const [encounterInitialPAGuards] = useState(paGuards)
+
   const isResolved  = combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost'
   const isResolving = combat.phase === 'resolving'
   const canFight    = !!player.gun && player.gun.ammo > 0 && !isResolving
@@ -149,6 +156,20 @@ export default function CombatPanel({ player, combat }: Props) {
 
   const initialMountHealth = player.mount?.health ?? 0
 
+  const [visibleLog, setVisibleLog] = useState<string[]>([])
+  const logDivRef = useRef<HTMLDivElement>(null)
+
+  // Reset visible log to just the intro line whenever a new fight animation starts
+  useEffect(() => {
+    if (combatAnimSteps && combatAnimSteps.length > 0) {
+      setVisibleLog([combat.log[0]])
+    }
+  }, [combatAnimSteps]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onLogLine = useCallback((line: string) => {
+    setVisibleLog(prev => [...prev, line])
+  }, [])
+
   const anim = useCombatAnimation(
     combatAnimSteps,
     combat.enemies,
@@ -158,7 +179,16 @@ export default function CombatPanel({ player, combat }: Props) {
     player.armor?.armorPoints ?? 0,
     initialMountHealth,
     completeCombatAnim,
+    onLogLine,
   )
+
+  const displayLog = anim.isAnimating ? visibleLog : combat.log
+
+  // Scroll to bottom whenever log content changes
+  useEffect(() => {
+    const el = logDivRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [displayLog])
 
   // Enemy display: animated health during sequence, real health otherwise
   const displayEnemies = anim.isAnimating
@@ -171,9 +201,9 @@ export default function CombatPanel({ player, combat }: Props) {
   // Alive counts — used to determine which cards are greyed out
   const aliveGuards   = anim.isAnimating ? anim.displayGuards   : player.guards
   const alivePAGuards = anim.isAnimating ? anim.displayPAGuards : paGuards
-  // Total cards to render — stays at pre-fight count so dead guards show as grey
-  const totalGuards   = Math.max(anim.initialGuards,   player.guards)
-  const totalPAGuards = Math.max(anim.initialPAGuards, paGuards)
+  // Total cards to render — encounter-start count so dead guards stay visible all round
+  const totalGuards   = encounterInitialGuards
+  const totalPAGuards = encounterInitialPAGuards
   // Mount health for display during animation
   const displayMountHp = anim.isAnimating ? anim.displayMountHealth : (player.mount?.health ?? 0)
   const mountIsDead    = anim.isAnimating ? anim.mountDied : (player.mount ? player.mount.health <= 0 : false)
@@ -189,9 +219,6 @@ export default function CombatPanel({ player, combat }: Props) {
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }      = useValueFlash(player.armor?.armorPoints ?? 0)
 
-  const logRef = (el: HTMLDivElement | null) => {
-    if (el) el.scrollTop = el.scrollHeight
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -376,10 +403,10 @@ export default function CombatPanel({ player, combat }: Props) {
 
       {/* Combat log */}
       <div
-        ref={logRef}
+        ref={logDivRef}
         className="border border-pip-border p-3 rounded bg-pip-border-dim text-xs font-mono space-y-1 overflow-y-auto max-h-36"
       >
-        {combat.log.map((line, i) => (
+        {displayLog.map((line, i) => (
           <div
             key={i}
             className={
