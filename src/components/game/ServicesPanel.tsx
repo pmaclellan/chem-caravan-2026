@@ -14,8 +14,9 @@ export default function ServicesPanel({ player }: Props) {
   const mc = GAME_MODES[mode]
   const settlement = mc.settlements[player.location]
   const [activeTab, setActiveTab] = useState<Tab | null>(null)
-  const [amount, setAmount] = useState(100)
-  const [ammoQty, setAmmoQty] = useState(10)
+  const [amount,    setAmount]    = useState(100)
+  const [rawAmount, setRawAmount] = useState('100')
+  const [ammoQty,   setAmmoQty]   = useState(10)
   const store = useGameStore()
 
   const tabs: { key: Tab; icon: string; label: string; available: boolean }[] = (
@@ -32,6 +33,16 @@ export default function ServicesPanel({ player }: Props) {
   }
 
   const interestPct = Math.round(mc.interestRate * 100 * 10) / 10
+
+  // Returns validated amount and syncs state — call this right before any loan action
+  const resolveAmount = () => {
+    const n = Math.max(1, parseInt(rawAmount, 10) || 1)
+    setAmount(n)
+    setRawAmount(String(n))
+    return n
+  }
+
+  const setPreset = (n: number) => { setAmount(n); setRawAmount(String(n)) }
 
   return (
     <div className="flex flex-col gap-3">
@@ -103,17 +114,65 @@ export default function ServicesPanel({ player }: Props) {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <input type="number" min={100} step={100} value={amount} onChange={e => setAmount(Math.max(100, parseInt(e.target.value) || 100))} className="pip-input w-24" />
-              <button className="pip-btn-danger" onClick={() => store.borrow(amount)}>BORROW ({amount} ¤)</button>
+            {/* Quick presets */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="pip-label text-pip-green-dim" style={{ fontSize: '0.6rem' }}>QUICK:</span>
+              {[100, 500, 1000].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setPreset(n)}
+                  className="font-mono border rounded transition-colors"
+                  style={{
+                    fontSize: '0.7rem', padding: '1px 7px',
+                    borderColor: amount === n ? 'var(--pip-green)' : 'var(--pip-border)',
+                    color:       amount === n ? 'var(--pip-bg)'    : 'var(--pip-green-dim)',
+                    backgroundColor: amount === n ? 'var(--pip-green)' : 'transparent',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+              {player.debt > 0 && (
+                <button
+                  onClick={() => setPreset(player.debt)}
+                  className="font-mono border rounded transition-colors"
+                  style={{
+                    fontSize: '0.7rem', padding: '1px 7px',
+                    borderColor: amount === player.debt ? 'var(--pip-amber)' : 'var(--pip-border)',
+                    color:       amount === player.debt ? 'var(--pip-bg)'    : 'var(--pip-amber)',
+                    backgroundColor: amount === player.debt ? 'var(--pip-amber)' : 'transparent',
+                  }}
+                >
+                  ALL
+                </button>
+              )}
             </div>
-            {player.debt > 0 && (
-              <div className="flex gap-2 mt-1">
-                <button className="pip-btn" disabled={player.caps < Math.min(amount, player.debt)} onClick={() => store.payDebt(amount)}>
+
+            {/* Custom amount + actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                inputMode="numeric"
+                className="pip-input w-24"
+                value={rawAmount}
+                onChange={e => { const v = e.target.value.replace(/[^0-9]/g, ''); setRawAmount(v); const n = parseInt(v, 10); if (n > 0) setAmount(n) }}
+                onBlur={resolveAmount}
+                onKeyDown={e => { if (e.key === 'Enter') resolveAmount() }}
+                placeholder="100"
+              />
+              <button className="pip-btn-danger" onClick={() => store.borrow(resolveAmount())}>
+                BORROW ({amount} ¤)
+              </button>
+              {player.debt > 0 && (
+                <button
+                  className="pip-btn"
+                  disabled={player.caps < Math.min(amount, player.debt)}
+                  onClick={() => store.payDebt(resolveAmount())}
+                >
                   REPAY {Math.min(amount, player.debt)} ¤
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )
       })()}
