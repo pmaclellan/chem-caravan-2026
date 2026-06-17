@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
@@ -155,18 +155,17 @@ export default function CombatPanel({ player, combat }: Props) {
 
   const initialMountHealth = player.mount?.health ?? 0
 
-  const [visibleLog, setVisibleLog] = useState<string[]>([])
-  const logDivRef = useRef<HTMLDivElement>(null)
+  // Real-time lines delivered during the current animation round.
+  // combat.log already accumulates across rounds, so we only need to augment
+  // it with in-flight messages while an animation is playing.
+  const [animLines, setAnimLines] = useState<string[]>([])
 
-  // Reset visible log to just the intro line whenever a new fight animation starts
-  useEffect(() => {
-    if (combatAnimSteps && combatAnimSteps.length > 0) {
-      setVisibleLog([combat.log[0]])
-    }
-  }, [combatAnimSteps]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Clear animLines both when a new fight starts and when animation finishes
+  // (at which point combat.log has been committed with everything).
+  useEffect(() => { setAnimLines([]) }, [combatAnimSteps])
 
   const onLogLine = useCallback((line: string) => {
-    setVisibleLog(prev => [...prev, line])
+    setAnimLines(prev => [...prev, line])
   }, [])
 
   const anim = useCombatAnimation(
@@ -181,13 +180,11 @@ export default function CombatPanel({ player, combat }: Props) {
     onLogLine,
   )
 
-  const displayLog = anim.isAnimating ? visibleLog : combat.log
-
-  // Scroll to bottom whenever log content changes
-  useEffect(() => {
-    const el = logDivRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [displayLog])
+  // Newest message at top — reverse after building the full list.
+  // During animation: augment committed log with real-time lines.
+  const displayLog = [...(
+    anim.isAnimating ? [...combat.log, ...animLines] : combat.log
+  )].reverse()
 
   // Enemy display: animated health during sequence, real health otherwise
   const displayEnemies = anim.isAnimating
@@ -400,27 +397,6 @@ export default function CombatPanel({ player, combat }: Props) {
         </div>
       )}
 
-      {/* Combat log */}
-      <div
-        ref={logDivRef}
-        className="border border-pip-border p-3 rounded bg-pip-border-dim text-xs font-mono space-y-1 overflow-y-auto max-h-36"
-      >
-        {displayLog.map((line, i) => (
-          <div
-            key={i}
-            className={
-              line.includes('dead') || line.includes('defeated') ? 'text-pip-amber' :
-              line.includes('killed') || line.includes('hit you') || line.includes('flee') || line.includes('Missed') ? 'text-pip-red' :
-              line.includes('armor absorbs') ? 'text-pip-blue' :
-              line.includes('Hit') ? 'text-pip-green-mid' :
-              'text-pip-green'
-            }
-          >
-            &gt; {line}
-          </div>
-        ))}
-      </div>
-
       {/* Tame hint — solo tameable creature but player lacks equipment or is in standard mode */}
       {isTameableEnemy && !canTame && !isResolving && !isResolved && (
         <div className="text-xs font-mono border rounded p-2" style={{ color: 'var(--pip-amber)', borderColor: 'var(--pip-amber)', opacity: 0.8 }}>
@@ -460,6 +436,24 @@ export default function CombatPanel({ player, combat }: Props) {
           {combat.phase === 'won' ? 'VICTORY' : combat.phase === 'fled' ? 'ESCAPED' : 'DEFEATED'}
         </div>
       )}
+
+      {/* Combat log — below buttons so it can't push them off screen */}
+      <div className="border border-pip-border p-3 rounded bg-pip-border-dim text-xs font-mono space-y-1 overflow-y-auto max-h-48">
+        {displayLog.map((line, i) => (
+          <div
+            key={i}
+            className={
+              line.includes('dead') || line.includes('defeated') ? 'text-pip-amber' :
+              line.includes('killed') || line.includes('hit you') || line.includes('flee') || line.includes('Missed') ? 'text-pip-red' :
+              line.includes('armor absorbs') ? 'text-pip-blue' :
+              line.includes('Hit') ? 'text-pip-green-mid' :
+              'text-pip-green'
+            }
+          >
+            &gt; {line}
+          </div>
+        ))}
+      </div>
 
       {/* Taming mini-game overlay */}
       {showTamingMinigame && player.tamingTool && soloAlive && (
