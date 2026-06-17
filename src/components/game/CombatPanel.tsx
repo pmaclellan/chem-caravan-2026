@@ -10,6 +10,7 @@ import EnemyUnitCard from './EnemyUnitCard'
 import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
+import { runEscapeChance } from '../../engine/tuning'
 
 const KEYFRAMES = `
   @keyframes mountFire {
@@ -144,9 +145,7 @@ export default function CombatPanel({ player, combat }: Props) {
   const isResolving = combat.phase === 'resolving'
   const canFight    = !!player.gun && player.gun.ammo > 0 && !isResolving
 
-  const runChancePct = Math.round(Math.min(0.9, Math.max(0.1,
-    0.40 + player.guards * 0.10 - player.brahmin * 0.05
-  )) * 100)
+  const runChancePct = Math.round(runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin) * 100)
 
   const aliveEnemies = combat.enemies.filter(e => !e.dead)
   const soloAlive    = aliveEnemies.length === 1 ? aliveEnemies[0] : null

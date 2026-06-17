@@ -3,11 +3,7 @@ import type { GameModeConfig } from '../data/modes'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
-import { minEnemyCount } from './tuning'
-
-const RUN_BASE_CHANCE      = 0.40
-const RUN_GUARD_BONUS      = 0.10  // per guard (regular or PA)
-const RUN_BRAHMIN_PENALTY  = 0.05  // per brahmin
+import { minEnemyCount, runEscapeChance } from './tuning'
 
 const SPAWN_COUNT_FACTOR   = 7     // base: dangerLevel × SPAWN_COUNT_FACTOR
 
@@ -287,10 +283,7 @@ export function resolveRun(
   combat: CombatState,
   modeConfig: GameModeConfig,
 ): { player: PlayerState; combat: CombatState } {
-  const totalGuards = player.guards + (player.powerArmorGuards ?? 0)
-  const runChance = Math.min(0.9, Math.max(0.1,
-    RUN_BASE_CHANCE + totalGuards * RUN_GUARD_BONUS - player.brahmin * RUN_BRAHMIN_PENALTY
-  ))
+  const runChance = runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin)
   const success = rng() < runChance
   const log: string[] = []
   let updatedPlayer = player
