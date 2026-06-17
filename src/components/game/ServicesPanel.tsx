@@ -264,8 +264,10 @@ export default function ServicesPanel({ player }: Props) {
             {/* Taming gear — Free Play only */}
             {gameType === 'free_play' && <div className="border-t border-pip-border pt-3 space-y-3">
               <div className="pip-label">TAMING GEAR</div>
-              <div className="text-xs text-pip-green-dim">
-                Encounter a solo tameable creature to attempt taming. Requires saddle + taming tool. Weaken it first — higher HP means a faster cursor.
+              <div className="text-xs text-pip-green-dim space-y-1">
+                <div>Encounter a solo tameable creature (Yao Guai, Radscorpion, Deathclaw) and choose TAME instead of fighting. Requires a saddle + taming tool equipped.</div>
+                <div>Weaken the creature first — higher HP means a faster cursor. Land 3 hits before 3 misses to tame it. Miss 3 times and it attacks enraged.</div>
+                <div>Mounts fight alongside you, absorb damage when your guards and armor are gone, and can only be tamed in Free Play mode.</div>
               </div>
 
               {/* Saddle */}
