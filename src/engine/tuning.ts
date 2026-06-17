@@ -21,6 +21,33 @@ export function tamingCursorSpeedScale(currentHP: number): number {
 }
 
 /**
+ * Escape chance when running from combat.
+ *
+ * Each guard (regular or PA) adds +0.10.
+ * Each brahmin subtracts 0.12 — intentionally larger than the guard bonus
+ * so a full brahmin train is a genuine liability in a fight.
+ *
+ * Clamped to [0.10, 0.90] so there's always some hope (and some risk).
+ *
+ * Example table (no PA guards):
+ *   0 guards / 0 brahmin → 40%
+ *   2 guards / 0 brahmin → 60%
+ *   0 guards / 5 brahmin → 10% (clamped)
+ *   2 guards / 5 brahmin → 20%
+ *   4 guards / 5 brahmin → 40%
+ */
+export const RUN_BASE_CHANCE     = 0.40
+export const RUN_GUARD_BONUS     = 0.10   // per regular or PA guard
+export const RUN_BRAHMIN_PENALTY = 0.12   // per brahmin — larger than guard bonus by design
+
+export function runEscapeChance(guards: number, paGuards: number, brahmin: number): number {
+  const totalGuards = guards + paGuards
+  return Math.min(0.90, Math.max(0.10,
+    RUN_BASE_CHANCE + totalGuards * RUN_GUARD_BONUS - brahmin * RUN_BRAHMIN_PENALTY
+  ))
+}
+
+/**
  * Floor on enemy count that grows with turn number in Free Play.
  * Caps at a road-based ceiling so safe roads stay safe regardless of turn.
  *
