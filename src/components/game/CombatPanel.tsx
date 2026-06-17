@@ -397,17 +397,6 @@ export default function CombatPanel({ player, combat }: Props) {
         </div>
       )}
 
-      {/* Tame hint — solo tameable creature but player lacks equipment or is in standard mode */}
-      {isTameableEnemy && !canTame && !isResolving && !isResolved && (
-        <div className="text-xs font-mono border rounded p-2" style={{ color: 'var(--pip-amber)', borderColor: 'var(--pip-amber)', opacity: 0.8 }}>
-          {gameType !== 'free_play' && 'Taming is only available in Free Play.'}
-          {gameType === 'free_play' && !player.tamingTool && !player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a saddle + taming tool at any Armory.`}
-          {gameType === 'free_play' && !player.tamingTool && player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a taming tool (Lasso/Tranq Gun/Mesmetron) at any Armory.`}
-          {gameType === 'free_play' && player.tamingTool && !player.hasSaddle && `${soloAlive!.name} can be tamed. Buy a saddle at any Armory.`}
-          {gameType === 'free_play' && player.mount && 'You already have a mount.'}
-        </div>
-      )}
-
       {!isResolved && (
         <div className="flex gap-3">
           <button className="pip-btn-danger flex-1" disabled={!canFight} onClick={fight}>
