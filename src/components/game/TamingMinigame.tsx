@@ -79,9 +79,9 @@ const TOOL_SVGS: Record<string, string> = {
 }
 
 const TOOL_FLAVOUR: Record<string, string> = {
-  lasso:     'Stop the needle in the green zone 3 times in a row',
-  tranq_gun: 'Stop the needle in the green zone 3 times in a row',
-  mesmetron: 'Stop the needle in the green zone 3 times in a row',
+  lasso:     '3 hits to tame · 3 misses and it attacks',
+  tranq_gun: '3 hits to tame · 3 misses and it attacks',
+  mesmetron: '3 hits to tame · 3 misses and it attacks',
 }
 
 interface TamingMinigameProps {
@@ -109,15 +109,16 @@ export default function TamingMinigame({
   const greenEnd = greenStart + tool.greenWindowFraction
 
   const [cursorPos,    setCursorPos]    = useState(0.5)
-  const [streak,       setStreak]       = useState(0)
+  const [attempts,     setAttempts]     = useState<('hit' | 'miss')[]>([])
   const [done,         setDone]         = useState(false)
+  const [failed,       setFailed]       = useState(false)
 
   // Animation restart keys — increment → matching child remounts → CSS animation restarts
   const [feedbackKey,    setFeedbackKey]    = useState(0)
-  const [feedbackKind,   setFeedbackKind]   = useState<'none' | 'hit' | 'miss' | 'tamed'>('none')
+  const [feedbackKind,   setFeedbackKind]   = useState<'none' | 'hit' | 'miss' | 'tamed' | 'enraged'>('none')
   const [meterFlashKey,  setMeterFlashKey]  = useState(0)
   const [meterFlashKind, setMeterFlashKind] = useState<'hit' | 'miss' | null>(null)
-  const [pipPopKeys,     setPipPopKeys]     = useState([0, 0, 0])
+  const [pipPopKeys,     setPipPopKeys]     = useState([0, 0, 0, 0, 0])
   const [greenPulseKey,  setGreenPulseKey]  = useState(0)
 
   // Refs for rAF loop (avoid stale closures)
@@ -125,7 +126,9 @@ export default function TamingMinigame({
   const lastTsRef  = useRef<number | null>(null)
   const pausedRef  = useRef(false)
   const doneRef    = useRef(false)
-  const streakRef  = useRef(0)
+  const hitsRef    = useRef(0)
+  const missesRef  = useRef(0)
+  const attemptsRef = useRef<('hit' | 'miss')[]>([])
   const rafRef     = useRef<number | null>(null)
   const angularRef = useRef(BASE_ANGULAR * tool.cursorSpeedMultiplier)
 
@@ -159,17 +162,19 @@ export default function TamingMinigame({
 
     const pos = 0.5 + 0.5 * Math.sin(timeRef.current * angularRef.current)
     const hit = pos >= greenStart && pos <= greenEnd
+    const idx = attemptsRef.current.length
+    attemptsRef.current = [...attemptsRef.current, hit ? 'hit' : 'miss']
+    setAttempts([...attemptsRef.current])
+    setPipPopKeys(prev => { const n = [...prev]; n[idx]++; return n })
+    setMeterFlashKind(hit ? 'hit' : 'miss')
+    setMeterFlashKey(k => k + 1)
 
     if (hit) {
-      const ns = streakRef.current + 1
-      streakRef.current = ns
-      setStreak(ns)
-      setPipPopKeys(prev => { const n = [...prev]; n[ns - 1]++; return n })
+      const newHits = hitsRef.current + 1
+      hitsRef.current = newHits
       setGreenPulseKey(k => k + 1)
-      setMeterFlashKind('hit')
-      setMeterFlashKey(k => k + 1)
 
-      if (ns >= 3) {
+      if (newHits >= 3) {
         doneRef.current = true
         setDone(true)
         setFeedbackKind('tamed')
@@ -185,23 +190,30 @@ export default function TamingMinigame({
         }, 560)
       }
     } else {
-      streakRef.current = 0
-      setStreak(0)
-      setFeedbackKind('miss')
-      setFeedbackKey(k => k + 1)
-      setMeterFlashKind('miss')
-      setMeterFlashKey(k => k + 1)
+      const newMisses = missesRef.current + 1
+      missesRef.current = newMisses
       // Reset cursor to centre (sin(0) = 0 → pos = 0.5)
-      timeRef.current  = 0
+      timeRef.current   = 0
       lastTsRef.current = null
 
-      setTimeout(() => {
-        setFeedbackKind('none')
-        setMeterFlashKind(null)
-        pausedRef.current = false
-      }, 690)
+      if (newMisses >= 3) {
+        doneRef.current = true
+        setDone(true)
+        setFailed(true)
+        setFeedbackKind('enraged')
+        setFeedbackKey(k => k + 1)
+        setTimeout(() => onAbandon(), 1400)
+      } else {
+        setFeedbackKind('miss')
+        setFeedbackKey(k => k + 1)
+        setTimeout(() => {
+          setFeedbackKind('none')
+          setMeterFlashKind(null)
+          pausedRef.current = false
+        }, 690)
+      }
     }
-  }, [greenStart, greenEnd, onSuccess])
+  }, [greenStart, greenEnd, onSuccess, onAbandon])
 
   const creatureSvg = CREATURE_SVGS[creatureTypeId]
   const toolSvg     = TOOL_SVGS[tool.id]
@@ -238,7 +250,7 @@ export default function TamingMinigame({
               TAMING OPERATION
             </span>
             <span className="font-mono" style={{ color: 'var(--pip-bg-light)', fontSize: '0.6rem', opacity: 0.65 }}>
-              STREAK [{streak}/3]
+              HITS [{attempts.filter(a => a === 'hit').length}/3] · MISS [{attempts.filter(a => a === 'miss').length}/3]
             </span>
           </div>
 
@@ -250,10 +262,10 @@ export default function TamingMinigame({
                 <svg
                   viewBox="0 0 48 48" width="80" height="80"
                   style={{
-                    color: done ? 'var(--pip-green)' : 'var(--pip-amber)',
+                    color: done ? (failed ? 'var(--pip-red)' : 'var(--pip-green)') : 'var(--pip-amber)',
                     transition: 'color 800ms ease, filter 800ms ease',
                     animation: done ? 'none' : 'creatureThrob 2.2s ease-in-out infinite',
-                    filter: done ? 'drop-shadow(0 0 14px var(--pip-green))' : undefined,
+                    filter: done ? `drop-shadow(0 0 14px ${failed ? 'var(--pip-red)' : 'var(--pip-green)'})` : undefined,
                   }}
                   dangerouslySetInnerHTML={{ __html: creatureSvg }}
                 />
@@ -266,7 +278,7 @@ export default function TamingMinigame({
                 {creatureName}
               </div>
               <div className="font-mono" style={{ color: 'var(--pip-green-dim)', fontSize: '0.62rem', letterSpacing: '0.13em' }}>
-                {done ? '— SUBDUED —' : '— CORNERED & WEAKENED —'}
+                {done ? (failed ? '— ENRAGED! —' : '— SUBDUED —') : '— CORNERED & WEAKENED —'}
               </div>
             </div>
 
@@ -296,6 +308,16 @@ export default function TamingMinigame({
                   textShadow: '0 0 28px var(--pip-green)',
                 }}>
                   TAMED!
+                </span>
+              )}
+              {feedbackKind === 'enraged' && (
+                <span key={`enraged-${feedbackKey}`} className="font-display" style={{
+                  position: 'absolute',
+                  color: 'var(--pip-red)', fontSize: '2.0rem', letterSpacing: '0.1em',
+                  animation: 'tamedAppear 900ms ease-out forwards',
+                  textShadow: '0 0 28px var(--pip-red)',
+                }}>
+                  ENRAGED!
                 </span>
               )}
             </div>
@@ -379,18 +401,20 @@ export default function TamingMinigame({
               )}
             </div>
 
-            {/* Streak pip indicators */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginBottom: '16px' }}>
-              {[0, 1, 2].map(i => {
-                const filled = i < streak
+            {/* Attempt history — 5 slots, green for hits, red for misses */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '16px' }}>
+              {[0, 1, 2, 3, 4].map(i => {
+                const result = attempts[i]
+                const borderColor = result === 'hit' ? 'var(--pip-green)' : result === 'miss' ? 'var(--pip-red)' : 'var(--pip-border)'
+                const bgColor     = result ? borderColor : 'transparent'
                 return (
                   <div
                     key={`pip-${i}-${pipPopKeys[i]}`}
                     style={{
-                      width: '18px', height: '18px',
+                      width: '16px', height: '16px',
                       borderRadius: '50%',
-                      border: `2px solid ${filled ? 'var(--pip-amber)' : 'var(--pip-border)'}`,
-                      backgroundColor: filled ? 'var(--pip-amber)' : 'transparent',
+                      border: `2px solid ${borderColor}`,
+                      backgroundColor: bgColor,
                       transition: 'background-color 160ms, border-color 160ms',
                       animation: pipPopKeys[i] > 0 ? 'pipPop 330ms ease-out' : 'none',
                     }}
