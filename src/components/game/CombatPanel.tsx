@@ -176,6 +176,7 @@ export default function CombatPanel({ player, combat }: Props) {
     player.health,
     player.armor?.armorPoints ?? 0,
     initialMountHealth,
+    player.gun?.ammo ?? 0,
     completeCombatAnim,
     onLogLine,
   )
@@ -276,7 +277,7 @@ export default function CombatPanel({ player, combat }: Props) {
           )}
           {player.gun && (
             <FlashText flashKey={ammoFlash} variant={ammoDir === 'down' ? 'red' : 'green'}>
-              {player.gun.name} · {player.gun.ammo} ammo
+              {player.gun.name} · {anim.isAnimating ? anim.displayAmmo : player.gun.ammo} ammo
             </FlashText>
           )}
           {player.guards > 0 && (

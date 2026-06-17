@@ -42,10 +42,25 @@ export default function HowToPlayPage() {
           <section>
             <div className="pip-label mb-1">Combat</div>
             <p className="text-pip-green-dim leading-relaxed">
-              When ambushed, you can FIGHT or RUN. Your guards fire alongside you each turn from
-              the same ammo pool — one round per guard per turn. Fighting lets you loot caps and
-              chems from defeated enemies. Running becomes harder with brahmin in tow. Losing all
-              health ends your run.
+              When ambushed, choose FIGHT or RUN. On FIGHT, you and all your guards fire one shot
+              each — all from the <span className="text-pip-green">same shared ammo pool</span>.
+              Four guards means five rounds fired per turn (you + four guards). Keep ammo stocked
+              or your guards go silent. Winning lets you loot caps and chems from defeated enemies.
+            </p>
+            <p className="text-pip-green-dim leading-relaxed mt-2">
+              Armor absorbs damage before your HP takes a hit. Guards act as ablative shields —
+              each one soaks a fixed hit before going down. Power armor guards absorb much more.
+              Running becomes harder the more brahmin you're dragging along.
+            </p>
+          </section>
+
+          <section>
+            <div className="pip-label mb-1">Mounts (Free Play)</div>
+            <p className="text-pip-green-dim leading-relaxed">
+              In Free Play mode you can tame wild creatures. Fight a solo enemy down to low health,
+              then hit TAME. Land 3 hits in the green zone before 3 misses or it attacks enraged.
+              A tamed mount fights beside you each turn and absorbs damage when your guards and
+              armor are gone. Buy a saddle and taming tool at any Armory before you try.
             </p>
           </section>
 
@@ -57,10 +72,10 @@ export default function HowToPlayPage() {
               interest charged.{' '}
               <span className="text-pip-green">Loansharks</span> extend your debt at compound
               interest — think carefully before borrowing.{' '}
-              <span className="text-pip-green">Gun shops</span> sell weapons and ammo.{' '}
-              <span className="text-pip-green">Guard posts</span> and{' '}
-              <span className="text-pip-green">Brahmin yards</span> let you hire protection and
-              pack animals.
+              <span className="text-pip-green">Armories</span> sell weapons, ammo, armor, and
+              taming gear.{' '}
+              <span className="text-pip-green">Followers</span> lets you hire guards, power armor
+              guards, and brahmin pack animals.
             </p>
           </section>
 
