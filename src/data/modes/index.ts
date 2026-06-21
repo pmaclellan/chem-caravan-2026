@@ -260,7 +260,7 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
     { id: 'deathclaw',     name: 'Deathclaw',     caps: [0, 0],      lootChems: [] },
     { id: 'radscorpion',   name: 'Radscorpion',   caps: [0, 0],      lootChems: [] },
     { id: 'powder_ganger', name: 'Powder Ganger', caps: [20, 100],   lootChems: ['jet', 'psycho', 'buffout'] },
-    { id: 'cazador',       name: 'Cazador',       caps: [0, 0],      lootChems: [],                           countMultiplier: 1.5 },
+    { id: 'cazador',       name: 'Cazador',       caps: [0, 0],      lootChems: [], countMultiplier: 1.75 },
     { id: 'ncr_ranger',    name: 'NCR Ranger',    caps: [500, 1000], lootChems: ['stimpak', 'radx', 'radaway'], eventOnly: true },
   ],
   enemyStats: {
@@ -271,7 +271,7 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
     deathclaw:     { health: 140, damage: [50, 90], xpReward: 80 },
     radscorpion:   { health: 70,  damage: [20, 42], xpReward: 30 },
     powder_ganger: { health: 40,  damage: [12, 28], xpReward: 15 },
-    cazador:       { health: 30,  damage: [8, 18],  xpReward: 20 },
+    cazador:       { health: 50,  damage: [18, 28], xpReward: 30 },
     ncr_ranger:    { health: 110, damage: [28, 50], xpReward: 50 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'turbo', 'rocket'],

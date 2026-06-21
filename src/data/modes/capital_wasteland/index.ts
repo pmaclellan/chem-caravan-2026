@@ -6,4 +6,3 @@ export { TRAVEL_EVENT_DEFS, STASH_CHEMS, STASH_QUANTITY_MIN, STASH_QUANTITY_MAX,
 export type { TravelEventDefinition } from './events'
 export { TRANSIT_QUOTES, pickQuote } from './quotes'
 export type { TransitQuote } from './quotes'
-export { CAPITAL_WASTELAND_ENEMIES } from './enemies'
