@@ -73,28 +73,32 @@ export function selectTravelEvent(
 }
 
 const AMBUSH_TITLES: Record<string, string> = {
-  raider:       '!! RAIDER AMBUSH !!',
-  super_mutant: '!! SUPER MUTANT ATTACK !!',
-  great_khan:   '!! GREAT KHAN AMBUSH !!',
-  legionnaire:  '!! LEGION AMBUSH !!',
-  deathclaw:    '!! DEATHCLAW !!',
-  fiend:        '!! FIEND ATTACK !!',
-  feral_ghoul:  '!! GHOUL ATTACK !!',
-  radscorpion:  '!! RADSCORPION !!',
-  yao_guai:     '!! YAO GUAI !!',
+  raider:        '!! RAIDER AMBUSH !!',
+  super_mutant:  '!! SUPER MUTANT ATTACK !!',
+  great_khan:    '!! GREAT KHAN AMBUSH !!',
+  legionnaire:   '!! LEGION AMBUSH !!',
+  deathclaw:     '!! DEATHCLAW !!',
+  fiend:         '!! FIEND ATTACK !!',
+  feral_ghoul:   '!! GHOUL ATTACK !!',
+  radscorpion:   '!! RADSCORPION !!',
+  yao_guai:      '!! YAO GUAI !!',
+  powder_ganger: '!! POWDER GANGER !!',
+  cazador:       '!! CAZADOR SWARM !!',
 }
 
 // Enemy-specific ambush lines — functions of count so description reads naturally
 const AMBUSH_LINES: Record<string, (n: number) => string> = {
-  raider:       (n) => n === 1 ? "A lone Raider steps out from cover, weapon raised." : `${n} Raiders emerge from cover. They want your caps.`,
-  super_mutant: (n) => n === 1 ? "A Super Mutant charges from the rubble, roaring." : `${n} Super Mutants block the road ahead, weapons raised.`,
-  great_khan:   (n) => n === 1 ? "A Great Khan rides out of the dust, armed." : `${n} Great Khans ride out of the dust, looking for trouble.`,
-  legionnaire:  (n) => n === 1 ? "A Legionnaire steps from the shadows. Blade drawn." : `${n} Legion Assassins step out of the shadows. Blades drawn.`,
-  deathclaw:    (n) => n === 1 ? "A Deathclaw rounds the bend. You might want to run." : `${n} Deathclaws emerge from the ruins. Run.`,
-  fiend:        (n) => n === 1 ? "A wild-eyed Fiend rushes from cover, screaming." : `${n} Fiends pour out of a wrecked vehicle, wild-eyed and armed.`,
-  feral_ghoul:  (n) => n === 1 ? "A Feral Ghoul lurches out of the dark, moaning." : `${n} Feral Ghouls close in from the shadows. They're fast.`,
-  radscorpion:  (n) => n === 1 ? "The ground ruptures — a Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand, tails raised.`,
-  yao_guai:     (n) => n === 1 ? "A Yao Guai crashes out of the brush, snarling." : `${n} Yao Guai surge from cover. They're hunting.`,
+  raider:        (n) => n === 1 ? "A lone Raider steps out from cover, weapon raised." : `${n} Raiders emerge from cover. They want your caps.`,
+  super_mutant:  (n) => n === 1 ? "A Super Mutant charges from the rubble, roaring." : `${n} Super Mutants block the road ahead, weapons raised.`,
+  great_khan:    (n) => n === 1 ? "A Great Khan rides out of the dust, armed." : `${n} Great Khans ride out of the dust, looking for trouble.`,
+  legionnaire:   (n) => n === 1 ? "A Legionnaire steps from the shadows. Blade drawn." : `${n} Legion Assassins step out of the shadows. Blades drawn.`,
+  deathclaw:     (n) => n === 1 ? "A Deathclaw rounds the bend. You might want to run." : `${n} Deathclaws emerge from the ruins. Run.`,
+  fiend:         (n) => n === 1 ? "A wild-eyed Fiend rushes from cover, screaming." : `${n} Fiends pour out of a wrecked vehicle, wild-eyed and armed.`,
+  feral_ghoul:   (n) => n === 1 ? "A Feral Ghoul lurches out of the dark, moaning." : `${n} Feral Ghouls close in from the shadows. They're fast.`,
+  radscorpion:   (n) => n === 1 ? "The ground ruptures — a Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand, tails raised.`,
+  yao_guai:      (n) => n === 1 ? "A Yao Guai crashes out of the brush, snarling." : `${n} Yao Guai surge from cover. They're hunting.`,
+  powder_ganger: (n) => n === 1 ? "A Powder Ganger raises a lit stick of dynamite." : `${n} Powder Gangers light their fuses. Hit the dirt.`,
+  cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadors swarm out of the canyon.`,
 }
 
 function buildEventPayload(
