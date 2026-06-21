@@ -97,16 +97,44 @@ const YAO_GUAI = `
   <path d="M38 42 L41 47 M36 43 L38 48 M32 43 L33 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
 `
 
+// Powder Ganger: standing human, dominant arm raised with lit dynamite stick overhead
+const POWDER_GANGER = `
+  <circle cx="24" cy="9" r="6" fill="currentColor"/>
+  <rect x="17" y="15" width="14" height="16" rx="2" fill="currentColor"/>
+  <rect x="31" y="13" width="4" height="12" rx="2" fill="currentColor"/>
+  <rect x="13" y="18" width="4" height="10" rx="2" fill="currentColor"/>
+  <rect x="35" y="5" width="3" height="8" rx="1" fill="currentColor"/>
+  <circle cx="36" cy="4" r="2" fill="currentColor"/>
+  <path d="M34 3 C32 1 33 0 35 1" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <rect x="17" y="31" width="5" height="14" rx="1" fill="currentColor"/>
+  <rect x="26" y="31" width="5" height="14" rx="1" fill="currentColor"/>
+`
+
+// Cazador: flying venomous insect — segmented body, two wing pairs, legs, curved stinger
+const CAZADOR = `
+  <ellipse cx="24" cy="26" rx="6" ry="10" fill="currentColor"/>
+  <ellipse cx="24" cy="13" rx="4" ry="5" fill="currentColor"/>
+  <path d="M18 22 C10 14 6 8 10 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M18 26 C9 26 4 22 6 18" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M30 22 C38 14 42 8 38 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M30 26 C39 26 44 22 42 18" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M20 34 L17 40 M24 35 L24 42 M28 34 L31 40" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M24 36 C26 40 30 44 28 48" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <polygon points="26,47 22,47 24,51" fill="currentColor"/>
+`
+
 export const ENEMY_SVGS: Record<string, string> = {
-  raider:       RAIDER,
-  feral_ghoul:  FERAL_GHOUL,
-  radscorpion:  RADSCORPION,
-  yao_guai:     YAO_GUAI,
-  super_mutant: SUPER_MUTANT,
-  great_khan:   GREAT_KHAN,
-  legionnaire:  LEGIONNAIRE,
-  deathclaw:    DEATHCLAW,
-  fiend:        FIEND,
+  raider:        RAIDER,
+  feral_ghoul:   FERAL_GHOUL,
+  radscorpion:   RADSCORPION,
+  yao_guai:      YAO_GUAI,
+  super_mutant:  SUPER_MUTANT,
+  great_khan:    GREAT_KHAN,
+  legionnaire:   LEGIONNAIRE,
+  deathclaw:     DEATHCLAW,
+  fiend:         FIEND,
+  powder_ganger: POWDER_GANGER,
+  cazador:       CAZADOR,
 }
 
 export const ENEMY_FALLBACK_SVG = RAIDER

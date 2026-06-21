@@ -146,6 +146,19 @@ export default function MobileGame() {
             )
           })()}
 
+          {player.conditions?.some(c => c.type === 'radscorpion_venom') && (
+            <div className="border border-red-500 px-2 py-1.5 rounded text-xs space-y-1.5">
+              <div className="text-red-400 font-bold">SCORPION VENOM — -5 HP per travel turn</div>
+              {(player.inventory['antivenom']?.quantity ?? 0) > 0 ? (
+                <button className="pip-btn w-full text-xs py-0.5" onClick={() => store.useAntivenom()}>
+                  USE ANTIVENOM (have {player.inventory['antivenom']!.quantity})
+                </button>
+              ) : (
+                <div className="text-pip-green-dim">Buy antivenom at a doctor to cure.</div>
+              )}
+            </div>
+          )}
+
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="pip-label">Turn</span>
@@ -454,6 +467,20 @@ export default function MobileGame() {
                     </button>
                   )
                 })()}
+                <div className="border-t border-pip-border pt-2 space-y-1">
+                  <div className="pip-label">
+                    ANTIVENOM — 200 ¤
+                    {(player.inventory['antivenom']?.quantity ?? 0) > 0 && ` (have ${player.inventory['antivenom']!.quantity})`}
+                  </div>
+                  <div className="text-xs text-pip-green-dim">Cures cazador and radscorpion venom.</div>
+                  <button
+                    className="pip-btn w-full"
+                    disabled={player.caps < 200}
+                    onClick={() => store.buyAntivenom()}
+                  >
+                    BUY ANTIVENOM (200 ¤)
+                  </button>
+                </div>
               </div>
             )}
 

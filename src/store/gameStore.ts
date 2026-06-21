@@ -116,6 +116,8 @@ interface GameStore {
   purchaseArmor: (armorId: string) => void
   repairArmor: () => void
   retire: () => void
+  buyAntivenom: () => void
+  useAntivenom: () => void
 
   // Internal
   _setToast: (msg: string | null) => void
@@ -139,6 +141,7 @@ function normalizeState(state: GameState): GameState {
       tamingTool: state.player.tamingTool ?? null,
       hasSaddle: state.player.hasSaddle ?? false,
       mount: state.player.mount ?? null,
+      conditions: state.player.conditions ?? [],
     },
   }
 }
@@ -637,6 +640,40 @@ export const useGameStore = create<GameStore>((set, get) => {
           type: 'info' as const,
         }]
         return { ...state, player, log }
+      })
+    },
+
+    buyAntivenom: () => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const settlement = mc.settlements[state.player.location]
+        if (!settlement.hasDoctor) { set({ toast: 'No doctor here.' }); return state }
+        const ANTIVENOM_PRICE = 200
+        if (state.player.caps < ANTIVENOM_PRICE) { set({ toast: 'Not enough caps.' }); return state }
+        const existing = state.player.inventory['antivenom']
+        const inventory = {
+          ...state.player.inventory,
+          antivenom: { quantity: (existing?.quantity ?? 0) + 1, pricePaid: ANTIVENOM_PRICE },
+        }
+        const player = { ...state.player, caps: state.player.caps - ANTIVENOM_PRICE, inventory }
+        const log = [...state.log, { turn: state.world.turn, message: `Bought antivenom for ${ANTIVENOM_PRICE} caps.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    useAntivenom: () => {
+      mutate(state => {
+        const existing = state.player.inventory['antivenom']
+        if (!existing || existing.quantity < 1) { set({ toast: 'No antivenom in inventory.' }); return state }
+        const newQty = existing.quantity - 1
+        const inventory = { ...state.player.inventory }
+        if (newQty === 0) delete inventory['antivenom']
+        else inventory['antivenom'] = { ...existing, quantity: newQty }
+        const conditions = (state.player.conditions ?? []).filter(c => c.type !== 'radscorpion_venom')
+        const player = { ...state.player, inventory, conditions }
+        const combat = state.combat ? { ...state.combat, playerVenomed: false } : state.combat
+        const log = [...state.log, { turn: state.world.turn, message: 'Antivenom administered. Venom cleared.', type: 'info' as const }]
+        return { ...state, player, combat, log }
       })
     },
 

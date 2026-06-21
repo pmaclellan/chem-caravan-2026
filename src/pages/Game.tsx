@@ -124,7 +124,7 @@ export default function Game() {
               {/* Gradient darkens the bottom so parchment panels stay readable */}
               <div
                 className="absolute inset-0 pointer-events-none rounded"
-                style={{ background: 'linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(192,168,90,0.65) 90%, rgba(192,168,90,0.92) 100%)' }}
+                style={{ background: 'linear-gradient(to bottom, transparent 0%, transparent 75%, color-mix(in srgb, var(--pip-bg) 65%, transparent) 90%, color-mix(in srgb, var(--pip-bg) 92%, transparent) 100%)' }}
               />
             </>
           )}

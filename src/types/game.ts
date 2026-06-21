@@ -91,6 +91,7 @@ export interface PlayerState {
   debtWarnings?: number         // times enforcement has triggered; drives damage escalation
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window
   debtWindowStartAge?: number   // ageOfDebt when the current payment window opened
+  conditions?: PlayerCondition[]  // persistent status effects (e.g. radscorpion venom)
 }
 
 export interface SettlementMarket {
@@ -111,6 +112,8 @@ export interface MarketEvent {
   message: string
 }
 
+export type PlayerCondition = { type: 'radscorpion_venom' }
+
 export interface CombatState {
   enemies: EnemyUnit[]
   capsPool: number                      // total caps all enemies carry
@@ -122,6 +125,7 @@ export interface CombatState {
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
+  playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
 }
 
 export type AnimStep =
@@ -154,6 +158,8 @@ export type AnimStep =
       mountDamageTaken: number
       mountDied: boolean
       logLines: string[]
+      venomApplied?: boolean
+      venomDotDamage?: number
     }
 
 export type LogType = 'info' | 'danger' | 'profit' | 'system'
