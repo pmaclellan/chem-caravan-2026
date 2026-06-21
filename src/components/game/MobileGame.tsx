@@ -484,10 +484,32 @@ export default function MobileGame() {
               </div>
             )}
 
-            {serviceOpen === 'loanshark' && (
+            {serviceOpen === 'loanshark' && (() => {
+              const isOverGrace     = player.ageOfDebt >= mc.debtGracePeriod
+              const windowStartAge  = player.debtWindowStartAge ?? player.ageOfDebt
+              const turnsElapsed    = player.ageOfDebt - windowStartAge
+              const turnsLeft       = Math.max(0, mc.debtWindowSize - turnsElapsed)
+              const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
+              const windowPaid      = (player.debtWindowCapsPaid ?? 0) + (player.debtPaidThisCycle ?? 0)
+              const stillOwed       = Math.max(0, minWindowPayment - windowPaid)
+              const windowOverdue   = turnsElapsed >= mc.debtWindowSize
+              const windowSatisfied = windowPaid >= minWindowPayment
+              return (
               <div className="border border-pip-border-dim rounded p-3 space-y-3">
                 <div className="pip-label">Loanshark — {Math.round(mc.interestRate * 100 * 10) / 10}% interest/turn</div>
                 <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
+                {player.debt > 0 && isOverGrace && (
+                  <div className={`text-xs rounded p-2 border ${windowOverdue && !windowSatisfied ? 'border-pip-red text-pip-red' : 'border-pip-border text-pip-green-dim'}`}>
+                    {windowSatisfied
+                      ? `Paid up this window. Next payment due in ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''}.`
+                      : windowOverdue
+                        ? `OVERDUE — pay ${stillOwed} ¤ now to keep them off your back.`
+                        : `Pay ${stillOwed} ¤ within ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''} to stay safe.`}
+                    {!windowSatisfied && windowPaid > 0 && (
+                      <span className="text-pip-green-dim"> ({windowPaid} ¤ paid so far this window)</span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
                     type="number" min={100} step={100} value={loanAmount}
@@ -506,7 +528,8 @@ export default function MobileGame() {
                   </button>
                 )}
               </div>
-            )}
+              )
+            })()}
 
             {serviceOpen === 'armory' && (
               <div className="border border-pip-border-dim rounded p-3 space-y-3">
