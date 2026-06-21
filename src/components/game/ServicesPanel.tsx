@@ -117,7 +117,7 @@ export default function ServicesPanel({ player }: Props) {
         const turnsElapsed     = player.ageOfDebt - windowStartAge
         const turnsLeft        = Math.max(0, mc.debtWindowSize - turnsElapsed)
         const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
-        const windowPaid       = player.debtWindowCapsPaid ?? 0
+        const windowPaid       = (player.debtWindowCapsPaid ?? 0) + (player.debtPaidThisCycle ?? 0)
         const stillOwed        = Math.max(0, minWindowPayment - windowPaid)
         const windowOverdue    = turnsElapsed >= mc.debtWindowSize
         const windowSatisfied  = windowPaid >= minWindowPayment
