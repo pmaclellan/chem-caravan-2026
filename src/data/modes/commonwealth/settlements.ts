@@ -9,6 +9,7 @@ export interface Settlement {
   hasFollowers: boolean
   doctorCost: number    // caps to heal fully
   imageUrl: string | null
+  priceModifier?: number  // optional multiplier applied to all chem prices at this settlement (e.g. 0.80 = 20% off)
 }
 
 export interface Road {

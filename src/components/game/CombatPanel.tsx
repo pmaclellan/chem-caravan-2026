@@ -127,7 +127,7 @@ function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
-  const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame } = useGameStore()
+  const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame, useAntivenom } = useGameStore()
   const combatAnimSteps    = useGameStore(s => s.combatAnimSteps)
   const showTamingMinigame = useGameStore(s => s.showTamingMinigame)
   const mode     = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
@@ -395,6 +395,15 @@ export default function CombatPanel({ player, combat }: Props) {
             {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}
           </div>
+        </div>
+      )}
+
+      {combat.playerVenomed && !isResolved && (
+        <div className="border border-red-500 px-2 py-1 rounded text-xs flex items-center justify-between gap-2">
+          <span className="text-red-400 font-bold">VENOMED — Accuracy -30%, +5 HP/round</span>
+          {(player.inventory['antivenom']?.quantity ?? 0) > 0 && (
+            <button className="pip-btn text-xs py-0.5 px-2 shrink-0" onClick={useAntivenom}>USE ANTIVENOM</button>
+          )}
         </div>
       )}
 

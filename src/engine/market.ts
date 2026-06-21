@@ -3,7 +3,7 @@ import type { GameModeConfig } from '../data/modes'
 import type { MarketEvent, SettlementMarket, WorldState } from '../types/game'
 import { rng, rngBetween, rngInt, rngPick } from './rng'
 
-export function initializeMarket(turn: number, availableChemIds: string[]): SettlementMarket {
+export function initializeMarket(turn: number, availableChemIds: string[], priceModifier = 1.0): SettlementMarket {
   const prices: Record<string, number> = {}
   const stock: Record<string, number> = {}
 
@@ -11,7 +11,7 @@ export function initializeMarket(turn: number, availableChemIds: string[]): Sett
     const chem = CHEMS[chemId]
     if (rng() < chem.availability) {
       const variance = (rng() - 0.5) * 2 * chem.priceVariance
-      prices[chemId] = Math.round((chem.basePrice * (1 + variance)) / 5) * 5
+      prices[chemId] = Math.round((chem.basePrice * (1 + variance) * priceModifier) / 5) * 5
       stock[chemId] = rngInt(1, chem.maxStock)
     }
   }
@@ -19,8 +19,8 @@ export function initializeMarket(turn: number, availableChemIds: string[]): Sett
   return { prices, stock, lastRefreshed: turn }
 }
 
-export function refreshMarket(_existing: SettlementMarket, turn: number, availableChemIds: string[]): SettlementMarket {
-  return initializeMarket(turn, availableChemIds)
+export function refreshMarket(_existing: SettlementMarket, turn: number, availableChemIds: string[], priceModifier = 1.0): SettlementMarket {
+  return initializeMarket(turn, availableChemIds, priceModifier)
 }
 
 export function applyMarketEvents(

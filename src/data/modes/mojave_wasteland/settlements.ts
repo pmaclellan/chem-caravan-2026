@@ -118,7 +118,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
   red_rock_canyon: {
     id: 'red_rock_canyon',
     name: 'Red Rock Canyon',
-    description: "Scenic canyon west of New Vegas. Home to the Great Khans.",
+    description: "Scenic canyon west of New Vegas. Home to the Great Khans and their drug lab. Chems move cheap here.",
     faction: 'Great Khans',
     hasDoctor: true,
     hasLoanshark: false,
@@ -126,6 +126,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasFollowers: true,
     doctorCost: 100,
     imageUrl: '/assets/settlements/mojave/Red_Rock_Canyon.webp',
+    priceModifier: 0.80,
   },
   sloan: {
     id: 'sloan',
@@ -227,8 +228,8 @@ export const ROADS: Road[] = [
     from: 'novac',
     to: 'primm',
     dangerLevel: 0.6,
-    description: "Down I-15, past Camp Searchlight.",
-    enemyWeights: { ghouls: 4, fiend: 1 },
+    description: "Down I-15, past Camp Searchlight. Powder Gangers raid the highway.",
+    enemyWeights: { feral_ghoul: 4, fiend: 1, powder_ganger: 1 },
   },
   {
     id: 'novac_goodsp',
@@ -244,8 +245,8 @@ export const ROADS: Road[] = [
     from: 'primm',
     to: 'goodsprings',
     dangerLevel: 0.28,
-    description: "Quiet desert road. Relatively light traffic — and threats.",
-    enemyWeights: { fiend: 2, radscorpion: 1 },
+    description: "Quiet desert road. Powder Gangers work this stretch near the NCRCF.",
+    enemyWeights: { powder_ganger: 2, fiend: 1, radscorpion: 1 },
   },
   {
     id: 'goodsp_sloan',
@@ -253,8 +254,8 @@ export const ROADS: Road[] = [
     from: 'goodsprings',
     to: 'sloan',
     dangerLevel: 0.44,
-    description: "Long desert run north. Fiends camp along the hills.",
-    enemyWeights: { fiend: 2, great_khan: 1 },
+    description: "Long desert run north. Powder Gangers and Fiends camp along the hills.",
+    enemyWeights: { powder_ganger: 2, fiend: 2, great_khan: 1 },
   },
   {
     id: 'mccar_sloan',

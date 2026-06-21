@@ -60,15 +60,17 @@ export function initiateCombat(
   }
 
   const COMBAT_INTRO: Record<string, (n: number) => string> = {
-    raider:       (n) => n === 1 ? "A Raider blocks the road ahead." : `${n} Raiders block the road ahead.`,
-    feral_ghoul:  (n) => n === 1 ? "A Feral Ghoul lurches toward you." : `${n} Feral Ghouls close in from the darkness.`,
-    radscorpion:  (n) => n === 1 ? "A Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand.`,
-    yao_guai:     (n) => n === 1 ? "A Yao Guai charges, roaring." : `${n} Yao Guai surge from cover.`,
-    super_mutant: (n) => n === 1 ? "A Super Mutant charges from the rubble." : `${n} Super Mutants block the road ahead.`,
-    deathclaw:    (n) => n === 1 ? "A Deathclaw rounds the bend. Run or fight." : `${n} Deathclaws emerge from the ruins.`,
-    fiend:        (n) => n === 1 ? "A Fiend rushes from cover, screaming." : `${n} Fiends pour out of cover.`,
-    great_khan:   (n) => n === 1 ? "A Great Khan rides out of the dust." : `${n} Great Khans block the road ahead.`,
-    legionnaire:  (n) => n === 1 ? "A Legionnaire steps from the shadows, blade drawn." : `${n} Legionnaires step from the shadows.`,
+    raider:        (n) => n === 1 ? "A Raider blocks the road ahead." : `${n} Raiders block the road ahead.`,
+    feral_ghoul:   (n) => n === 1 ? "A Feral Ghoul lurches toward you." : `${n} Feral Ghouls close in from the darkness.`,
+    radscorpion:   (n) => n === 1 ? "A Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand.`,
+    yao_guai:      (n) => n === 1 ? "A Yao Guai charges, roaring." : `${n} Yao Guai surge from cover.`,
+    super_mutant:  (n) => n === 1 ? "A Super Mutant charges from the rubble." : `${n} Super Mutants block the road ahead.`,
+    deathclaw:     (n) => n === 1 ? "A Deathclaw rounds the bend. Run or fight." : `${n} Deathclaws emerge from the ruins.`,
+    fiend:         (n) => n === 1 ? "A Fiend rushes from cover, screaming." : `${n} Fiends pour out of cover.`,
+    great_khan:    (n) => n === 1 ? "A Great Khan rides out of the dust." : `${n} Great Khans block the road ahead.`,
+    legionnaire:   (n) => n === 1 ? "A Legionnaire steps from the shadows, blade drawn." : `${n} Legionnaires step from the shadows.`,
+    powder_ganger: (n) => n === 1 ? "A Powder Ganger raises a lit stick of dynamite." : `${n} Powder Gangers light their dynamite.`,
+    cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadors swarm out of the canyon.`,
   }
   const description = COMBAT_INTRO[enemyType.id]?.(count) ?? (count === 1 ? `A ${enemyType.name} blocks the road ahead.` : `${count} ${enemyType.name}s block the road ahead.`)
 
@@ -114,7 +116,8 @@ export function resolveFight(
     gun.ammo -= gun.ammoPerShot
     const target = updatedEnemies.find(e => !e.dead)
     if (target) {
-      if (rng() < gun.accuracy) {
+      const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+      if (rng() < effectiveAccuracy) {
         const dealt = Math.min(gun.damage, target.health)
         damageDealt += dealt
         target.health = Math.max(0, target.health - gun.damage)
@@ -187,6 +190,7 @@ export function resolveFight(
   // ── Surviving enemies attack ──────────────────────────────────────────────
   const aliveEnemies = updatedEnemies.filter(e => !e.dead)
   let damageTaken = 0
+  let playerVenomed = combat.playerVenomed ?? false
 
   if (aliveEnemies.length > 0) {
     let totalIncoming = 0
@@ -229,6 +233,22 @@ export function resolveFight(
     health = Math.max(0, health - finalDamage)
     damageTaken = finalDamage + armorAbsorb + mountDamageTaken
 
+    // Cazador sting: apply venom if not already venomed and player took HP damage
+    const enemyTypeId = aliveEnemies[0]?.typeId
+    let venomApplied = false
+    if (!playerVenomed && enemyTypeId === 'cazador' && finalDamage > 0) {
+      playerVenomed = true
+      venomApplied = true
+    }
+
+    // Venom DoT: ticks every round from the round AFTER the initial sting
+    let venomDotDamage = 0
+    if (combat.playerVenomed ?? false) {
+      venomDotDamage = 5
+      health = Math.max(0, health - venomDotDamage)
+      damageTaken += venomDotDamage
+    }
+
     const retaliationLogLines: string[] = []
     if (paAbsorb > 0) retaliationLogLines.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
     if (guardAbsorb > 0) retaliationLogLines.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
@@ -236,8 +256,10 @@ export function resolveFight(
     if (mountDamageTaken > 0 && !mountDied) retaliationLogLines.push(`${player.mount!.name} shields you for ${mountDamageTaken} damage. (${mount!.health} HP remaining)`)
     if (mountDied) retaliationLogLines.push(`${player.mount!.name} shields you and falls!`)
     if (finalDamage > 0) retaliationLogLines.push(`Enemies hit you for ${finalDamage} damage.`)
+    if (venomApplied) retaliationLogLines.push('Cazador venom enters your bloodstream. Accuracy -30%, +5 HP/round.')
+    if (venomDotDamage > 0) retaliationLogLines.push(`Venom burns through you. -${venomDotDamage} HP.`)
     log.push(...retaliationLogLines)
-    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage, mountDamageTaken, mountDied, logLines: retaliationLogLines })
+    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage + venomDotDamage, mountDamageTaken, mountDied, logLines: retaliationLogLines, venomApplied, venomDotDamage })
   }
 
   // ── Determine outcome ─────────────────────────────────────────────────────
@@ -273,6 +295,7 @@ export function resolveFight(
       phase,
       log: [...combat.log, ...log],
       enragedEnemyIds: [],
+      playerVenomed: phase === 'won' || phase === 'fled' ? false : playerVenomed,
     },
     animSteps,
   }

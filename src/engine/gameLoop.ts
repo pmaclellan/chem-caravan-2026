@@ -67,11 +67,12 @@ export function initializeGame(
     debtWarnings: 0,
     debtWindowCapsPaid: 0,
     debtWindowStartAge: mc.debtGracePeriod,
+    conditions: [],
   }
 
   const settlements: WorldState['settlements'] = {}
   for (const id of mc.settlementIds) {
-    settlements[id] = initializeMarket(1, mc.availableChemIds)
+    settlements[id] = initializeMarket(1, mc.availableChemIds, mc.settlements[id]?.priceModifier)
   }
 
   // Seed 2 market events on turn 1 as advance intelligence for the player
@@ -163,6 +164,25 @@ export function continueTravel(state: GameState): GameState {
     }
   }
 
+  // Radscorpion venom DoT — drains 5 HP per travel turn until cured
+  if (player.conditions?.some(c => c.type === 'radscorpion_venom')) {
+    const newHealth = Math.max(0, player.health - 5)
+    log.push(makeLog(state.world.turn, 'Radscorpion venom burns through you. -5 HP.', 'danger'))
+    player = { ...player, health: newHealth }
+    if (newHealth <= 0) {
+      return {
+        ...state,
+        player,
+        log,
+        phase: 'game_over',
+        gameOverReason: 'combat',
+        endReason: 'Killed by radscorpion venom',
+        pendingEvent: null,
+        pendingDestination: null,
+      }
+    }
+  }
+
   const sf = getScaleFactor(state.world.turn, state.gameType)
   const { player: p1, logMessage: xpMsg1 } = awardXp(player, { type: XpEventType.RoadTravel, dangerLevel: road.dangerLevel, scaleFactor: sf })
   player = p1
@@ -198,7 +218,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     settlements: {
       ...world.settlements,
       [destinationId]: applyMarketEvents(
-        refreshMarket(world.settlements[destinationId], turn, mc.availableChemIds),
+        refreshMarket(world.settlements[destinationId], turn, mc.availableChemIds, mc.settlements[destinationId]?.priceModifier),
         world.activeMarketEvents,
         destinationId,
       ),
@@ -438,6 +458,15 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     player = p4
     combat = { ...combat, xpGained }
     if (xpMsg4) newLogs.push(makeLog(turn, xpMsg4, 'profit'))
+  }
+
+  // Radscorpion venom: apply post-combat condition if player took damage from scorpions
+  if ((combat.phase === 'won' || combat.phase === 'fled') && combat.totalDamageTaken > 0) {
+    const enemyTypeId = combat.enemies[0]?.typeId
+    if (enemyTypeId === 'radscorpion' && !player.conditions?.some(c => c.type === 'radscorpion_venom')) {
+      player = { ...player, conditions: [...(player.conditions ?? []), { type: 'radscorpion_venom' as const }] }
+      newLogs.push(makeLog(turn, "The radscorpion's sting left venom in your blood. You'll need antivenom.", 'danger'))
+    }
   }
 
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
