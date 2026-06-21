@@ -11,8 +11,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasLoanshark: true,
 
     hasArmory: true,
-    hasFollowers: true,
-    doctorCost: 250,
+    hasFollowers: false,
+    doctorCost: 300,
     imageUrl: '/assets/settlements/mojave/the_strip.webp',
   },
   freeside: {
@@ -24,8 +24,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasLoanshark: true,
 
     hasArmory: true,
-    hasFollowers: false,
-    doctorCost: 100,
+    hasFollowers: true,
+    doctorCost: 300,
     imageUrl: '/assets/settlements/mojave/Freeside.webp',
   },
   goodsprings: {
@@ -37,8 +37,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasLoanshark: false,
 
     hasArmory: true,
-    hasFollowers: false,
-    doctorCost: 100,
+    hasFollowers: true,
+    doctorCost: 200,
     imageUrl: '/assets/settlements/mojave/Goodsprings.webp',
   },
   primm: {
@@ -49,7 +49,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: false,
     hasLoanshark: false,
 
-    hasArmory: true,
+    hasArmory: false,
     hasFollowers: true,
     doctorCost: 0,
     imageUrl: '/assets/settlements/mojave/primm.webp',
@@ -62,7 +62,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasDoctor: true,
     hasLoanshark: false,
     hasArmory: true,
-    hasFollowers: true,
+    hasFollowers: false,
     doctorCost: 150,
     imageUrl: '/assets/settlements/mojave/HELIOS_One.webp',
   },
@@ -83,7 +83,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     name: 'NCR Sharecropper Farms',
     description: "NCR-run farm. They grow food here, and that's about it.",
     faction: 'NCR',
-    hasDoctor: true,
+    hasDoctor: false,
     hasLoanshark: false,
     hasArmory: false,
     hasFollowers: true,
@@ -107,11 +107,11 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     name: 'Jacobstown',
     description: "Super Mutant community on Mount Charleston. More peaceful than it sounds.",
     faction: 'Super Mutants',
-    hasDoctor: true,
+    hasDoctor: false,
     hasLoanshark: false,
 
-    hasArmory: false,
-    hasFollowers: true,
+    hasArmory: true,
+    hasFollowers: false,
     doctorCost: 100,
     imageUrl: '/assets/settlements/mojave/Jacobstown.webp',
   },
