@@ -2,9 +2,16 @@ import type { PlayerState } from '../../types/game'
 import type { GameModeConfig, MapNodePosition } from '../../data/modes'
 import { getAdjacentRoads, getRoadDestination } from '../../engine/travel'
 
-function dangerColor(danger: number): string {
-  if (danger >= 0.50) return '#8c1c1c'
-  if (danger >= 0.33) return '#c47810'
+const DANGER_THRESHOLDS: Record<string, { red: number; amber: number }> = {
+  commonwealth:     { red: 0.50, amber: 0.33 },
+  capital_wasteland: { red: 0.50, amber: 0.33 },
+  mojave_wasteland:  { red: 0.70, amber: 0.45 },
+}
+
+function dangerColor(danger: number, modeId: string): string {
+  const t = DANGER_THRESHOLDS[modeId] ?? { red: 0.50, amber: 0.33 }
+  if (danger >= t.red)   return '#8c1c1c'
+  if (danger >= t.amber) return '#c47810'
   return '#4a6a20'
 }
 
@@ -162,7 +169,7 @@ export default function SettlementMap({ player, mc, onTravel, compact = false }:
             const to   = positions[road.to]
             if (!from || !to) return null
             const adj   = isAdjRoad(road)
-            const color = dangerColor(road.dangerLevel)
+            const color = dangerColor(road.dangerLevel, mc.id)
             return (
               <line key={road.id}
                 x1={from.x} y1={from.y} x2={to.x} y2={to.y}
