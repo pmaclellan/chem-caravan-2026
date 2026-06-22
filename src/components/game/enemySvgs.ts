@@ -87,14 +87,25 @@ const RADSCORPION = `
 `
 
 const YAO_GUAI = `
-  <circle cx="24" cy="16" r="11" fill="currentColor"/>
-  <circle cx="15" cy="8" r="5" fill="currentColor"/>
-  <circle cx="33" cy="8" r="5" fill="currentColor"/>
-  <ellipse cx="24" cy="34" rx="14" ry="12" fill="currentColor"/>
-  <rect x="8" y="28" width="8" height="14" rx="4" fill="currentColor"/>
-  <rect x="32" y="28" width="8" height="14" rx="4" fill="currentColor"/>
-  <path d="M8 42 L5 47 M10 43 L8 48 M14 43 L13 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M38 42 L41 47 M36 43 L38 48 M32 43 L33 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Body: low-slung, hump higher at the back (right) -->
+  <path d="M12 28C12 16 18 12 28 12C38 12 46 16 46 24C46 32 40 38 30 38C20 38 12 36 12 28Z" fill="currentColor"/>
+  <!-- Upper skull: head thrust forward-left, muzzle low -->
+  <path d="M2 20C2 12 10 10 14 14C18 18 16 24 12 26C8 28 2 26 2 20Z" fill="currentColor"/>
+  <!-- Lower jaw: separated to show open mouth -->
+  <path d="M4 32C4 36 8 40 12 38C16 36 16 32 14 30C10 30 6 30 4 32Z" fill="currentColor"/>
+  <!-- Teeth hanging from upper jaw into mouth gap -->
+  <path d="M7 26L6 30M10 26L10 30M12 26L12 30" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Front legs (longer — bear is leaning forward) -->
+  <rect x="14" y="36" width="6" height="10" rx="3" fill="currentColor"/>
+  <rect x="22" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+  <!-- Back legs -->
+  <rect x="32" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+  <rect x="40" y="36" width="5" height="10" rx="2" fill="currentColor"/>
+  <!-- Front claws (4 per paw, prominent) -->
+  <path d="M11 46L8 48M14 46L13 48M17 46L17 48M20 46L21 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M20 46L18 48M23 46L22 48M26 46L26 48M29 46L30 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Back claws (smaller) -->
+  <path d="M30 46L28 48M34 46L33 48M38 46L38 48M42 46L43 48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
 `
 
 // Powder Ganger: standing human, dominant arm raised with lit dynamite stick overhead
