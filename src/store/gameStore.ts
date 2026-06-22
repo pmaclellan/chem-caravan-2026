@@ -469,8 +469,15 @@ export const useGameStore = create<GameStore>((set, get) => {
       const state = get().gameState
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
-      const result = resolveRun(state.player, state.combat, mc)
-      mutate(s => afterCombat(s, result))
+      const { player, combat, animSteps } = resolveRun(state.player, state.combat, mc)
+      if (animSteps.length > 0) {
+        // Flee failed — animate enemy retaliation before applying result
+        set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
+        mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
+      } else {
+        // Flee succeeded — apply immediately
+        mutate(s => afterCombat(s, { player, combat }))
+      }
     },
 
     dismissCombatSummary: () => {

@@ -305,13 +305,14 @@ export function resolveRun(
   player: PlayerState,
   combat: CombatState,
   modeConfig: GameModeConfig,
-): { player: PlayerState; combat: CombatState } {
+): { player: PlayerState; combat: CombatState; animSteps: AnimStep[] } {
   const runChance = runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin)
   const success = rng() < runChance
   const log: string[] = []
   let updatedPlayer = player
   let { phase } = combat
   let damageTaken = 0
+  const animSteps: AnimStep[] = []
 
   if (success) {
     if (player.brahmin > 0 && rng() < 0.30) {
@@ -344,6 +345,16 @@ export function resolveRun(
       phase = 'lost'
       log.push("You've been killed trying to flee.")
     }
+    animSteps.push({
+      kind: 'retaliation',
+      guardsLost: 0,
+      paGuardsLost: 0,
+      armorAbsorb,
+      hpDamage: finalDamage,
+      mountDamageTaken: 0,
+      mountDied: false,
+      logLines: [...log],
+    })
   }
 
   return {
@@ -354,6 +365,7 @@ export function resolveRun(
       phase,
       log: [...combat.log, ...log],
     },
+    animSteps,
   }
 }
 
