@@ -67,6 +67,7 @@ export function selectTravelEvent(
   if (rng() < modeConfig.nonCombatEventProb) {
     const eligible = modeConfig.travelEvents.filter(
       e => e.weight > 0 && e.type !== 'raider_ambush' && road.dangerLevel >= e.minDangerToTrigger
+        && !(e.type === 'brahmin_lost' && player.brahmin === 0)
     )
     const chosen = rngWeightedPick(eligible)
     if (chosen) return buildEventPayload(chosen.type, chosen.title, chosen.description, modeConfig, road)
