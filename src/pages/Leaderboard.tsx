@@ -19,6 +19,16 @@ interface LeaderboardRow {
 }
 
 
+// Minimum game_version (major*10000+minor*100+patch) required per mode.
+// Rows with NULL game_version (pre-versioning) are always excluded by the gte filter.
+const MIN_GAME_VERSION: Partial<Record<LbTab, number>> & { default: number } = {
+  default:           600,  // v0.6.0
+  commonwealth:      600,
+  capital_wasteland: 600,
+  mojave_wasteland:  600,
+  global:            600,
+}
+
 const TABS: { id: LbTab; label: string }[] = [
   { id: 'commonwealth',      label: 'Commonwealth'  },
   { id: 'capital_wasteland', label: 'Capital'       },
@@ -39,11 +49,14 @@ export default function Leaderboard() {
       setLoading(true)
       setError(null)
 
+      const minVersion = MIN_GAME_VERSION[tab] ?? MIN_GAME_VERSION.default
+
       let query = supabase
         .from('games')
         .select('id, character_name, final_score, status, mode, turns_reached, created_at, state')
         .eq('game_type', gameTypeFilter)
         .not('final_score', 'is', null)
+        .gte('game_version', minVersion)
         .order('final_score', { ascending: false })
         .limit(20)
 
