@@ -436,7 +436,7 @@ export default function TamingMinigame({
               <>
                 <button
                   className="pip-btn-amber"
-                  onClick={handleStop}
+                  onPointerDown={e => { e.preventDefault(); handleStop() }}
                   style={{ width: '100%', fontSize: '1.55rem', padding: '10px 0', letterSpacing: '0.22em', marginBottom: '10px' }}
                 >
                   STOP
