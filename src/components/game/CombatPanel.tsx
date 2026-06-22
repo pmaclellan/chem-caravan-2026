@@ -213,6 +213,7 @@ export default function CombatPanel({ player, combat }: Props) {
   // Real-state flashes (fire when game state updates after animation completes)
   const { flashKey: hpFlash }      = useValueFlash(player.health)
   const { flashKey: guardsFlash }  = useValueFlash(player.guards)
+  const { flashKey: paGuardsFlash } = useValueFlash(paGuards)
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }      = useValueFlash(player.armor?.armorPoints ?? 0)
 
@@ -282,6 +283,9 @@ export default function CombatPanel({ player, combat }: Props) {
           )}
           {player.guards > 0 && (
             <FlashText flashKey={guardsFlash} variant="red">{player.guards} guards</FlashText>
+          )}
+          {paGuards > 0 && (
+            <FlashText flashKey={paGuardsFlash} variant="red"><span style={{ color: 'var(--pip-blue)' }}>{paGuards} PA guards</span></FlashText>
           )}
           {player.brahmin > 0 && <span>{player.brahmin} brahmin</span>}
         </div>
