@@ -387,14 +387,14 @@ export default function CombatPanel({ player, combat }: Props) {
                   <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
                     {/* Body */}
                     <path d="M8 14C8 10.5 10.5 9 15 9C19.5 9 22 10.5 22 14C22 17.5 19.5 19 15 19C10.5 19 8 17.5 8 14Z" />
-                    {/* Upper head */}
-                    <path d="M2 7C2 4.5 3.5 4 5 4C6.5 4 8 4.5 8 7C8 9.5 6.5 10 5 10C3.5 10 2 9.5 2 7Z" />
+                    {/* Upper head — centered on upper half of body */}
+                    <path d="M2 11C2 8 8 8 8 11C8 14 2 14 2 11Z" />
                     {/* Upper horns */}
-                    <path d="M3.5 5C3 3.5 3.5 2 4.5 2C4.5 3 4 4 3.5 5ZM6.5 4.5C6.5 3 7.5 2 8 2C8 3 7.5 4 6.5 4.5Z" />
-                    {/* Lower head */}
-                    <path d="M2 14C2 11.5 3.5 11 5 11C6.5 11 8 11.5 8 14C8 16.5 6.5 17 5 17C3.5 17 2 16.5 2 14Z" />
+                    <path d="M3.5 9C3 7.5 3.5 6 4.5 6C4.5 7 4 8 3.5 9ZM6.5 8.5C6.5 7 7.5 6 8 6C8 7 7.5 8 6.5 8.5Z" />
+                    {/* Lower head — centered on lower half of body */}
+                    <path d="M2 16C2 13.5 8 13.5 8 16C8 18.5 2 18.5 2 16Z" />
                     {/* Lower horns */}
-                    <path d="M3.5 12C3 10.5 3.5 9 4.5 9C4.5 10 4 11 3.5 12ZM6.5 11.5C6.5 10 7.5 9 8 9C8 10 7.5 11 6.5 11.5Z" />
+                    <path d="M3.5 14C3 13 3.5 12 4.5 12C4.5 12.5 4 13.5 3.5 14ZM6.5 13.5C6.5 12.5 7.5 12 8 12C8 12.5 7.5 13 6.5 13.5Z" />
                     {/* Legs */}
                     <rect x="9.5" y="18" width="2" height="5.5" rx="1" />
                     <rect x="12.5" y="18" width="2" height="5.5" rx="1" />
