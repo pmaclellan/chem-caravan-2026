@@ -384,8 +384,24 @@ export default function CombatPanel({ player, combat }: Props) {
             {Array.from({ length: player.brahmin }).map((_, i) => (
               <div key={`b-${i}`} className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
                 <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ color: 'var(--pip-amber)' }}>
-                    <path d="M5 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M12 14c0-2.5 1.5-4 3.5-4s3.5 1.5 3.5 4M3 18h18M7 18v2.5M10 18v2.5M14 18v2.5M17 18v2.5" />
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
+                    {/* Body */}
+                    <path d="M8 14C8 10.5 10.5 9 15 9C19.5 9 22 10.5 22 14C22 17.5 19.5 19 15 19C10.5 19 8 17.5 8 14Z" />
+                    {/* Upper head */}
+                    <path d="M2 7C2 4.5 3.5 4 5 4C6.5 4 8 4.5 8 7C8 9.5 6.5 10 5 10C3.5 10 2 9.5 2 7Z" />
+                    {/* Upper horns */}
+                    <path d="M3.5 5C3 3.5 3.5 2 4.5 2C4.5 3 4 4 3.5 5ZM6.5 4.5C6.5 3 7.5 2 8 2C8 3 7.5 4 6.5 4.5Z" />
+                    {/* Lower head */}
+                    <path d="M2 14C2 11.5 3.5 11 5 11C6.5 11 8 11.5 8 14C8 16.5 6.5 17 5 17C3.5 17 2 16.5 2 14Z" />
+                    {/* Lower horns */}
+                    <path d="M3.5 12C3 10.5 3.5 9 4.5 9C4.5 10 4 11 3.5 12ZM6.5 11.5C6.5 10 7.5 9 8 9C8 10 7.5 11 6.5 11.5Z" />
+                    {/* Legs */}
+                    <rect x="9.5" y="18" width="2" height="5.5" rx="1" />
+                    <rect x="12.5" y="18" width="2" height="5.5" rx="1" />
+                    <rect x="16" y="18.5" width="2" height="5" rx="1" />
+                    <rect x="19" y="18.5" width="1.5" height="4.5" rx="0.75" />
+                    {/* Tail */}
+                    <path d="M22 13C23.5 11 23 9 21.5 8.5C22.5 10 22.5 12 22 13Z" />
                   </svg>
                 </div>
                 <div className="h-1 rounded w-full" style={{ backgroundColor: 'var(--pip-amber)' }} />
@@ -397,7 +413,7 @@ export default function CombatPanel({ player, combat }: Props) {
             {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: attacks each turn, shields you if guards &amp; armor are gone ({displayMountHp}/{player.mount.maxHealth} HP)</span>}
             {totalGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
             {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
-            {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Brahmin: 30% escape risk ea.</span>}
+            {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Each brahmin: −12% escape chance, 30% bolt risk on escape</span>}
           </div>
         </div>
       )}
