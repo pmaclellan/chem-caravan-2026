@@ -10,7 +10,8 @@ export function applyTurnInterest(player: PlayerState, interestRate: number): Pl
     ...player,
     debt: Math.ceil(player.debt * (1 + interestRate)),
     ageOfDebt: player.ageOfDebt + 1,
-    debtPaidThisCycle: 0,   // reset — caller saves the pre-tick value for enforcement check
+    debtPaidThisCycle: 0,      // reset — caller saves the pre-tick value for enforcement check
+    debtBorrowedThisCycle: 0,
   }
 }
 
@@ -100,7 +101,12 @@ export function healPlayer(player: PlayerState, cost: number): { player: PlayerS
 }
 
 export function takeLoan(player: PlayerState, amount: number): PlayerState {
-  return { ...player, caps: player.caps + amount, debt: player.debt + amount }
+  return {
+    ...player,
+    caps: player.caps + amount,
+    debt: player.debt + amount,
+    debtBorrowedThisCycle: (player.debtBorrowedThisCycle ?? 0) + amount,
+  }
 }
 
 export function repayDebt(player: PlayerState, amount: number): { player: PlayerState; error?: string } {
