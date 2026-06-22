@@ -159,8 +159,9 @@ export function continueTravel(state: GameState): GameState {
     const windowSatisfied = windowCapsPaid >= minWindowPayment
     player = {
       ...player,
-      debtWindowCapsPaid: windowSatisfied ? 0 : windowCapsPaid,
-      debtWindowStartAge: windowSatisfied ? player.ageOfDebt : (player.debtWindowStartAge ?? player.ageOfDebt),
+      debtWindowCapsPaid:   windowSatisfied ? 0 : windowCapsPaid,
+      debtWindowStartAge:   windowSatisfied ? player.ageOfDebt : (player.debtWindowStartAge ?? player.ageOfDebt),
+      debtWindowMinPayment: windowSatisfied ? minWindowPayment : (player.debtWindowMinPayment ?? minWindowPayment),
     }
   }
 

@@ -489,7 +489,7 @@ export default function MobileGame() {
               const windowStartAge  = player.debtWindowStartAge ?? player.ageOfDebt
               const turnsElapsed    = player.ageOfDebt - windowStartAge
               const turnsLeft       = Math.max(0, mc.debtWindowSize - turnsElapsed)
-              const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
+              const minWindowPayment = player.debtWindowMinPayment ?? Math.ceil(player.debt * mc.debtMinPaymentRate)
               const windowPaid      = (player.debtWindowCapsPaid ?? 0) + (player.debtPaidThisCycle ?? 0)
               const stillOwed       = Math.max(0, minWindowPayment - windowPaid)
               const windowOverdue   = turnsElapsed >= mc.debtWindowSize

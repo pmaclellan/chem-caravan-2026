@@ -87,18 +87,17 @@ export default function EventPanel({ event, player }: Props) {
       )}
 
       {event.type === 'debt_collector' && (() => {
-        const { warnings = 0 } = (event.payload ?? {}) as { warnings?: number }
-        const threatLine =
-          warnings === 0
+        const { warnings = 0, isKill = false } = (event.payload ?? {}) as { warnings?: number; isKill?: boolean }
+        const threatLine = isKill
+          ? "You've run out of chances. They're not here to warn you."
+          : warnings === 0
             ? "Make your payments at the next loanshark. Don't make them come back."
-            : warnings === 1
-              ? "One more miss and they finish the job."
-              : "This is the last warning. They won't leave you breathing next time."
+            : "One more miss and they finish the job."
         return (
           <div className="flex flex-col gap-2">
             <div className="text-pip-red text-sm">The {collectorFaction} are collecting. There's no reasoning with them.</div>
             <div className="text-pip-green-dim text-xs italic">{threatLine}</div>
-            <button className="pip-btn-danger" onClick={() => resolveEvent('endure')}>TAKE THE BEATING</button>
+            <button className="pip-btn-danger" onClick={() => resolveEvent('endure')}>{isKill ? 'FACE YOUR FATE' : 'TAKE THE BEATING'}</button>
           </div>
         )
       })()}
