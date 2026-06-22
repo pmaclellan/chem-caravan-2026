@@ -142,10 +142,16 @@ export default function EventPanel({ event, player }: Props) {
           isFence: boolean
         }
         const { prices, isFence } = payload
-        const space = calculateCapacity(player.brahmin) - totalInventoryItems(player.inventory)
+        const capacity = calculateCapacity(player.brahmin)
+        const used     = totalInventoryItems(player.inventory)
+        const space    = capacity - used
 
         return (
           <div className="flex flex-col gap-3">
+            <div className="flex gap-4 text-xs border border-pip-border-dim rounded px-3 py-1.5">
+              <span className="text-pip-green-dim">Caps: <span className="text-pip-amber font-display">{player.caps.toLocaleString()} ¤</span></span>
+              <span className="text-pip-green-dim">Pack: <span className="text-pip-green font-display">{used}/{capacity}</span></span>
+            </div>
             <div className="text-pip-green-dim text-xs">
               {isFence
                 ? "Prices are suspiciously low. No receipt. No questions asked."
