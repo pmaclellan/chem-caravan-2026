@@ -91,6 +91,7 @@ export interface PlayerState {
   debtWarnings?: number         // times enforcement has triggered; drives damage escalation
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window
   debtWindowStartAge?: number   // ageOfDebt when the current payment window opened
+  debtWindowMinPayment?: number // minimum payment required for the current window (fixed at window open)
   conditions?: PlayerCondition[]  // persistent status effects (e.g. radscorpion venom)
 }
 

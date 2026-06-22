@@ -40,6 +40,8 @@ export function selectTravelEvent(
     if (windowOverdue && windowUnsatisfied && rng() < modeConfig.debtCollectorProb) {
       const def      = modeConfig.travelEvents.find(e => e.type === 'debt_collector')!
       const warnings = player.debtWarnings ?? 0
+      const idx      = Math.min(warnings, modeConfig.debtEnforcement.length - 1)
+      const isKill   = modeConfig.debtEnforcement[idx].damage >= 999
       const description =
         warnings === 0 ? def.description
         : warnings === 1
@@ -49,7 +51,7 @@ export function selectTravelEvent(
         type: def.type,
         title: def.title,
         description,
-        payload: { warnings },
+        payload: { warnings, isKill },
       }
     }
   }
