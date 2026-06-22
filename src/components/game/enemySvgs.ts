@@ -87,14 +87,14 @@ const RADSCORPION = `
 `
 
 const YAO_GUAI = `
-  <!-- Body: hump peaks on the back (right side) -->
-  <path d="M12 28C12 16 18 12 26 12C30 12 33 7 38 7C43 7 46 12 46 22C46 32 40 38 30 38C20 38 12 36 12 28Z" fill="currentColor"/>
-  <!-- Upper skull: narrower elongated muzzle, less tall -->
-  <path d="M2 21C2 15 8 12 13 14C16 15 16 21 13 24C10 27 6 27 3 24C2 22 2 21 2 21Z" fill="currentColor"/>
-  <!-- Lower jaw: narrow -->
-  <path d="M4 32C4 36 8 40 12 38C15 36 15 32 13 30C10 30 6 30 4 32Z" fill="currentColor"/>
+  <!-- Body: hump rises right behind the head (x≈20), then descends over back -->
+  <path d="M12 28C12 16 14 10 20 8C26 6 34 10 40 14C44 16 46 20 46 26C46 32 40 38 28 38C18 38 12 36 12 28Z" fill="currentColor"/>
+  <!-- Upper skull: longer in x, narrower in y — tapers toward tip -->
+  <path d="M1 20C1 16 6 13 12 13C15 14 16 19 14 23C11 26 5 26 2 23C1 22 1 20 1 20Z" fill="currentColor"/>
+  <!-- Lower jaw -->
+  <path d="M3 30C3 34 7 38 11 36C14 34 14 30 12 29C9 29 5 29 3 30Z" fill="currentColor"/>
   <!-- Teeth in mouth gap -->
-  <path d="M7 26L6 30M10 26L10 30M12 26L12 30" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M6 25L5 29M9 25L9 29M11 25L11 29" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
   <!-- Front legs -->
   <rect x="14" y="36" width="6" height="10" rx="3" fill="currentColor"/>
   <rect x="22" y="38" width="5" height="8" rx="2" fill="currentColor"/>
