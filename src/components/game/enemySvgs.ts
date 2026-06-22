@@ -87,24 +87,24 @@ const RADSCORPION = `
 `
 
 const YAO_GUAI = `
-  <!-- Body: low-slung, hump higher at the back (right) -->
-  <path d="M12 28C12 16 18 12 28 12C38 12 46 16 46 24C46 32 40 38 30 38C20 38 12 36 12 28Z" fill="currentColor"/>
-  <!-- Upper skull: head thrust forward-left, muzzle low -->
-  <path d="M2 20C2 12 10 10 14 14C18 18 16 24 12 26C8 28 2 26 2 20Z" fill="currentColor"/>
-  <!-- Lower jaw: separated to show open mouth -->
-  <path d="M4 32C4 36 8 40 12 38C16 36 16 32 14 30C10 30 6 30 4 32Z" fill="currentColor"/>
-  <!-- Teeth hanging from upper jaw into mouth gap -->
+  <!-- Body: hump peaks on the back (right side) -->
+  <path d="M12 28C12 16 18 12 26 12C30 12 33 7 38 7C43 7 46 12 46 22C46 32 40 38 30 38C20 38 12 36 12 28Z" fill="currentColor"/>
+  <!-- Upper skull: narrower elongated muzzle, less tall -->
+  <path d="M2 21C2 15 8 12 13 14C16 15 16 21 13 24C10 27 6 27 3 24C2 22 2 21 2 21Z" fill="currentColor"/>
+  <!-- Lower jaw: narrow -->
+  <path d="M4 32C4 36 8 40 12 38C15 36 15 32 13 30C10 30 6 30 4 32Z" fill="currentColor"/>
+  <!-- Teeth in mouth gap -->
   <path d="M7 26L6 30M10 26L10 30M12 26L12 30" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <!-- Front legs (longer — bear is leaning forward) -->
+  <!-- Front legs -->
   <rect x="14" y="36" width="6" height="10" rx="3" fill="currentColor"/>
   <rect x="22" y="38" width="5" height="8" rx="2" fill="currentColor"/>
   <!-- Back legs -->
   <rect x="32" y="38" width="5" height="8" rx="2" fill="currentColor"/>
   <rect x="40" y="36" width="5" height="10" rx="2" fill="currentColor"/>
-  <!-- Front claws (4 per paw, prominent) -->
+  <!-- Front claws -->
   <path d="M11 46L8 48M14 46L13 48M17 46L17 48M20 46L21 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
   <path d="M20 46L18 48M23 46L22 48M26 46L26 48M29 46L30 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <!-- Back claws (smaller) -->
+  <!-- Back claws -->
   <path d="M30 46L28 48M34 46L33 48M38 46L38 48M42 46L43 48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
 `
 
