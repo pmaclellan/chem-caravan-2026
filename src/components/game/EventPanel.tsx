@@ -169,6 +169,7 @@ export default function EventPanel({ event, player }: Props) {
 
                   if (isFence) {
                     const inStock = payload.stock?.[chemId] ?? 0
+                    const maxBuy  = Math.min(inStock, space)
                     const canBuy  = player.caps >= price * q && inStock >= q && space >= q
                     return (
                       <tr key={chemId} className="border-b border-pip-border-dim">
@@ -181,7 +182,7 @@ export default function EventPanel({ event, player }: Props) {
                               onClick={() => setMerchantQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}>−</button>
                             <span className="text-pip-green font-display text-sm w-5 text-center select-none">{q}</span>
                             <button className="pip-btn text-xs px-1 py-0 leading-4" tabIndex={-1}
-                              onClick={() => setMerchantQty(p => ({ ...p, [chemId]: q + 1 }))}>+</button>
+                              onClick={() => setMerchantQty(p => ({ ...p, [chemId]: Math.min(q + 1, maxBuy) }))}>+</button>
                             <button className="pip-btn-amber text-xs px-2 py-0.5 ml-1"
                               disabled={!canBuy}
                               onClick={() => buyFromMerchant(chemId, q)}>BUY</button>
@@ -192,6 +193,7 @@ export default function EventPanel({ event, player }: Props) {
                   } else {
                     const remaining = payload.demand?.[chemId] ?? 0
                     const owned     = player.inventory[chemId]?.quantity ?? 0
+                    const maxSell  = Math.min(owned, remaining)
                     const canSell   = owned >= q && remaining >= q
                     return (
                       <tr key={chemId} className="border-b border-pip-border-dim">
@@ -207,7 +209,7 @@ export default function EventPanel({ event, player }: Props) {
                                 onClick={() => setMerchantQty(p => ({ ...p, [chemId]: Math.max(1, q - 1) }))}>−</button>
                               <span className="text-pip-green font-display text-sm w-5 text-center select-none">{q}</span>
                               <button className="pip-btn text-xs px-1 py-0 leading-4" tabIndex={-1}
-                                onClick={() => setMerchantQty(p => ({ ...p, [chemId]: q + 1 }))}>+</button>
+                                onClick={() => setMerchantQty(p => ({ ...p, [chemId]: Math.min(q + 1, maxSell) }))}>+</button>
                               <button className="pip-btn text-xs px-2 py-0.5 ml-1"
                                 disabled={!canSell}
                                 onClick={() => sellToMerchant(chemId, q)}>SELL</button>
