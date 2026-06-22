@@ -238,6 +238,7 @@ export interface GameRow {
   mode: GameModeId | null              // null for pre-v2 rows (migration 003)
   turns_reached: number | null         // set on game over
   game_type: GameType // defaults to 'standard' (migration 005)
+  game_version: number | null  // semver encoded as major*10000+minor*100+patch; null = pre-versioning
   created_at: string
   updated_at: string
 }

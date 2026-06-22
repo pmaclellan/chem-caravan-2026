@@ -35,7 +35,7 @@ export default function Home() {
   const [showNewGame,    setShowNewGame]    = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
   const [starting,       setStarting]       = useState(false)
-  const [freePlayUnlocked, setFreePlayUnlocked] = useState(false)
+  const [unlockedFreePlayModes, setUnlockedFreePlayModes] = useState<Set<GameModeId>>(new Set())
 
   useEffect(() => {
     if (user) loadActiveGames(user.id)
@@ -49,13 +49,12 @@ export default function Home() {
         .select('mode')
         .eq('user_id', user!.id)
         .eq('status', 'won')
+        .eq('game_type', 'standard')
       if (!data) return
-      const wonModes = new Set(data.map((r: { mode: string | null }) => r.mode).filter(Boolean))
-      setFreePlayUnlocked(
-        wonModes.has('commonwealth') &&
-        wonModes.has('capital_wasteland') &&
-        wonModes.has('mojave_wasteland')
+      const wonModes = new Set(
+        data.map((r: { mode: string | null }) => r.mode).filter(Boolean)
       )
+      setUnlockedFreePlayModes(wonModes as Set<GameModeId>)
     }
     checkUnlock()
   }, [user])
@@ -103,12 +102,16 @@ export default function Home() {
   function handleModeSelect(modeId: GameModeId) {
     setSelectedMode(modeId)
     if (gameType === 'free_play') {
+      if (!unlockedFreePlayModes.has(modeId)) {
+        setGameType('standard')
+      }
       setConfirmAbandon(false)
       setShowNewGame(false)
     }
   }
 
   const isFreePlay = gameType === 'free_play'
+  const freePlayUnlockedForMode = unlockedFreePlayModes.has(selectedMode)
 
   return (
     <div
@@ -183,7 +186,11 @@ export default function Home() {
                         {DIFFICULTY_LABEL[modeId]}
                       </div>
 
-                      {displayRun ? (
+                      {isFreePlay && !unlockedFreePlayModes.has(modeId) ? (
+                        <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs text-pip-green-dim">
+                          🔒 Beat Standard to unlock
+                        </div>
+                      ) : displayRun ? (
                         <div className="mt-2 pt-2 border-t border-pip-border-dim text-xs">
                           <div className="text-pip-green font-display">{displayRun.characterName}</div>
                           <div className="text-pip-green-dim">
@@ -216,17 +223,17 @@ export default function Home() {
                 </button>
                 <button
                   className={`flex-1 py-1.5 text-sm font-display tracking-wider transition-colors duration-100 ${
-                    !freePlayUnlocked
+                    !freePlayUnlockedForMode
                       ? 'opacity-40 cursor-not-allowed'
                       : isFreePlay
                         ? 'bg-pip-amber text-pip-bg'
                         : 'text-pip-green-dim hover:text-pip-amber'
                   }`}
-                  onClick={() => freePlayUnlocked && setGameType('free_play')}
-                  disabled={!freePlayUnlocked}
-                  title={!freePlayUnlocked ? 'Win all 3 difficulties to unlock' : undefined}
+                  onClick={() => freePlayUnlockedForMode && setGameType('free_play')}
+                  disabled={!freePlayUnlockedForMode}
+                  title={!freePlayUnlockedForMode ? `Beat ${GAME_MODES[selectedMode].name} in Standard to unlock` : undefined}
                 >
-                  FREE PLAY{!freePlayUnlocked ? ' 🔒' : ''}
+                  FREE PLAY{!freePlayUnlockedForMode ? ' 🔒' : ''}
                 </button>
               </div>
 
@@ -236,9 +243,9 @@ export default function Home() {
                   No turn limit · danger scales with time · score = XP earned
                 </div>
               )}
-              {!isFreePlay && !freePlayUnlocked && (
+              {!isFreePlay && !freePlayUnlockedForMode && (
                 <div className="text-xs text-pip-green-dim text-center opacity-60">
-                  Win all 3 difficulties to unlock Free Play
+                  Beat {GAME_MODES[selectedMode].name} in Standard to unlock Free Play
                 </div>
               )}
 

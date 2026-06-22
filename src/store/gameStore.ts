@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import pkg from '../../package.json'
 import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
 import type { AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
@@ -43,6 +44,13 @@ import type { TamingToolId } from '../types/game'
 import { awardXp, XpEventType } from '../engine/xp'
 import type { SettlementMarket, WorldState } from '../types/game'
 import { applyMarketEvents } from '../engine/market'
+
+function encodeVersion(v: string): number {
+  const [major = 0, minor = 0, patch = 0] = v.split('.').map(Number)
+  return major * 10000 + minor * 100 + patch
+}
+
+const CURRENT_GAME_VERSION = encodeVersion(pkg.version)
 
 function updateSettlementStock(world: WorldState, loc: string, chemId: string, delta: number): WorldState {
   const prev = world.settlements[loc]?.stock[chemId] ?? 0
@@ -257,6 +265,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           status: 'active',
           mode: modeId,
           game_type: gameType,
+          game_version: CURRENT_GAME_VERSION,
           current_location: newState.player.location,
           is_traveling: false,
         })
