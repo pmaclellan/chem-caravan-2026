@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
-import { TAMING_TOOLS, TAMING_TOOL_IDS, SADDLE_PRICE } from '../../data/mounts'
 import { applyMarketEvents } from '../../engine/market'
 import { getAdjacentRoads, getRoadDestination, calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
@@ -17,6 +16,10 @@ import EventPanel from './EventPanel'
 import TravelSplash from './TravelSplash'
 import SettlementMap from './SettlementMap'
 import { CapsIcon } from '../ui/CapsIcon'
+import { DoctorPanel } from './service-panels/DoctorPanel'
+import { LoansharkPanel } from './service-panels/LoansharkPanel'
+import { ArmoryPanel } from './service-panels/ArmoryPanel'
+import { FollowersPanel } from './service-panels/FollowersPanel'
 
 type MobileTab = 'player' | 'market' | 'travel' | 'settlement' | 'log'
 
@@ -45,8 +48,6 @@ export default function MobileGame() {
   const [tab, setTab] = useState<MobileTab>('market')
   const [marketQty, setMarketQty] = useState<Record<string, number>>({})
   const [serviceOpen, setServiceOpen] = useState<string | null>(null)
-  const [loanAmount, setLoanAmount] = useState(100)
-  const [ammoQty, setAmmoQty] = useState(10)
 
   const store = useGameStore()
   const { gameState, buy, sell, travelTo, toast } = store
@@ -444,294 +445,13 @@ export default function MobileGame() {
               ))}
             </div>
 
-            {serviceOpen === 'doctor' && (
-              <div className="border border-pip-border-dim rounded p-3 space-y-2">
-                <div className="pip-label">Doctor — {settlement.doctorCost} ¤ to fully heal</div>
-                <div className="text-xs text-pip-green-dim">HP: {player.health} / {player.maxHealth}</div>
-                <button
-                  className="pip-btn w-full"
-                  disabled={player.health >= player.maxHealth || player.caps < settlement.doctorCost}
-                  onClick={() => store.heal()}
-                >
-                  HEAL ({settlement.doctorCost} ¤)
-                </button>
-                {player.mount && (() => {
-                  const mountHealCost = settlement.doctorCost * 2
-                  return (
-                    <button
-                      className="pip-btn w-full"
-                      disabled={player.mount.health >= player.mount.maxHealth || player.caps < mountHealCost}
-                      onClick={() => store.healMount()}
-                    >
-                      HEAL MOUNT — {player.mount.name} ({player.mount.health}/{player.mount.maxHealth} HP) · {mountHealCost} ¤
-                    </button>
-                  )
-                })()}
-                <div className="border-t border-pip-border pt-2 space-y-1">
-                  <div className="pip-label">
-                    ANTIVENOM — 200 ¤
-                    {(player.inventory['antivenom']?.quantity ?? 0) > 0 && ` (have ${player.inventory['antivenom']!.quantity})`}
-                  </div>
-                  <div className="text-xs text-pip-green-dim">Cures cazador and radscorpion venom.</div>
-                  <button
-                    className="pip-btn w-full"
-                    disabled={player.caps < 200}
-                    onClick={() => store.buyAntivenom()}
-                  >
-                    BUY ANTIVENOM (200 ¤)
-                  </button>
-                </div>
-              </div>
-            )}
+            {serviceOpen === 'doctor' && <DoctorPanel player={player} />}
 
-            {serviceOpen === 'loanshark' && (() => {
-              const isOverGrace     = player.ageOfDebt >= mc.debtGracePeriod
-              const windowStartAge  = player.debtWindowStartAge ?? player.ageOfDebt
-              const turnsElapsed    = player.ageOfDebt - windowStartAge
-              const turnsLeft       = Math.max(0, mc.debtWindowSize - turnsElapsed)
-              const minWindowPayment = player.debtWindowMinPayment ?? Math.ceil(player.debt * mc.debtMinPaymentRate)
-              const netPaidThisCycle = Math.max(0, (player.debtPaidThisCycle ?? 0) - (player.debtBorrowedThisCycle ?? 0))
-              const windowPaid      = (player.debtWindowCapsPaid ?? 0) + netPaidThisCycle
-              const stillOwed       = Math.max(0, minWindowPayment - windowPaid)
-              const windowOverdue   = turnsElapsed >= mc.debtWindowSize
-              const windowSatisfied = windowPaid >= minWindowPayment
-              return (
-              <div className="border border-pip-border-dim rounded p-3 space-y-3">
-                <div className="pip-label">Loanshark — {Math.round(mc.interestRate * 100 * 10) / 10}% interest/turn</div>
-                <div className="text-xs text-pip-red">Current debt: {player.debt} ¤</div>
-                {player.debt > 0 && isOverGrace && (
-                  <div className={`text-xs rounded p-2 border ${windowOverdue && !windowSatisfied ? 'border-pip-red text-pip-red' : 'border-pip-border text-pip-green-dim'}`}>
-                    {windowSatisfied
-                      ? `Paid up this window. Next payment due in ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''}.`
-                      : windowOverdue
-                        ? `OVERDUE — pay ${stillOwed} ¤ now to keep them off your back.`
-                        : `Pay ${stillOwed} ¤ within ${turnsLeft} turn${turnsLeft !== 1 ? 's' : ''} to stay safe.`}
-                    {!windowSatisfied && windowPaid > 0 && (
-                      <span className="text-pip-green-dim"> ({windowPaid} ¤ paid so far this window)</span>
-                    )}
-                  </div>
-                )}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <input
-                    type="number" min={100} step={100} value={loanAmount}
-                    onChange={e => setLoanAmount(Math.max(100, parseInt(e.target.value) || 100))}
-                    className="pip-input w-24"
-                  />
-                  <button className="pip-btn-danger text-sm" onClick={() => store.borrow(loanAmount)}>BORROW ({loanAmount} ¤)</button>
-                </div>
-                {player.debt > 0 && (
-                  <button
-                    className="pip-btn text-sm"
-                    disabled={player.caps < Math.min(loanAmount, player.debt)}
-                    onClick={() => store.payDebt(loanAmount)}
-                  >
-                    REPAY {Math.min(loanAmount, player.debt)} ¤
-                  </button>
-                )}
-              </div>
-              )
-            })()}
+            {serviceOpen === 'loanshark' && <LoansharkPanel player={player} />}
 
-            {serviceOpen === 'armory' && (
-              <div className="border border-pip-border-dim rounded p-3 space-y-3">
-                <div className="pip-label">ARMORY</div>
-                {mc.gunIds.map(gunId => {
-                  const gun = mc.guns[gunId]
-                  const owned = player.gun?.id === gunId
-                  return (
-                    <div key={gunId} className="flex justify-between items-center">
-                      <div>
-                        <div className="text-pip-green font-display">{gun.name}</div>
-                        <div className="text-xs text-pip-green-dim">
-                          Acc {Math.round(gun.accuracy * 100)}% · {gun.damage} dmg
-                        </div>
-                      </div>
-                      <button
-                        className={owned ? 'pip-btn text-xs px-2' : 'pip-btn-amber text-xs px-2'}
-                        disabled={owned || player.caps < gun.price}
-                        onClick={() => store.purchaseGun(gunId)}
-                      >
-                        {owned ? 'EQUIPPED' : `${gun.price} ¤`}
-                      </button>
-                    </div>
-                  )
-                })}
-                {player.gun && (
-                  <div className="border-t border-pip-border-dim pt-2">
-                    <div className="flex items-baseline justify-between">
-                      <div className="pip-label">Ammo — {mc.ammoPrice} ¤/round</div>
-                      <div className="text-xs text-pip-green-dim">{player.gun.ammo} rounds loaded</div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <input
-                        type="number" min={1} value={ammoQty}
-                        onChange={e => setAmmoQty(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="pip-input w-16"
-                      />
-                      <button
-                        className="pip-btn text-sm"
-                        disabled={player.caps < ammoQty * mc.ammoPrice}
-                        onClick={() => store.purchaseAmmo(ammoQty)}
-                      >
-                        BUY {ammoQty} ({ammoQty * mc.ammoPrice} ¤)
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div className="border-t border-pip-border-dim pt-2 space-y-2">
-                  <div className="pip-label">ARMOR</div>
-                  {mc.armorIds.map(armorId => {
-                    const armor = mc.armors[armorId]
-                    const equipped = player.armor?.id === armorId
-                    return (
-                      <div key={armorId} className="flex justify-between items-center">
-                        <div>
-                          <div className="text-pip-green font-display">{armor.name}</div>
-                          <div className="text-xs text-pip-green-dim">{armor.armorPoints} AP · {armor.repairCostPerAP} ¤/AP repair</div>
-                        </div>
-                        <button
-                          className={equipped ? 'pip-btn text-xs px-2' : 'pip-btn-amber text-xs px-2'}
-                          disabled={equipped || player.caps < armor.price}
-                          onClick={() => store.purchaseArmor(armorId)}
-                        >
-                          {equipped ? 'EQUIPPED' : `${armor.price} ¤`}
-                        </button>
-                      </div>
-                    )
-                  })}
-                  {player.armor && player.armor.armorPoints < player.armor.maxArmorPoints && (() => {
-                    const missingAP = player.armor.maxArmorPoints - player.armor.armorPoints
-                    const repairCost = missingAP * player.armor.repairCostPerAP
-                    return (
-                      <div className="border border-pip-blue rounded p-2 space-y-1">
-                        <div className="text-xs text-pip-blue">
-                          {player.armor.name}: {player.armor.armorPoints} / {player.armor.maxArmorPoints} AP
-                        </div>
-                        <button
-                          className="pip-btn w-full text-xs"
-                          disabled={player.caps < repairCost}
-                          onClick={() => store.repairArmor()}
-                        >
-                          REPAIR ({repairCost} ¤)
-                        </button>
-                      </div>
-                    )
-                  })()}
-                </div>
-                {gameType === 'free_play' && <div className="border-t border-pip-border-dim pt-2 space-y-2">
-                  <div className="pip-label">TAMING GEAR</div>
-                  <div className="text-xs text-pip-green-dim">Encounter a solo tameable creature to attempt taming. Requires saddle + tool.</div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-pip-green font-display">Leather Saddle</div>
-                      <div className="text-xs text-pip-green-dim">Required to ride — permanent</div>
-                    </div>
-                    <button
-                      className={player.hasSaddle ? 'pip-btn text-xs px-2' : 'pip-btn-amber text-xs px-2'}
-                      disabled={player.hasSaddle || player.caps < SADDLE_PRICE}
-                      onClick={() => store.purchaseSaddle()}
-                    >
-                      {player.hasSaddle ? 'OWNED' : `${SADDLE_PRICE} ¤`}
-                    </button>
-                  </div>
-                  {TAMING_TOOL_IDS.map(toolId => {
-                    const tool = TAMING_TOOLS[toolId]
-                    const equipped = player.tamingTool?.id === toolId
-                    return (
-                      <div key={toolId} className="flex justify-between items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-pip-green font-display">{tool.name}</div>
-                          <div className="text-xs text-pip-green-dim truncate">{tool.description}</div>
-                        </div>
-                        <button
-                          className={equipped ? 'pip-btn text-xs px-2 flex-shrink-0' : 'pip-btn-amber text-xs px-2 flex-shrink-0'}
-                          disabled={equipped || player.caps < tool.price}
-                          onClick={() => store.purchaseTamingTool(tool.id)}
-                        >
-                          {equipped ? 'EQUIPPED' : `${tool.price} ¤`}
-                        </button>
-                      </div>
-                    )
-                  })}
-                  {player.mount && (
-                    <div className="border border-pip-amber rounded p-2 space-y-0.5">
-                      <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
-                      <div className="text-xs text-pip-green-dim">
-                        {player.mount.health}/{player.mount.maxHealth} HP · {player.mount.damage[0]}–{player.mount.damage[1]} dmg · {Math.round(player.mount.accuracy * 100)}% acc
-                      </div>
-                    </div>
-                  )}
-                </div>}
-              </div>
-            )}
+            {serviceOpen === 'armory' && <ArmoryPanel player={player} />}
 
-            {serviceOpen === 'followers' && (
-              <div className="border border-pip-border-dim rounded p-3 space-y-4">
-                <div className="space-y-2">
-                  <div className="pip-label">Guards — {mc.guardCost} ¤ each</div>
-                  <div className="text-xs text-pip-green-dim">
-                    {player.guards} / {mc.maxGuards} · each absorbs {mc.guardHealth} HP in combat
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {[1, 2, 3].map(n => (
-                      <button
-                        key={n}
-                        className="pip-btn text-sm"
-                        disabled={player.guards >= mc.maxGuards || player.caps < n * mc.guardCost}
-                        onClick={() => store.hireguards(n)}
-                      >
-                        HIRE {n} ({n * mc.guardCost} ¤)
-                      </button>
-                    ))}
-                  </div>
-                  {player.guards >= mc.maxGuards && (
-                    <div className="text-xs text-pip-green-dim">Guard roster is full.</div>
-                  )}
-                </div>
-                <div className="border-t border-pip-border-dim pt-3 space-y-2">
-                  <div className="pip-label">Power Armor Guards — {mc.powerArmorGuardCost} ¤ each</div>
-                  <div className="text-xs text-pip-green-dim">
-                    {player.powerArmorGuards ?? 0} / {mc.maxPowerArmorGuards} · absorbs {mc.powerArmorGuardHealth} HP each
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {[1, 2].map(n => (
-                      <button
-                        key={n}
-                        className="pip-btn-amber text-sm"
-                        disabled={(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards || player.caps < n * mc.powerArmorGuardCost}
-                        onClick={() => store.purchasePowerArmorGuard(n)}
-                      >
-                        HIRE {n} ({n * mc.powerArmorGuardCost} ¤)
-                      </button>
-                    ))}
-                  </div>
-                  {(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards && (
-                    <div className="text-xs text-pip-green-dim">Power armor roster is full.</div>
-                  )}
-                </div>
-                <div className="border-t border-pip-border-dim pt-3 space-y-2">
-                  <div className="pip-label">Brahmin — {mc.brahminCost} ¤ each</div>
-                  <div className="text-xs text-pip-green-dim">
-                    {player.brahmin} / {mc.maxBrahmin} · +{mc.capacityPerBrahmin} pack capacity each
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {[1, 2].map(n => (
-                      <button
-                        key={n}
-                        className="pip-btn text-sm"
-                        disabled={player.brahmin >= mc.maxBrahmin || player.caps < n * mc.brahminCost}
-                        onClick={() => store.purchaseBrahmin(n)}
-                      >
-                        BUY {n} ({n * mc.brahminCost} ¤)
-                      </button>
-                    ))}
-                  </div>
-                  {player.brahmin >= mc.maxBrahmin && (
-                    <div className="text-xs text-pip-green-dim">Brahmin pen is full.</div>
-                  )}
-                </div>
-              </div>
-            )}
+            {serviceOpen === 'followers' && <FollowersPanel player={player} />}
           </div>
         )}
 
