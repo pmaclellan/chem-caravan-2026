@@ -88,6 +88,7 @@ export interface PlayerState {
   xp: number                    // accumulated XP across all activities
   visitedSettlements: string[]  // settlement ids visited this run (for discovery bonus)
   debtPaidThisCycle?: number    // caps paid toward debt since last turn tick; resets each tick
+  debtBorrowedThisCycle?: number // caps borrowed since last turn tick; netted against paid for window credit
   debtWarnings?: number         // times enforcement has triggered; drives damage escalation
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window
   debtWindowStartAge?: number   // ageOfDebt when the current payment window opened

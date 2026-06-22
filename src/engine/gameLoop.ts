@@ -154,7 +154,8 @@ export function continueTravel(state: GameState): GameState {
   // Update payment window using post-interest debt as the threshold baseline.
   // If cumulative window payment meets 15% of current debt, open a fresh window.
   if (player.debt > 0) {
-    const windowCapsPaid = (player.debtWindowCapsPaid ?? 0) + debtPaidThisCycle
+    const netPaidThisCycle = Math.max(0, debtPaidThisCycle - (player.debtBorrowedThisCycle ?? 0))
+    const windowCapsPaid = (player.debtWindowCapsPaid ?? 0) + netPaidThisCycle
     const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
     const windowSatisfied = windowCapsPaid >= minWindowPayment
     player = {

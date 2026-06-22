@@ -33,7 +33,8 @@ export function selectTravelEvent(
     const windowStartAge  = player.debtWindowStartAge ?? player.ageOfDebt
     const turnsElapsed    = player.ageOfDebt - windowStartAge
     const windowOverdue   = turnsElapsed >= modeConfig.debtWindowSize
-    const windowPaid      = (player.debtWindowCapsPaid ?? 0) + (player.debtPaidThisCycle ?? 0)
+    const netPaidThisCycle = Math.max(0, (player.debtPaidThisCycle ?? 0) - (player.debtBorrowedThisCycle ?? 0))
+    const windowPaid      = (player.debtWindowCapsPaid ?? 0) + netPaidThisCycle
     const minWindowPayment = Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
     const windowUnsatisfied = windowPaid < minWindowPayment
 
