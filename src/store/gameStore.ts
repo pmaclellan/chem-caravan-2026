@@ -685,7 +685,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         const inventory = { ...state.player.inventory }
         if (newQty === 0) delete inventory['antivenom']
         else inventory['antivenom'] = { ...existing, quantity: newQty }
-        const conditions = (state.player.conditions ?? []).filter(c => c.type !== 'radscorpion_venom')
+        const conditions = (state.player.conditions ?? []).filter(c => c.type !== 'radscorpion_venom' && c.type !== 'cazador_venom')
         const player = { ...state.player, inventory, conditions }
         const combat = state.combat ? { ...state.combat, playerVenomed: false } : state.combat
         const log = [...state.log, { turn: state.world.turn, message: 'Antivenom administered. Venom cleared.', type: 'info' as const }]

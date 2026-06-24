@@ -114,7 +114,7 @@ export interface MarketEvent {
   message: string
 }
 
-export type PlayerCondition = { type: 'radscorpion_venom' }
+export type PlayerCondition = { type: 'radscorpion_venom' } | { type: 'cazador_venom' }
 
 export interface CombatState {
   enemies: EnemyUnit[]
