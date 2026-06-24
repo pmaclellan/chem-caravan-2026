@@ -185,6 +185,25 @@ export function continueTravel(state: GameState): GameState {
     }
   }
 
+  // Cazador venom DoT — drains 10 HP per travel turn until cured
+  if (player.conditions?.some(c => c.type === 'cazador_venom')) {
+    const newHealth = Math.max(0, player.health - 10)
+    log.push(makeLog(state.world.turn, 'Cazador venom eats at you. -10 HP.', 'danger'))
+    player = { ...player, health: newHealth }
+    if (newHealth <= 0) {
+      return {
+        ...state,
+        player,
+        log,
+        phase: 'game_over',
+        gameOverReason: 'combat',
+        endReason: 'Killed by cazador venom',
+        pendingEvent: null,
+        pendingDestination: null,
+      }
+    }
+  }
+
   const sf = getScaleFactor(state.world.turn, state.gameType)
   const { player: p1, logMessage: xpMsg1 } = awardXp(player, { type: XpEventType.RoadTravel, dangerLevel: road.dangerLevel, scaleFactor: sf })
   player = p1
@@ -449,13 +468,18 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     if (xpMsg4) newLogs.push(makeLog(turn, xpMsg4, 'profit'))
   }
 
-  // Radscorpion venom: apply post-combat condition if player took damage from scorpions
-  if ((combat.phase === 'won' || combat.phase === 'fled') && combat.totalDamageTaken > 0) {
+  // Post-combat venom: apply persistent conditions from combat
+  if (combat.phase === 'won' || combat.phase === 'fled') {
     const enemyTypeId = combat.enemies[0]?.typeId
-    if (enemyTypeId === 'radscorpion' && !player.conditions?.some(c => c.type === 'radscorpion_venom')) {
+    if (combat.totalDamageTaken > 0 && enemyTypeId === 'radscorpion' && !player.conditions?.some(c => c.type === 'radscorpion_venom')) {
       player = { ...player, conditions: [...(player.conditions ?? []), { type: 'radscorpion_venom' as const }] }
       newLogs.push(makeLog(turn, "The radscorpion's sting left venom in your blood. You'll need antivenom.", 'danger'))
     }
+    if (combat.playerVenomed && !player.conditions?.some(c => c.type === 'cazador_venom')) {
+      player = { ...player, conditions: [...(player.conditions ?? []), { type: 'cazador_venom' as const }] }
+      newLogs.push(makeLog(turn, "Cazador venom is still in your system. -10 HP per turn until cured.", 'danger'))
+    }
+    combat = { ...combat, playerVenomed: false }
   }
 
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }

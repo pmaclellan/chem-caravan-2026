@@ -295,7 +295,7 @@ export function resolveFight(
       phase,
       log: [...combat.log, ...log],
       enragedEnemyIds: [],
-      playerVenomed: phase === 'won' || phase === 'fled' ? false : playerVenomed,
+      playerVenomed,
     },
     animSteps,
   }

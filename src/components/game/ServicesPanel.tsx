@@ -31,14 +31,27 @@ export default function ServicesPanel({ player }: Props) {
     return <div className="text-pip-green-dim text-sm">No services available here.</div>
   }
 
-  const isVenomed      = player.conditions?.some(c => c.type === 'radscorpion_venom') ?? false
-  const antivenomOwned = player.inventory['antivenom']?.quantity ?? 0
+  const isVenomed        = player.conditions?.some(c => c.type === 'radscorpion_venom') ?? false
+  const isCazadorVenomed = player.conditions?.some(c => c.type === 'cazador_venom') ?? false
+  const antivenomOwned   = player.inventory['antivenom']?.quantity ?? 0
 
   return (
     <div className="flex flex-col gap-3">
       {isVenomed && (
         <div className="border border-red-500 p-2 rounded text-xs space-y-1">
           <div className="text-red-400 font-bold">⚠ SCORPION VENOM — -5 HP per travel turn</div>
+          {antivenomOwned > 0 ? (
+            <button className="pip-btn w-full" onClick={() => store.useAntivenom()}>
+              USE ANTIVENOM (have {antivenomOwned})
+            </button>
+          ) : (
+            <div className="text-pip-green-dim">Buy antivenom at a doctor to cure this.</div>
+          )}
+        </div>
+      )}
+      {isCazadorVenomed && (
+        <div className="border border-red-500 p-2 rounded text-xs space-y-1">
+          <div className="text-red-400 font-bold">⚠ CAZADOR VENOM — -10 HP per travel turn</div>
           {antivenomOwned > 0 ? (
             <button className="pip-btn w-full" onClick={() => store.useAntivenom()}>
               USE ANTIVENOM (have {antivenomOwned})

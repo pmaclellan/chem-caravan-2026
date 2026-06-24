@@ -159,6 +159,18 @@ export default function MobileGame() {
               )}
             </div>
           )}
+          {player.conditions?.some(c => c.type === 'cazador_venom') && (
+            <div className="border border-red-500 px-2 py-1.5 rounded text-xs space-y-1.5">
+              <div className="text-red-400 font-bold">CAZADOR VENOM — -10 HP per travel turn</div>
+              {(player.inventory['antivenom']?.quantity ?? 0) > 0 ? (
+                <button className="pip-btn w-full text-xs py-0.5" onClick={() => store.useAntivenom()}>
+                  USE ANTIVENOM (have {player.inventory['antivenom']!.quantity})
+                </button>
+              ) : (
+                <div className="text-pip-green-dim">Buy antivenom at a doctor to cure.</div>
+              )}
+            </div>
+          )}
 
           <div>
             <div className="flex justify-between items-center mb-1">
