@@ -377,21 +377,8 @@ export function resolveDebtCollector(state: GameState): GameState {
 
   player = {
     ...player,
-    health: Math.max(0, player.health - enforcement.damage),
+    health: Math.max(1, player.health - enforcement.damage),
     debtWarnings: warnings + 1,
-  }
-
-  if (player.health <= 0) {
-    return {
-      ...state,
-      player,
-      phase: 'game_over',
-      gameOverReason: 'debt',
-      endReason: debtEndReason,
-      pendingEvent: null,
-      pendingDestination: null,
-      log,
-    }
   }
 
   const { player: p3, logMessage: xpMsg3 } = awardXp(player, { type: XpEventType.DebtSurvival })
