@@ -170,7 +170,7 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   mapTitle: 'COMMONWEALTH WASTELAND',
   mapPositions: {
     sanctuary_hills:          { x: 160, y: 160, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
-    concord:                  { x: 200, y: 260, labelAnchor: 'middle', labelDx: -13, labelDy:   0 },
+    concord:                  { x: 200, y: 260, labelAnchor: 'end',    labelDx: -13, labelDy:   0 },
     covenant:                 { x: 360, y: 180, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
     bunker_hill:              { x: 410, y: 290, labelAnchor: 'start',  labelDx:  13, labelDy:  -5 },
     cambridge_police_station: { x: 300, y: 340, labelAnchor: 'middle', labelDx:   0, labelDy: -15 },
@@ -179,7 +179,7 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     diamond_city:             { x: 280, y: 410, labelAnchor: 'middle', labelDx:  -6, labelDy:  18 },
     vault_81:                 { x: 180, y: 400, labelAnchor: 'end',    labelDx: -13, labelDy:   4 },
     somerville_place:         { x: 150, y: 560, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
-    jamaica_plain:            { x: 430, y: 510, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
+    jamaica_plain:            { x: 380, y: 510, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
     the_castle:               { x: 560, y: 530, labelAnchor: 'middle', labelDx:   0, labelDy:  18 },
   },
 }
