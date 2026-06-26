@@ -43,5 +43,3 @@ export const STASH_CHEMS = ['jet', 'psycho', 'buffout', 'radx', 'radaway', 'ment
 export const STASH_QUANTITY_MIN = 1
 export const STASH_QUANTITY_MAX = 4
 export const BROTHERHOOD_TOLL = 150
-export const MERCHANT_PRICE_MARKUP = 1.25
-export const MERCHANT_CHEM_COUNT = 3
