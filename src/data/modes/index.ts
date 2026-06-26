@@ -261,6 +261,7 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
     { id: 'radscorpion',   name: 'Radscorpion',   caps: [0, 0],      lootChems: [] },
     { id: 'powder_ganger', name: 'Powder Ganger', caps: [20, 100],   lootChems: ['jet', 'psycho', 'buffout'] },
     { id: 'cazador',       name: 'Cazador',       caps: [0, 0],      lootChems: [], countMultiplier: 1.75 },
+    { id: 'thug',          name: 'Thug',          caps: [20, 150],   lootChems: ['stimpak', 'buffout', 'mentats'] },
     { id: 'ncr_ranger',    name: 'NCR Ranger',    caps: [500, 1000], lootChems: ['stimpak', 'radx', 'radaway'], eventOnly: true },
   ],
   enemyStats: {
@@ -272,6 +273,7 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
     radscorpion:   { health: 70,  damage: [20, 42], xpReward: 30 },
     powder_ganger: { health: 40,  damage: [12, 28], xpReward: 15 },
     cazador:       { health: 50,  damage: [18, 28], xpReward: 30 },
+    thug:          { health: 50,  damage: [12, 28], xpReward: 18 },
     ncr_ranger:    { health: 110, damage: [28, 50], xpReward: 50 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'turbo', 'rocket'],

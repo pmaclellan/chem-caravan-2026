@@ -162,7 +162,7 @@ export const ROADS: Road[] = [
     to: 'freeside',
     dangerLevel: 0.40,
     description: "Short run through Freeside's rough streets.",
-    enemyWeights: { fiend: 2, great_khan: 1, cazador: 0 },
+    enemyWeights: { thug: 3, fiend: 2, great_khan: 1, cazador: 0 },
   },
   {
     id: 'fre_nsf',
@@ -171,7 +171,7 @@ export const ROADS: Road[] = [
     to: 'freeside',
     dangerLevel: 0.40,
     description: "NCR-patrolled road to Freeside. Relatively safe.",
-    enemyWeights: { fiend: 2, great_khan: 1, cazador: 0 },
+    enemyWeights: { thug: 3, fiend: 2, great_khan: 1, cazador: 0 },
   },
   {
     id: 'str_nsf',
@@ -180,7 +180,7 @@ export const ROADS: Road[] = [
     to: 'ncr_sharecropper_farms',
     dangerLevel: 0.3,
     description: "NCR-patrolled road to Sharecropper Farms. Relatively safe.",
-    enemyWeights: { cazador: 0 },
+    enemyWeights: { thug: 3, cazador: 0 },
   },
   {
     id: 'nsf_mccar',

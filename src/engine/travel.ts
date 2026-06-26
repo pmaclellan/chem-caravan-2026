@@ -88,6 +88,7 @@ const AMBUSH_TITLES: Record<string, string> = {
   yao_guai:      '!! YAO GUAI !!',
   powder_ganger: '!! POWDER GANGER !!',
   cazador:       '!! CAZADOR SWARM !!',
+  thug:          '!! THUGS !!',
 }
 
 // Enemy-specific ambush lines — functions of count so description reads naturally
@@ -103,6 +104,7 @@ const AMBUSH_LINES: Record<string, (n: number) => string> = {
   yao_guai:      (n) => n === 1 ? "A Yao Guai crashes out of the brush, snarling." : `${n} Yao Guai surge from cover. They're hunting.`,
   powder_ganger: (n) => n === 1 ? "A Powder Ganger raises a lit stick of dynamite." : `${n} Powder Gangers light their fuses. Hit the dirt.`,
   cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadors swarm out of the canyon.`,
+  thug:          (n) => n === 1 ? "A Thug steps out of the alley, cracking his knuckles." : `${n} Thugs spill out of the alleyway. They want your caps.`,
 }
 
 function buildEventPayload(
