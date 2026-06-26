@@ -134,6 +134,18 @@ const CAZADOR = `
   <polygon points="26,47 22,47 24,51" fill="currentColor"/>
 `
 
+// Thug: stocky brawler, wide torso, thick arms, fists raised
+const THUG = `
+  <circle cx="24" cy="9" r="6" fill="currentColor"/>
+  <rect x="14" y="16" width="20" height="18" rx="2" fill="currentColor"/>
+  <rect x="6" y="15" width="9" height="15" rx="2" fill="currentColor"/>
+  <rect x="33" y="15" width="9" height="15" rx="2" fill="currentColor"/>
+  <rect x="2" y="26" width="8" height="6" rx="2" fill="currentColor"/>
+  <rect x="38" y="26" width="8" height="6" rx="2" fill="currentColor"/>
+  <rect x="15" y="34" width="7" height="13" rx="1" fill="currentColor"/>
+  <rect x="26" y="34" width="7" height="13" rx="1" fill="currentColor"/>
+`
+
 export const ENEMY_SVGS: Record<string, string> = {
   raider:        RAIDER,
   feral_ghoul:   FERAL_GHOUL,
@@ -146,6 +158,7 @@ export const ENEMY_SVGS: Record<string, string> = {
   fiend:         FIEND,
   powder_ganger: POWDER_GANGER,
   cazador:       CAZADOR,
+  thug:          THUG,
 }
 
 export const ENEMY_FALLBACK_SVG = RAIDER
