@@ -93,6 +93,7 @@ interface GameStore {
 
   // Events
   resolveEvent: (choice: string) => void
+  resolveChemStashSwap: (dropped: Record<string, number>, taken: Record<string, number>) => void
 
   // Combat
   fight: () => void
@@ -454,6 +455,42 @@ export const useGameStore = create<GameStore>((set, get) => {
           default:
             return state
         }
+      })
+    },
+
+    resolveChemStashSwap: (dropped, taken) => {
+      mutate(state => {
+        if (!state.pendingEvent || state.pendingEvent.type !== 'chem_stash') return state
+        const dest = state.pendingDestination ?? state.player.location
+        let player = { ...state.player }
+
+        // Apply drops
+        const inventory = { ...player.inventory }
+        for (const [chemId, qty] of Object.entries(dropped)) {
+          const existing = inventory[chemId]
+          if (!existing) continue
+          const newQty = existing.quantity - qty
+          if (newQty <= 0) delete inventory[chemId]
+          else inventory[chemId] = { ...existing, quantity: newQty }
+        }
+        player = { ...player, inventory }
+
+        // Apply takes
+        for (const [chemId, qty] of Object.entries(taken)) {
+          if (qty <= 0) continue
+          const existing = player.inventory[chemId]
+          player = {
+            ...player,
+            inventory: {
+              ...player.inventory,
+              [chemId]: { quantity: (existing?.quantity ?? 0) + qty, pricePaid: existing?.pricePaid ?? 0 },
+            },
+          }
+        }
+
+        const takenDesc = Object.entries(taken).filter(([, q]) => q > 0).map(([id, q]) => `${q}× ${id}`).join(', ')
+        const log = [...state.log, { turn: state.world.turn, message: `Swapped pack contents. Took ${takenDesc}.`, type: 'profit' as const }]
+        return completeTravel({ ...state, player, log, pendingEvent: null, pendingDestination: null }, dest)
       })
     },
 

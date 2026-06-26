@@ -5,14 +5,16 @@ import { CHEMS } from '../../data/chems'
 import { useGameStore } from '../../store/gameStore'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
+import InventorySwapModal from '../ui/InventorySwapModal'
 
 interface Props { event: TravelEvent; player: PlayerState }
 
 export default function EventPanel({ event, player }: Props) {
-  const resolveEvent    = useGameStore(s => s.resolveEvent)
-  const buyFromMerchant = useGameStore(s => s.buyFromMerchant)
-  const sellToMerchant  = useGameStore(s => s.sellToMerchant)
-  const mode            = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const resolveEvent        = useGameStore(s => s.resolveEvent)
+  const resolveChemStashSwap = useGameStore(s => s.resolveChemStashSwap)
+  const buyFromMerchant     = useGameStore(s => s.buyFromMerchant)
+  const sellToMerchant      = useGameStore(s => s.sellToMerchant)
+  const mode                = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const [merchantQty, setMerchantQty] = useState<Record<string, number>>({})
 
   const collectorFaction =
@@ -69,6 +71,20 @@ export default function EventPanel({ event, player }: Props) {
 
       {event.type === 'chem_stash' && (() => {
         const { chemId, qty } = event.payload as { chemId: string; qty: number }
+        const capacity = calculateCapacity(player.brahmin)
+        const current  = totalInventoryItems(player.inventory)
+        const isFull   = current + qty > capacity
+        if (isFull) {
+          return (
+            <InventorySwapModal
+              player={player}
+              incomingItems={{ [chemId]: qty }}
+              onConfirm={(dropped, taken) => resolveChemStashSwap(dropped, taken)}
+              onSkip={() => resolveEvent('take')}
+              title="PACK FULL"
+            />
+          )
+        }
         return (
           <div className="flex flex-col gap-2">
             <div className="text-pip-amber font-display text-lg">
