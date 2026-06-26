@@ -49,11 +49,9 @@ export const TRAVEL_EVENT_DEFS: TravelEventDefinition[] = [
 // Chem stash: which chems can be found and in what quantities
 export const STASH_CHEMS = ['jet', 'psycho', 'buffout', 'radx', 'radaway', 'mentats']
 export const STASH_QUANTITY_MIN = 1
-export const STASH_QUANTITY_MAX = 4
+export const STASH_QUANTITY_MAX = 6
 
 // Brotherhood toll
 export const BROTHERHOOD_TOLL = 100   // caps
 
 // Wandering merchant: a small random selection of chems at slightly above market
-export const MERCHANT_PRICE_MARKUP = 1.25
-export const MERCHANT_CHEM_COUNT = 3
