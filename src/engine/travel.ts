@@ -59,8 +59,7 @@ export function selectTravelEvent(
 
   // Combat roll — dangerLevel scaled by free play difficulty ramp.
   if (rng() < Math.min(1, road.dangerLevel * scaleFactor)) {
-    const def = modeConfig.travelEvents.find(e => e.type === 'raider_ambush')
-    if (def) return buildEventPayload('raider_ambush', def.title, def.description, modeConfig, road)
+    return buildEventPayload('raider_ambush', 'AMBUSH', 'Armed hostiles block the road ahead.', modeConfig, road)
   }
 
   // Non-combat event roll — only reached when no ambush this trip.
