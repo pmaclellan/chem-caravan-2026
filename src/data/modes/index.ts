@@ -154,7 +154,7 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     yao_guai:            { health: 85,  damage: [28, 48], xpReward: 40 },
     brotherhood_paladin: { health: 130, damage: [30, 55], xpReward: 100 },
   },
-  availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'daytripper'],
+  availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'daytripper', 'gwinnett_ale'],
   settlements: CW_SETTLEMENTS,
   settlementIds: CW_SETTLEMENT_IDS,
   roads: CW_ROADS,
