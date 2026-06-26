@@ -156,6 +156,19 @@ export const CHEMS: Record<string, ChemDefinition> = {
     description: "Euphoria chem. Popular in settlements with a nightlife.",
     imageUrl: null,
   },
+  // Commonwealth exclusive
+  gwinnett_ale: {
+    id: 'gwinnett_ale',
+    name: 'Gwinnett Ale',
+    basePrice: 60,
+    priceVariance: 0.35,
+    availability: 0.95,
+    maxStock: 25,
+    highPriceMsg: "Gwinnett Ale flowing slow — barley shipments got raided.",
+    lowPriceMsg: "Brewery had a bumper crop. Gwinnett Ale dirt cheap.",
+    description: "Pre-war recipe, post-war brew. The Commonwealth runs on it.",
+    imageUrl: '/assets/items/gwinnett_ale.webp',
+  },
   // Capital Wasteland exclusive
   nuka_cola_quantum: {
     id: 'nuka_cola_quantum',
