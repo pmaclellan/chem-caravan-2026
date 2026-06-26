@@ -10,13 +10,6 @@ export interface TravelEventDefinition {
 
 export const TRAVEL_EVENT_DEFS: TravelEventDefinition[] = [
   {
-    type: 'raider_ambush',
-    weight: 30,
-    minDangerToTrigger: 0.30,
-    title: "RAIDER AMBUSH",
-    description: "A gang of Raiders steps out from the ruins, weapons raised. Your caravan comes to a halt.",
-  },
-  {
     type: 'chem_stash',
     weight: 20,
     minDangerToTrigger: 0,

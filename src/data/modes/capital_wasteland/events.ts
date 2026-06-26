@@ -3,13 +3,6 @@ export type { TravelEventDefinition }
 
 export const TRAVEL_EVENT_DEFS: TravelEventDefinition[] = [
   {
-    type: 'raider_ambush',
-    weight: 30,
-    minDangerToTrigger: 0.30,
-    title: "AMBUSH",
-    description: "Armed hostiles step out from the ruins ahead. Your caravan is blocked.",
-  },
-  {
     type: 'chem_stash',
     weight: 20,
     minDangerToTrigger: 0,
