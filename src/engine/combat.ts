@@ -368,8 +368,12 @@ export function resolveRun(
 
   if (success) {
     if (player.brahmin > 0 && rng() < 0.30) {
-      updatedPlayer = loseBrahmin(player)
-      log.push("You escape! But one of your brahmin couldn't keep up and bolted.")
+      const { player: p, dropped } = loseBrahmin(player)
+      updatedPlayer = p
+      const droppedDesc = Object.entries(dropped).map(([id, q]) => `${q}× ${id}`).join(', ')
+      log.push(droppedDesc
+        ? `You escape! One of your brahmin bolted. Lost: ${droppedDesc} (pack over capacity).`
+        : "You escape! But one of your brahmin couldn't keep up and bolted.")
     } else {
       log.push("You manage to escape!")
     }
