@@ -513,9 +513,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
       const { player, combat, animSteps } = resolveFight(state.player, state.combat, mc)
-      // Store the final result for later, set combat to 'resolving' to disable buttons during animation
-      set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
-      mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
+      if (animSteps.length === 0) {
+        // No animation (e.g. weapon on cooldown) — apply immediately
+        mutate(s => afterCombat(s, { player, combat }))
+      } else {
+        set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
+        mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
+      }
     },
 
     completeCombatAnim: () => {
