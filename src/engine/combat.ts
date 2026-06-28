@@ -165,6 +165,21 @@ export function resolveFight(
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
         log.push(logLine)
         animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+
+        // Stray shot — missed primary but may clip a random other alive enemy
+        if (gun.strayChance && rng() < gun.strayChance) {
+          const others = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
+          if (others.length > 0) {
+            const stray = others[Math.floor(rng() * others.length)]
+            const strayDealt = Math.min(gun.damage, stray.health)
+            damageDealt += strayDealt
+            stray.health = Math.max(0, stray.health - gun.damage)
+            stray.dead = stray.health <= 0
+            log.push(stray.dead
+              ? `Stray round clips ${stray.name} for ${gun.damage} damage — ${stray.name} is dead!`
+              : `Stray round clips ${stray.name} for ${gun.damage} damage.`)
+          }
+        }
       }
     }
   } else {

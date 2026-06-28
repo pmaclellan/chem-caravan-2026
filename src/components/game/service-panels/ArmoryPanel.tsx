@@ -26,6 +26,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
             ? `${gun.ammoPerShot} rds/shot`
             : null
         const cooldownLabel = gun.cooldownTurns ? `${gun.cooldownTurns}-turn reload` : null
+        const strayLabel = gun.strayChance ? `${Math.round(gun.strayChance * 100)}% stray` : null
         return (
           <div key={gunId} className="flex justify-between items-center">
             <div>
@@ -33,6 +34,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
               <div className="text-xs text-pip-green-dim">
                 Acc {Math.round(gun.accuracy * 100)}% · {gun.damage} dmg
                 {mechanic && ` · ${mechanic}`}
+                {strayLabel && ` · ${strayLabel}`}
                 {cooldownLabel && ` · ${cooldownLabel}`}
                 {savedAmmo !== null && ` · ${savedAmmo} rds stored`}
               </div>

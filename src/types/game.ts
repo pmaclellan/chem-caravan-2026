@@ -66,6 +66,7 @@ export interface GunState {
   cooldownTurns?: number   // turns of reload after firing (missile launcher)
   cooldownRemaining?: number
   splashRatios?: number[]  // on hit: damage fractions applied to subsequent alive enemies
+  strayChance?: number     // on miss: chance a stray shot hits a random other alive enemy
 }
 
 export interface InventoryEntry {
