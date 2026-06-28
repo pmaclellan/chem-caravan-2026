@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { tamingCursorSpeedScale } from '../../engine/tuning'
+import { ENEMY_SVGS } from './enemySvgs'
 
 const STYLES = `
   @keyframes feedbackFadeUp {
@@ -47,11 +48,6 @@ const STYLES = `
   }
 `
 
-const CREATURE_SVGS: Record<string, string> = {
-  yao_guai: `<circle cx="24" cy="16" r="11" fill="currentColor"/><circle cx="15" cy="8" r="5" fill="currentColor"/><circle cx="33" cy="8" r="5" fill="currentColor"/><ellipse cx="24" cy="34" rx="14" ry="12" fill="currentColor"/><rect x="8" y="28" width="8" height="14" rx="4" fill="currentColor"/><rect x="32" y="28" width="8" height="14" rx="4" fill="currentColor"/>`,
-  radscorpion: `<ellipse cx="22" cy="33" rx="13" ry="9" fill="currentColor"/><ellipse cx="19" cy="21" rx="8" ry="6" fill="currentColor"/><path d="M11 19 L3 13 L4 18 L11 23 Z" fill="currentColor"/><path d="M11 23 L3 27 L4 31 L11 27 Z" fill="currentColor"/><path d="M27 19 L33 12 L35 17 L27 23 Z" fill="currentColor"/><path d="M27 23 L34 27 L33 31 L27 27 Z" fill="currentColor"/><path d="M32 30 C38 26 44 18 42 9 C40 3 35 1 32 5" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/><polygon points="32,5 28,1 36,1" fill="currentColor"/>`,
-  deathclaw: `<ellipse cx="27" cy="30" rx="14" ry="10" fill="currentColor"/><ellipse cx="40" cy="22" rx="7" ry="5" fill="currentColor"/><rect x="36" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(-20 37 18)"/><rect x="42" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(15 44 18)"/><rect x="13" y="37" width="5" height="10" rx="2" fill="currentColor" transform="rotate(-10 15 42)"/><rect x="31" y="38" width="5" height="10" rx="2" fill="currentColor"/><path d="M13 28 C8 30 5 35 8 40" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>`,
-}
 
 const TOOL_SVGS: Record<string, string> = {
   lasso: `
@@ -108,7 +104,7 @@ export default function TamingMinigame({
   })
   const greenEnd = greenStart + tool.greenWindowFraction
 
-  const [cursorPos,    setCursorPos]    = useState(0.5)
+  const needleRef = useRef<HTMLDivElement>(null)
   const [attempts,     setAttempts]     = useState<('hit' | 'miss')[]>([])
   const [done,         setDone]         = useState(false)
   const [failed,       setFailed]       = useState(false)
@@ -147,7 +143,10 @@ export default function TamingMinigame({
           timeRef.current += (ts - lastTsRef.current) / 1000
         }
         // Sine gives natural ease-at-walls: pos oscillates [0, 1] smoothly
-        setCursorPos(0.5 + 0.5 * Math.sin(timeRef.current * angularRef.current))
+        // Write directly to DOM to avoid React re-renders every frame
+        if (needleRef.current) {
+          needleRef.current.style.left = `${(0.5 + 0.5 * Math.sin(timeRef.current * angularRef.current)) * 100}%`
+        }
       }
       lastTsRef.current = ts
       rafRef.current = requestAnimationFrame(tick)
@@ -215,7 +214,7 @@ export default function TamingMinigame({
     }
   }, [greenStart, greenEnd, onSuccess, onAbandon])
 
-  const creatureSvg = CREATURE_SVGS[creatureTypeId]
+  const creatureSvg = ENEMY_SVGS[creatureTypeId]
   const toolSvg     = TOOL_SVGS[tool.id]
 
   return (
@@ -385,11 +384,11 @@ export default function TamingMinigame({
                 />
               )}
 
-              {/* Bouncing needle */}
+              {/* Bouncing needle — position driven by direct DOM mutation, not React state */}
               {!done && (
-                <div style={{
+                <div ref={needleRef} style={{
                   position: 'absolute',
-                  left: `${cursorPos * 100}%`,
+                  left: '50%',
                   top: '3px', bottom: '3px',
                   width: '3px',
                   backgroundColor: '#f59e0b',
