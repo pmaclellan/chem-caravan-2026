@@ -224,13 +224,26 @@ export default function MobileGame() {
               <div className="text-xs text-pip-green-dim">Pack {used}/{capacity}</div>
             </div>
           </div>
-          {player.gun && (
-            <div className="mt-3 pt-3 border-t border-pip-border-dim">
-              <div className="pip-label">Weapon</div>
-              <div className="text-pip-green font-display">{player.gun.name}</div>
-              <div className="text-xs text-pip-green-dim">
-                {player.gun.ammo} ammo · {Math.round(player.gun.accuracy * 100)}% accuracy · {player.gun.damage} dmg
-              </div>
+          {Object.keys(player.ownedGuns ?? {}).length > 0 && (
+            <div className="mt-3 pt-3 border-t border-pip-border-dim space-y-1.5">
+              <div className="pip-label">Weapons</div>
+              {Object.values(player.ownedGuns).map(g => {
+                const equipped = player.gun?.id === g.id
+                const ammo = equipped ? player.gun!.ammo : g.ammo
+                return (
+                  <div key={g.id} className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-pip-green text-sm font-display">{g.name}</div>
+                      <div className="text-xs text-pip-green-dim">{ammo} rds · {Math.round(g.accuracy * 100)}% acc · {g.damage} dmg</div>
+                    </div>
+                    {equipped ? (
+                      <span className="text-xs text-pip-green-dim">EQUIPPED</span>
+                    ) : phase === 'settlement' ? (
+                      <button className="pip-btn text-xs py-0.5" onClick={() => store.equipGun(g.id)}>EQUIP</button>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

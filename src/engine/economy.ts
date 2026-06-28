@@ -1,6 +1,6 @@
 import type { GunDefinition } from '../data/guns'
 import type { DebtEnforcementEntry } from '../data/modes'
-import type { ArmorDefinition, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
+import type { ArmorDefinition, GunState, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
 import type { TamingToolDefinition } from '../data/mounts'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
@@ -173,21 +173,36 @@ export function buyGun(
   gunDef: GunDefinition,
   ammoWithPurchase = 20,
 ): { player: PlayerState; error?: string } {
-  const totalCost = gunDef.price
-  if (player.caps < totalCost) return { player, error: "Not enough caps." }
+  if (player.ownedGuns?.[gunDef.id]) return { player, error: "You already own this gun." }
+  if (player.caps < gunDef.price) return { player, error: "Not enough caps." }
+  const newGunState: GunState = {
+    id: gunDef.id,
+    name: gunDef.name,
+    accuracy: gunDef.accuracy,
+    damage: gunDef.damage,
+    ammo: ammoWithPurchase,
+    ammoPerShot: gunDef.ammoPerShot,
+  }
+  // Flush current gun's ammo into ownedGuns before equipping the new one
+  const ownedGuns = { ...(player.ownedGuns ?? {}), [gunDef.id]: newGunState }
+  if (player.gun) ownedGuns[player.gun.id] = { ...player.gun }
   return {
-    player: {
-      ...player,
-      caps: player.caps - totalCost,
-      gun: {
-        id: gunDef.id,
-        name: gunDef.name,
-        accuracy: gunDef.accuracy,
-        damage: gunDef.damage,
-        ammo: ammoWithPurchase,
-        ammoPerShot: gunDef.ammoPerShot,
-      },
-    },
+    player: { ...player, caps: player.caps - gunDef.price, gun: newGunState, ownedGuns },
+  }
+}
+
+export function equipGun(
+  player: PlayerState,
+  gunId: string,
+): { player: PlayerState; error?: string } {
+  const owned = player.ownedGuns?.[gunId]
+  if (!owned) return { player, error: "You don't own that gun." }
+  if (player.gun?.id === gunId) return { player, error: "Already equipped." }
+  // Flush current gun's live ammo back to ownedGuns
+  const ownedGuns = { ...(player.ownedGuns ?? {}) }
+  if (player.gun) ownedGuns[player.gun.id] = { ...player.gun }
+  return {
+    player: { ...player, gun: { ...owned }, ownedGuns },
   }
 }
 

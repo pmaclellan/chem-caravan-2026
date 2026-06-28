@@ -17,20 +17,33 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
 
       {mc.gunIds.map(gunId => {
         const gun = mc.guns[gunId]
-        const owned = player.gun?.id === gunId
+        const equipped = player.gun?.id === gunId
+        const owned    = !!player.ownedGuns?.[gunId]
+        const savedAmmo = owned && !equipped ? player.ownedGuns[gunId].ammo : null
         return (
           <div key={gunId} className="flex justify-between items-center">
             <div>
               <div className="text-pip-green text-sm">{gun.name}</div>
-              <div className="text-xs text-pip-green-dim">Acc {Math.round(gun.accuracy * 100)}% · {gun.damage} dmg</div>
+              <div className="text-xs text-pip-green-dim">
+                Acc {Math.round(gun.accuracy * 100)}% · {gun.damage} dmg
+                {savedAmmo !== null && ` · ${savedAmmo} rds stored`}
+              </div>
             </div>
-            <button
-              className={owned ? 'pip-btn text-xs' : 'pip-btn-amber text-xs'}
-              disabled={owned || player.caps < gun.price}
-              onClick={() => store.purchaseGun(gunId)}
-            >
-              {owned ? 'EQUIPPED' : `${gun.price} ¤`}
-            </button>
+            {equipped ? (
+              <span className="pip-btn text-xs opacity-60 cursor-default">EQUIPPED</span>
+            ) : owned ? (
+              <button className="pip-btn text-xs" onClick={() => store.equipGun(gunId)}>
+                EQUIP
+              </button>
+            ) : (
+              <button
+                className="pip-btn-amber text-xs"
+                disabled={player.caps < gun.price}
+                onClick={() => store.purchaseGun(gunId)}
+              >
+                {gun.price} ¤
+              </button>
+            )}
           </div>
         )
       })}

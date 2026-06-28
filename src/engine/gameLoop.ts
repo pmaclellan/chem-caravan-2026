@@ -57,6 +57,7 @@ export function initializeGame(
     ageOfDebt: 0,
     inventory: {},
     gun: null,
+    ownedGuns: {},
     armor: null,
     tamingTool: null,
     hasSaddle: false,
