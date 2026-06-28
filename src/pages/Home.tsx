@@ -25,7 +25,7 @@ export default function Home() {
   const navigate  = useNavigate()
   const { user, signOut } = useAuthStore()
   const store     = useGameStore()
-  const { activeGameSummaries, freePlaySummary, loadActiveGames, startNewGame, loadGameById, clearGame } = store
+  const { activeGameSummaries, freePlaySummaries, loadActiveGames, startNewGame, loadGameById, clearGame } = store
 
   const [showAuth,       setShowAuth]       = useState(false)
   const [showTutorial,   setShowTutorial]   = useState(false)
@@ -59,12 +59,14 @@ export default function Home() {
     checkUnlock()
   }, [user])
 
-  // When switching to free play, highlight the existing run's mode if there is one
+  // When switching to free play, snap to first mode that has a run (if any)
   useEffect(() => {
-    if (gameType === 'free_play' && freePlaySummary) {
-      setSelectedMode(freePlaySummary.modeId)
+    if (gameType === 'free_play' && freePlaySummaries) {
+      const activeMode = (['commonwealth', 'capital_wasteland', 'mojave_wasteland'] as const)
+        .find(m => freePlaySummaries[m])
+      if (activeMode) setSelectedMode(activeMode)
     }
-  }, [gameType, freePlaySummary])
+  }, [gameType, freePlaySummaries])
 
   // Reset action state when switching game type
   useEffect(() => {
@@ -88,15 +90,10 @@ export default function Home() {
 
   const existingRun = gameType === 'standard'
     ? activeGameSummaries?.[selectedMode]
-    : freePlaySummary?.modeId === selectedMode ? freePlaySummary : null
-
-  // A FP run exists for a DIFFERENT mode — starting here would abandon it
-  const conflictingFpRun = gameType === 'free_play' && freePlaySummary?.modeId !== selectedMode
-    ? freePlaySummary
-    : null
+    : freePlaySummaries?.[selectedMode]
 
   function requestNewGame() {
-    if (existingRun || conflictingFpRun) {
+    if (existingRun) {
       setConfirmAbandon(true)
     } else {
       setShowNewGame(true)
@@ -171,7 +168,7 @@ export default function Home() {
                 {MODE_IDS.map(modeId => {
                   const mc         = GAME_MODES[modeId]
                   const stdRun     = activeGameSummaries?.[modeId]
-                  const fpRun      = freePlaySummary?.modeId === modeId ? freePlaySummary : null
+                  const fpRun      = freePlaySummaries?.[modeId] ?? null
                   const displayRun = isFreePlay ? fpRun : stdRun
                   const isSelected = selectedMode === modeId
 
@@ -271,9 +268,7 @@ export default function Home() {
               {confirmAbandon && (
                 <div className="border border-pip-red rounded p-3 space-y-2">
                   <div className="text-pip-red text-sm font-display">
-                    ABANDON {conflictingFpRun
-                      ? `${GAME_MODES[conflictingFpRun.modeId].name} Free Play run as ${conflictingFpRun.characterName}?`
-                      : `active run as ${existingRun?.characterName}?`}
+                    ABANDON active run as {existingRun?.characterName}?
                   </div>
                   <div className="flex gap-2">
                     <button
