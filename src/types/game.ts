@@ -61,6 +61,10 @@ export interface GunState {
   damage: number
   ammo: number
   ammoPerShot: number
+  ammoPrice: number        // caps per round (gun-specific)
+  shotsPerTurn?: number    // minigun: fires this many times per trigger pull
+  cooldownTurns?: number   // turns of reload after firing (missile launcher)
+  cooldownRemaining?: number
 }
 
 export interface InventoryEntry {

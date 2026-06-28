@@ -153,13 +153,17 @@ function normalizeState(state: GameState): GameState {
       hasSaddle: state.player.hasSaddle ?? false,
       mount: state.player.mount ?? null,
       conditions: state.player.conditions ?? [],
+      gun: state.player.gun ? { ...state.player.gun, ammoPrice: state.player.gun.ammoPrice ?? 5 } : null,
       ownedGuns: (() => {
         const owned = state.player.ownedGuns ?? {}
         // Migrate saves that predate ownedGuns: if player has a gun, register it
         if (state.player.gun && !owned[state.player.gun.id]) {
-          return { ...owned, [state.player.gun.id]: state.player.gun }
+          const gun = state.player.gun
+          return { ...owned, [gun.id]: { ...gun, ammoPrice: gun.ammoPrice ?? 5 } }
         }
-        return owned
+        return Object.fromEntries(
+          Object.entries(owned).map(([id, g]) => [id, { ...g, ammoPrice: g.ammoPrice ?? 5 }])
+        )
       })(),
     },
   }
@@ -793,9 +797,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         const mc = GAME_MODES[state.mode]
         const gunDef = mc.guns[gunId]
         if (!gunDef) return state
-        const { player, error } = buyGun(state.player, gunDef, mc.ammoWithPurchase)
+        const { player, error } = buyGun(state.player, gunDef)
         if (error) { set({ toast: error }); return state }
-        const log = [...state.log, { turn: state.world.turn, message: `Purchased ${gunDef.name} with ${mc.ammoWithPurchase} rounds.`, type: 'info' as const }]
+        const log = [...state.log, { turn: state.world.turn, message: `Purchased ${gunDef.name} with ${gunDef.ammoWithPurchase} rounds.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
@@ -811,8 +815,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     purchaseAmmo: (rounds) => {
       mutate(state => {
-        const mc = GAME_MODES[state.mode]
-        const { player, error } = buyAmmo(state.player, rounds, mc.ammoPrice)
+        const { player, error } = buyAmmo(state.player, rounds)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Bought ${rounds} rounds.`, type: 'info' as const }]
         return { ...state, player, log }

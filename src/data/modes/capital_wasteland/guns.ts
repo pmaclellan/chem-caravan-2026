@@ -9,6 +9,8 @@ export const GUNS: Record<string, GunDefinition> = {
     accuracy: 0.55,
     damage: 25,
     ammoPerShot: 1,
+    ammoPrice: 3,
+    ammoWithPurchase: 30,
     description: "Cheapest thing that shoots. Better than nothing.",
   },
   pistol_10mm: {
@@ -18,6 +20,8 @@ export const GUNS: Record<string, GunDefinition> = {
     accuracy: 0.70,
     damage: 40,
     ammoPerShot: 1,
+    ammoPrice: 5,
+    ammoWithPurchase: 25,
     description: "Standard wasteland sidearm. Reliable and common.",
   },
   combat_shotgun: {
@@ -27,6 +31,8 @@ export const GUNS: Record<string, GunDefinition> = {
     accuracy: 0.65,
     damage: 75,
     ammoPerShot: 2,
+    ammoPrice: 10,
+    ammoWithPurchase: 20,
     description: "Devastating at close range. Burns through ammo.",
   },
   hunting_rifle: {
@@ -36,10 +42,10 @@ export const GUNS: Record<string, GunDefinition> = {
     accuracy: 0.80,
     damage: 55,
     ammoPerShot: 1,
+    ammoPrice: 7,
+    ammoWithPurchase: 20,
     description: "Bolt-action precision. Common in the Capital Wasteland.",
   },
 }
 
 export const GUN_IDS = Object.keys(GUNS)
-export const AMMO_PRICE = 5
-export const AMMO_WITH_PURCHASE = 20
