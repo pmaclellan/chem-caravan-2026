@@ -3,7 +3,7 @@ export type { TransitQuote }
 
 export const TRANSIT_QUOTES: TransitQuote[] = [
   // Merchants & trade
-  { text: "Rivet City prices are highway robbery. And I mean that literally — Rivet City is only accessible by boat.", speaker: "Canterbury caravan driver" },
+  { text: "Rivet City prices are highway robbery. Or boatway robbery, I guess.", speaker: "Canterbury caravan driver" },
   { text: "Nuka-Cola Quantum. You see one — you buy it. You don't ask questions.", speaker: "Veteran trader" },
   { text: "Three caravans got hit between Megaton and Canterbury this week. Three.", speaker: "Shaken merchant" },
   { text: "The Brotherhood taxes every chem shipment coming through. They call it 'confiscation.' I call it theft.", speaker: "Underground trader" },
@@ -37,6 +37,17 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "The wasteland doesn't care about your caps or your plans. Make plans anyway.", speaker: "Old Megaton settler" },
   { text: "Everyone's got a story about the day the bombs fell. Nobody's story ends well.", speaker: "Ancient survivor" },
   { text: "Keep moving. The Wasteland rewards movement and punishes stillness.", speaker: "Veteran caravan hand" },
+
+  // Gameplay tips
+  { text: "Guards improve your odds of escaping an ambush and fight alongside you. Brahmin carry more chems but slow you down when things go wrong. Pack accordingly.", speaker: "Omniscient Guide" },
+  { text: "Canterbury Commons sits at the center of the Capital Wasteland's road network. It's the most reliable hub for mid-run resupply and selling.", speaker: "Omniscient Guide" },
+  { text: "Rivet City has the highest-value market in the region, but it's deep in the east. Don't make the run unless your pack is worth the detour.", speaker: "Omniscient Guide" },
+  { text: "Nuka-Cola Quantum is rare and expensive. If you see it in stock anywhere, buy it. It won't be there on your next visit.", speaker: "Omniscient Guide" },
+  { text: "Talon Company operates on an escalating contract. Miss a payment window and they find you. Miss two and they don't leave you walking.", speaker: "Omniscient Guide" },
+  { text: "The D.C. ruins are the most dangerous roads on the map. The markup at Rivet City is real — but so are the Super Mutants.", speaker: "Omniscient Guide" },
+  { text: "Interest compounds every turn you carry debt. Paying it off faster isn't just safer — it's cheaper.", speaker: "Omniscient Guide" },
+  { text: "Armor absorbs flat damage every hit. On dangerous roads it pays for itself quickly — but needs repairs after heavy encounters.", speaker: "Omniscient Guide" },
+  { text: "You can own multiple guns and switch between them at any settlement. If you run dry on ammo mid-run, a backup weapon with rounds left can save the caravan.", speaker: "Omniscient Guide" },
 ]
 
 export function pickQuote(): TransitQuote {
