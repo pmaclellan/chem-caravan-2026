@@ -20,12 +20,20 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
         const equipped = player.gun?.id === gunId
         const owned    = !!player.ownedGuns?.[gunId]
         const savedAmmo = owned && !equipped ? player.ownedGuns[gunId].ammo : null
+        const mechanic = gun.shotsPerTurn && gun.shotsPerTurn > 1
+          ? `${gun.shotsPerTurn} shots/turn`
+          : gun.ammoPerShot > 1
+            ? `${gun.ammoPerShot} rds/shot`
+            : null
+        const cooldownLabel = gun.cooldownTurns ? `${gun.cooldownTurns}-turn reload` : null
         return (
           <div key={gunId} className="flex justify-between items-center">
             <div>
               <div className="text-pip-green text-sm">{gun.name}</div>
               <div className="text-xs text-pip-green-dim">
                 Acc {Math.round(gun.accuracy * 100)}% · {gun.damage} dmg
+                {mechanic && ` · ${mechanic}`}
+                {cooldownLabel && ` · ${cooldownLabel}`}
                 {savedAmmo !== null && ` · ${savedAmmo} rds stored`}
               </div>
             </div>
