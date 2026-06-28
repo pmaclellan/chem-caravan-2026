@@ -36,6 +36,12 @@ const TABS: { id: LbTab; label: string }[] = [
   { id: 'global',            label: 'GLOBAL'        },
 ]
 
+const MODE_SHORT: Partial<Record<GameModeId, string>> = {
+  commonwealth:      'CW',
+  capital_wasteland: 'Cap',
+  mojave_wasteland:  'Moj',
+}
+
 export default function Leaderboard() {
   const navigate  = useNavigate()
   const [gameTypeFilter, setGameTypeFilter] = useState<GameTypeFilter>('standard')
@@ -163,7 +169,10 @@ export default function Leaderboard() {
         {!loading && displayed.length > 0 && (
           <div className="pip-panel" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 82%, transparent)' }}>
             {/* Header */}
-            <div className={`grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2 ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}>
+            <div
+              className="grid gap-2 text-pip-green-dim text-xs uppercase tracking-widest border-b border-pip-border pb-2 mb-2"
+              style={{ gridTemplateColumns: tab === 'global' ? '1.5rem 1fr 1fr 1fr 2rem 2.5rem' : '1.5rem 1fr 1fr 1fr 2.5rem' }}
+            >
               <div>#</div>
               <div className="col-span-2">Name</div>
               <div>{isFreePlay ? 'XP / Caps' : 'Score'}</div>
@@ -174,7 +183,7 @@ export default function Leaderboard() {
             {displayed.map((row, idx) => {
               const rank     = idx + 1
               const score    = row.final_score ?? 0
-              const modeName = row.mode ? GAME_MODES[row.mode]?.name.split(' ')[0] : '—'
+              const modeName = row.mode ? (MODE_SHORT[row.mode] ?? '—') : '—'
               const outcome  = row.state?.endReason ?? (
                 row.status === 'won' ? 'Turn limit reached' : 'Killed on the road'
               )
@@ -182,7 +191,8 @@ export default function Leaderboard() {
               return (
                 <div
                   key={row.id}
-                  className={`grid gap-2 text-sm py-1.5 border-b border-pip-border-dim ${tab === 'global' ? 'grid-cols-6' : 'grid-cols-5'}`}
+                  className="grid gap-2 text-sm py-1.5 border-b border-pip-border-dim"
+                  style={{ gridTemplateColumns: tab === 'global' ? '1.5rem 1fr 1fr 1fr 2rem 2.5rem' : '1.5rem 1fr 1fr 1fr 2.5rem' }}
                 >
                   <div className={`font-display text-lg ${
                     rank === 1 ? 'text-pip-amber' : rank <= 3 ? 'text-pip-green-mid' : 'text-pip-green-dim'
