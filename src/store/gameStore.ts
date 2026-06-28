@@ -450,9 +450,14 @@ export const useGameStore = create<GameStore>((set, get) => {
             return resolveDebtCollector(state)
 
           case 'brahmin_lost': {
-            const player = loseBrahmin(state.player)
+            const { player, dropped } = loseBrahmin(state.player)
             const dest = state.pendingDestination ?? state.player.location
-            return completeTravel({ ...state, player, pendingEvent: null, pendingDestination: null }, dest)
+            const droppedDesc = Object.entries(dropped).map(([id, q]) => `${q}× ${id}`).join(', ')
+            const msg = droppedDesc
+              ? `One of your brahmin bolted into the wastes. Lost: ${droppedDesc} (pack over capacity).`
+              : 'One of your brahmin bolted into the wastes. Inventory space reduced.'
+            const log = [...state.log, { turn: state.world.turn, message: msg, type: 'danger' as const }]
+            return completeTravel({ ...state, player, log, pendingEvent: null, pendingDestination: null }, dest)
           }
 
           case 'wandering_merchant': {

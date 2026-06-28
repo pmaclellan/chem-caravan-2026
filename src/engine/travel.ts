@@ -217,10 +217,19 @@ export function dropExcessInventory(player: PlayerState): PlayerState {
   return { ...player, inventory }
 }
 
-export function loseBrahmin(player: PlayerState): PlayerState {
-  if (player.brahmin === 0) return player
+export function loseBrahmin(player: PlayerState): { player: PlayerState; dropped: Record<string, number> } {
+  if (player.brahmin === 0) return { player, dropped: {} }
   const updated = { ...player, brahmin: player.brahmin - 1 }
-  return dropExcessInventory(updated)
+  const after   = dropExcessInventory(updated)
+
+  const dropped: Record<string, number> = {}
+  for (const [id, entry] of Object.entries(player.inventory)) {
+    const before = entry.quantity
+    const nowQty = after.inventory[id]?.quantity ?? 0
+    if (nowQty < before) dropped[id] = before - nowQty
+  }
+
+  return { player: after, dropped }
 }
 
 export function getSettlementName(mc: GameModeConfig, id: string): string {
