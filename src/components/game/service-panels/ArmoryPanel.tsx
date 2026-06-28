@@ -27,6 +27,9 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
             : null
         const cooldownLabel = gun.cooldownTurns ? `${gun.cooldownTurns}-turn reload` : null
         const strayLabel = gun.strayChance ? `${Math.round(gun.strayChance * 100)}% stray` : null
+        const needsPA = !!gun.requiresPowerArmor
+        const hasPA   = player.armor?.id === 'power_armor'
+        const paLocked = needsPA && !hasPA
         return (
           <div key={gunId} className="flex justify-between items-center">
             <div>
@@ -36,19 +39,22 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                 {mechanic && ` · ${mechanic}`}
                 {strayLabel && ` · ${strayLabel}`}
                 {cooldownLabel && ` · ${cooldownLabel}`}
+                {needsPA && <span className="text-pip-red"> · requires Power Armor</span>}
                 {savedAmmo !== null && ` · ${savedAmmo} rds stored`}
               </div>
             </div>
             {equipped ? (
-              <span className="pip-btn text-xs opacity-60 cursor-default">EQUIPPED</span>
+              <span className={`pip-btn text-xs opacity-60 cursor-default${paLocked ? ' border-pip-red text-pip-red' : ''}`}>
+                {paLocked ? 'NO PA' : 'EQUIPPED'}
+              </span>
             ) : owned ? (
-              <button className="pip-btn text-xs" onClick={() => store.equipGun(gunId)}>
+              <button className="pip-btn text-xs" disabled={paLocked} onClick={() => store.equipGun(gunId)}>
                 EQUIP
               </button>
             ) : (
               <button
                 className="pip-btn-amber text-xs"
-                disabled={player.caps < gun.price}
+                disabled={player.caps < gun.price || paLocked}
                 onClick={() => store.purchaseGun(gunId)}
               >
                 {gun.price} ¤

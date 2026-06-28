@@ -67,6 +67,7 @@ export interface GunState {
   cooldownRemaining?: number
   splashRatios?: number[]  // on hit: damage fractions applied to subsequent alive enemies
   strayChance?: number     // on miss: chance a stray shot hits a random other alive enemy
+  requiresPowerArmor?: boolean
 }
 
 export interface InventoryEntry {

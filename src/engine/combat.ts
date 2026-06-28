@@ -99,6 +99,9 @@ export function resolveFight(
   if (player.gun.ammo === 0) {
     return { player, combat: { ...combat, log: [...combat.log, "You squeeze the trigger — click. No ammo."] }, animSteps: [] }
   }
+  if (player.gun.requiresPowerArmor && player.armor?.id !== 'power_armor') {
+    return { player, combat: { ...combat, log: [...combat.log, `${player.gun.name} requires Power Armor to wield. Equip Power Armor first.`] }, animSteps: [] }
+  }
   if ((player.gun.cooldownRemaining ?? 0) > 0) {
     const remaining = player.gun.cooldownRemaining! - 1
     const updatedGun = { ...player.gun, cooldownRemaining: remaining }

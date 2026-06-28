@@ -11,6 +11,7 @@ export interface GunDefinition {
   cooldownTurns?: number   // turns of reload after firing (missile launcher)
   splashRatios?: number[]  // on hit: apply these fractions of base damage to subsequent alive enemies
   strayChance?: number     // on miss: chance a stray shot hits a random other alive enemy instead
+  requiresPowerArmor?: boolean  // can only be wielded while wearing power armor
   description: string
 }
 
@@ -81,18 +82,19 @@ export const GUNS: Record<string, GunDefinition> = {
     ammoWithPurchase: 12,
     description: "Crank-powered Institute reject. Wildly inaccurate, but a hit puts anything down.",
   },
-  minigun: {
-    id: 'minigun',
-    name: 'Minigun',
+  gatling_laser: {
+    id: 'gatling_laser',
+    name: 'Gatling Laser',
     price: 2200,
     accuracy: 0.35,
-    damage: 40,
+    damage: 45,
     ammoPerShot: 3,
     shotsPerTurn: 3,
     strayChance: 0.40,
-    ammoPrice: 4,
+    requiresPowerArmor: true,
+    ammoPrice: 6,
     ammoWithPurchase: 60,
-    description: "Sprays three rounds per pull. Low accuracy on each, but misses can clip other enemies in the group.",
+    description: "Rotary energy weapon. Sprays fusion bolts across the field. Requires Power Armor to wield.",
   },
   missile_launcher: {
     id: 'missile_launcher',
@@ -103,9 +105,10 @@ export const GUNS: Record<string, GunDefinition> = {
     ammoPerShot: 1,
     cooldownTurns: 2,
     splashRatios: [0.30, 0.20, 0.10],
+    requiresPowerArmor: true,
     ammoPrice: 60,
     ammoWithPurchase: 5,
-    description: "One shot, massive damage. Blast wave hits nearby enemies. Two turns to reload.",
+    description: "One shot, massive damage. Blast wave hits nearby enemies. Requires Power Armor to wield. Two turns to reload.",
   },
 }
 
