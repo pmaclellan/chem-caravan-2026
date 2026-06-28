@@ -72,13 +72,14 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     location: 'diamond_city',
     ageOfDebt: 0,
     inventory: {},
-    gun: { id: 'pistol_10mm', name: '10mm Pistol', accuracy: 0.70, damage: 40, ammo: 20, ammoPerShot: 1 },
+    gun: { id: 'pistol_10mm', name: '10mm Pistol', accuracy: 0.70, damage: 40, ammo: 20, ammoPerShot: 1, ammoPrice: 5 },
     armor: null,
     tamingTool: null,
     hasSaddle: false,
     mount: null,
     xp: 0,
     visitedSettlements: [],
+    ownedGuns: {},
     ...overrides,
   }
 }
@@ -143,7 +144,7 @@ describe('resolveFight', () => {
   })
 
   it('returns log message if no ammo', () => {
-    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 0.7, damage: 40, ammo: 0, ammoPerShot: 1 } })
+    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 0.7, damage: 40, ammo: 0, ammoPerShot: 1, ammoPrice: 5 } })
     const { combat: result } = resolveFight(player, initiateCombat(0.4, testMode), testMode)
     expect(result.log.some(l => l.includes('No ammo'))).toBe(true)
   })
@@ -170,7 +171,7 @@ describe('resolveFight', () => {
   it('marks enemy dead when health reaches 0', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 9999, ammo: 20, ammoPerShot: 1 } })
+    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 9999, ammo: 20, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.1, testMode) // 1 enemy at low danger
     const { combat: result } = resolveFight(player, combat, testMode)
     expect(result.phase).toBe('won')
@@ -190,7 +191,7 @@ describe('resolveFight', () => {
     // Always hit so we can count damage
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    const player = makePlayer({ guards: 2, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 10, ammoPerShot: 1 } })
+    const player = makePlayer({ guards: 2, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 10, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.5, testMode)
     const { player: result } = resolveFight(player, combat, testMode)
     // Player spent 1 ammo + 2 guards spent 1 each = 3 total consumed
@@ -210,7 +211,7 @@ describe('resolveFight', () => {
   it('tracks totalDamageDealt correctly across hits', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 10, ammo: 20, ammoPerShot: 1 } })
+    const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 10, ammo: 20, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.1, testMode)
     const { combat: result } = resolveFight(player, combat, testMode)
     expect(result.totalDamageDealt).toBeGreaterThan(0)
