@@ -3,6 +3,7 @@ import type { TravelEvent, PlayerState } from '../../types/game'
 import { CHEMS } from '../../data/chems'
 
 import { useGameStore } from '../../store/gameStore'
+import { GAME_MODES } from '../../data/modes'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { priceColor } from '../../utils/priceColor'
 import InventorySwapModal from '../ui/InventorySwapModal'
@@ -10,11 +11,12 @@ import InventorySwapModal from '../ui/InventorySwapModal'
 interface Props { event: TravelEvent; player: PlayerState }
 
 export default function EventPanel({ event, player }: Props) {
-  const resolveEvent        = useGameStore(s => s.resolveEvent)
+  const resolveEvent         = useGameStore(s => s.resolveEvent)
   const resolveChemStashSwap = useGameStore(s => s.resolveChemStashSwap)
-  const buyFromMerchant     = useGameStore(s => s.buyFromMerchant)
-  const sellToMerchant      = useGameStore(s => s.sellToMerchant)
-  const mode                = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const equipGun             = useGameStore(s => s.equipGun)
+  const buyFromMerchant      = useGameStore(s => s.buyFromMerchant)
+  const sellToMerchant       = useGameStore(s => s.sellToMerchant)
+  const mode                 = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const [merchantQty, setMerchantQty] = useState<Record<string, number>>({})
 
   const collectorFaction =
@@ -50,11 +52,44 @@ export default function EventPanel({ event, player }: Props) {
           (forfeitCaps ?? 0) > 0 ? `${forfeitCaps} ¤` : '',
           chemCount > 0 ? `${chemCount} chem${chemCount > 1 ? 's' : ''}` : '',
         ].filter(Boolean).join(' and ')
+        const ownedGunIds = Object.keys(player.ownedGuns ?? {})
+        const mc = GAME_MODES[mode]
+        const hasPA = player.armor?.id === 'power_armor'
         return (
           <div className="flex flex-col gap-3">
             {hasForfeit && (
               <div className="border border-pip-red rounded px-3 py-2 text-xs text-pip-red">
                 Running forfeits first wave loot: {forfeitDesc}
+              </div>
+            )}
+            {ownedGunIds.length > 1 && (
+              <div>
+                <div className="pip-label text-xs mb-1">WEAPON</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {ownedGunIds.map(gid => {
+                    const def       = mc.guns[gid]
+                    const state     = player.gun?.id === gid ? player.gun : player.ownedGuns[gid]
+                    const equipped  = player.gun?.id === gid
+                    const paLocked  = !!def?.requiresPowerArmor && !hasPA
+                    if (!def || !state) return null
+                    return (
+                      <button
+                        key={gid}
+                        disabled={equipped || paLocked}
+                        onClick={() => equipGun(gid)}
+                        className={`text-xs px-2 py-1 rounded border font-mono ${
+                          equipped
+                            ? 'border-pip-green text-pip-green bg-pip-border-dim cursor-default'
+                            : paLocked
+                              ? 'border-pip-border text-pip-green-dim opacity-50 cursor-not-allowed'
+                              : 'border-pip-amber text-pip-amber hover:bg-pip-border-dim'
+                        }`}
+                      >
+                        {def.name} ({state.ammo} rds){paLocked ? ' [PA]' : ''}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
             <div className="flex gap-3">

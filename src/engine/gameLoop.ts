@@ -481,6 +481,14 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
       newLogs.push(makeLog(turn, "Cazador venom is still in your system. -10 HP per turn until cured.", 'danger'))
     }
     combat = { ...combat, playerVenomed: false }
+    // Clear weapon cooldown between combats — the player has time to reload
+    if (player.gun?.cooldownRemaining) {
+      const clearedGun = { ...player.gun, cooldownRemaining: 0 }
+      const clearedOwned = player.ownedGuns[player.gun.id]
+        ? { ...player.ownedGuns, [player.gun.id]: clearedGun }
+        : player.ownedGuns
+      player = { ...player, gun: clearedGun, ownedGuns: clearedOwned }
+    }
   }
 
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
