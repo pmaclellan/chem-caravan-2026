@@ -32,6 +32,7 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     mount: null,
     xp: 0,
     visitedSettlements: [],
+    ownedGuns: {},
     ...overrides,
   }
 }
