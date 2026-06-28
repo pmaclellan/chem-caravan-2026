@@ -144,6 +144,23 @@ export function resolveFight(
           : `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage)`
         log.push(logLine)
         animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+
+        // Splash damage — hits subsequent alive enemies at decreasing ratios
+        if (gun.splashRatios && gun.splashRatios.length > 0) {
+          const splashTargets = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
+          for (let si = 0; si < Math.min(gun.splashRatios.length, splashTargets.length); si++) {
+            const st = splashTargets[si]
+            const splashDmg = Math.max(1, Math.round(gun.damage * gun.splashRatios[si]))
+            const splashDealt = Math.min(splashDmg, st.health)
+            damageDealt += splashDealt
+            st.health = Math.max(0, st.health - splashDmg)
+            st.dead = st.health <= 0
+            const splashLine = st.dead
+              ? `Blast wave hits ${st.name} for ${splashDmg} damage — ${st.name} is dead!`
+              : `Blast wave hits ${st.name} for ${splashDmg} damage.`
+            log.push(splashLine)
+          }
+        }
       } else {
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
         log.push(logLine)

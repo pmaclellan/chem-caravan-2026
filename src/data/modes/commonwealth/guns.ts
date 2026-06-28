@@ -9,6 +9,7 @@ export interface GunDefinition {
   ammoWithPurchase: number // rounds included when buying
   shotsPerTurn?: number    // fires this many shot rolls per trigger pull (minigun)
   cooldownTurns?: number   // turns of reload after firing (missile launcher)
+  splashRatios?: number[]  // on hit: apply these fractions of base damage to subsequent alive enemies
   description: string
 }
 
@@ -99,9 +100,10 @@ export const GUNS: Record<string, GunDefinition> = {
     damage: 220,
     ammoPerShot: 1,
     cooldownTurns: 2,
+    splashRatios: [0.30, 0.20, 0.10],
     ammoPrice: 60,
     ammoWithPurchase: 5,
-    description: "One shot, massive damage. Two turns to reload. Plan accordingly.",
+    description: "One shot, massive damage. Blast wave hits nearby enemies. Two turns to reload.",
   },
 }
 

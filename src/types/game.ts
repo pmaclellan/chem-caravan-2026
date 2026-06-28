@@ -65,6 +65,7 @@ export interface GunState {
   shotsPerTurn?: number    // minigun: fires this many times per trigger pull
   cooldownTurns?: number   // turns of reload after firing (missile launcher)
   cooldownRemaining?: number
+  splashRatios?: number[]  // on hit: damage fractions applied to subsequent alive enemies
 }
 
 export interface InventoryEntry {
