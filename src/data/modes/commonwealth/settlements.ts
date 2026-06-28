@@ -95,6 +95,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasFollowers: true,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/sanctuary_hills.webp',
+    priceModifier: 1.10,
   },
   concord: {
     id: 'concord',
@@ -131,6 +132,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasFollowers: true,
     doctorCost: 100,
     imageUrl: '/assets/settlements/commonwealth/the_castle.webp',
+    priceModifier: 1.20,
   },
   vault_81: {
     id: 'vault_81',
@@ -167,6 +169,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasFollowers: false,
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/somerville_place.webp',
+    priceModifier: 1.50,
   }
 }
 

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InventorySwapModal — Preview</title>
+<style>
+:root {
+  --pip-bg:         #b89a52;
+  --pip-bg-light:   #e2cfa0;
+  --pip-green:      #2c4a10;
+  --pip-green-dim:  #6a5828;
+  --pip-green-mid:  #4a7018;
+  --pip-amber:      #c4501a;
+  --pip-red:        #8c1c1c;
+  --pip-border:     #8a6020;
+  --pip-border-dim: #cdb070;
+  --pip-blue:       #2a5a8a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background: var(--pip-bg);
+  color: var(--pip-green);
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+}
+
+.pip-label {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.6rem;
+  color: var(--pip-green-dim);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* ══ GAME BACKGROUND ══ */
+.game-bg {
+  position: fixed;
+  inset: 0;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: 200px 1fr 180px;
+  gap: 0.75rem;
+  filter: blur(3px) brightness(0.6) saturate(0.7);
+  pointer-events: none;
+  z-index: 1;
+  user-select: none;
+}
+.g-panel {
+  border: 1px solid var(--pip-border);
+  border-radius: 3px;
+  padding: 0.75rem;
+  background: var(--pip-bg);
+  overflow: hidden;
+}
+.g-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--pip-border-dim);
+  color: var(--pip-green-dim);
+}
+.g-row:last-child { border-bottom: none; }
+.g-row .hi { color: var(--pip-amber); }
+.g-bar { height: 6px; background: var(--pip-border-dim); border-radius: 3px; margin: 0.3rem 0 0.5rem; overflow: hidden; }
+.g-bar-fill { height: 100%; background: var(--pip-green-mid); border-radius: 3px; }
+
+/* ══ OVERLAY ══ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(30,18,4,0.74);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  width: 100%;
+  max-width: 27rem;
+  background: var(--pip-bg);
+  background-image: linear-gradient(160deg, rgba(255,235,160,0.08) 0%, transparent 50%, rgba(0,0,0,0.04) 100%);
+  border: 1px solid var(--pip-border);
+  border-radius: 4px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 0 0 1px var(--pip-border-dim), 0 12px 48px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,220,120,0.15);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  animation: modal-in 0.18s ease-out both;
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-header {
+  font-size: 1.35rem;
+  color: var(--pip-red);
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--pip-border);
+  padding-bottom: 0.6rem;
+}
+
+/* ── Capacity ── */
+.cap-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem; }
+.cap-count { font-size: 0.72rem; font-weight: bold; transition: color 0.25s; }
+.cap-track { height: 7px; background: var(--pip-border-dim); border-radius: 3px; overflow: hidden; }
+.cap-fill  { height: 100%; border-radius: 3px; transition: width 0.28s ease-out, background-color 0.28s; }
+.cap-hint  { font-size: 0.65rem; margin-top: 0.25rem; font-style: italic; transition: color 0.25s; min-height: 0.9rem; }
+
+/* ── Shared item row ── */
+.item-section {
+  border: 1px solid var(--pip-border);
+  border-radius: 3px;
+  padding: 0.55rem 0.75rem;
+}
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid var(--pip-border-dim);
+}
+.item-row:last-of-type { border-bottom: none; }
+
+.iname {
+  flex: 1;
+  transition: color 0.2s;
+}
+.iname.gone { text-decoration: line-through; color: var(--pip-border) !important; }
+
+.iqty {
+  min-width: 1.8rem;
+  text-align: right;
+  font-size: 0.75rem;
+  transition: color 0.2s;
+}
+.iqty.zero { color: var(--pip-red); }
+
+/* ── Buttons ── */
+.ibtn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.78rem;
+  width: 1.5rem;
+  height: 1.35rem;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s, opacity 0.15s;
+  flex-shrink: 0;
+}
+.ibtn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.ibtn-drop {
+  background: transparent;
+  border-color: var(--pip-red);
+  color: var(--pip-red);
+}
+.ibtn-drop:not(:disabled):hover { background: var(--pip-red); color: var(--pip-bg-light); }
+
+.ibtn-restore {
+  background: transparent;
+  border-color: var(--pip-border);
+  color: var(--pip-green-dim);
+}
+.ibtn-restore:not(:disabled):hover { background: var(--pip-border); color: var(--pip-bg-light); }
+
+/* incoming section uses amber palette */
+.incoming-section {
+  border-color: var(--pip-amber);
+  background: rgba(196,80,26,0.04);
+}
+.incoming-section .pip-label { color: var(--pip-amber); }
+.incoming-section .iname     { color: var(--pip-amber); }
+.incoming-section .iqty      { color: var(--pip-amber); }
+.incoming-section .iqty.zero { color: var(--pip-border); }
+
+/* amber reduce button */
+.ibtn-skip {
+  background: transparent;
+  border-color: var(--pip-amber);
+  color: var(--pip-amber);
+}
+.ibtn-skip:not(:disabled):hover { background: var(--pip-amber); color: var(--pip-bg-light); }
+
+.ibtn-unskip {
+  background: transparent;
+  border-color: var(--pip-border);
+  color: var(--pip-green-dim);
+}
+.ibtn-unskip:not(:disabled):hover { background: var(--pip-border); color: var(--pip-bg-light); }
+
+.tally {
+  font-size: 0.65rem;
+  font-style: italic;
+  margin-top: 0.35rem;
+  min-height: 0.85rem;
+  transition: opacity 0.2s;
+}
+
+/* ── Action buttons ── */
+.actions { display: flex; gap: 0.5rem; }
+
+.btn-take {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid;
+  text-transform: uppercase;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.btn-take.locked {
+  background: transparent;
+  border-color: var(--pip-border);
+  color: var(--pip-green-dim);
+  cursor: not-allowed;
+}
+.btn-take.ready {
+  background: var(--pip-green-mid);
+  border-color: var(--pip-green);
+  color: var(--pip-bg-light);
+  box-shadow: 0 0 8px rgba(74,112,24,0.35);
+}
+.btn-take.ready:hover { background: var(--pip-green); }
+
+.btn-leave {
+  padding: 0.45rem 0.85rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--pip-amber);
+  background: transparent;
+  color: var(--pip-amber);
+  text-transform: uppercase;
+  transition: background 0.12s;
+  flex-shrink: 0;
+}
+.btn-leave:hover { background: rgba(196,80,26,0.12); }
+</style>
+</head>
+<body>
+
+<!-- ══ BLURRED GAME BG ══ -->
+<div class="game-bg">
+  <div class="g-panel">
+    <div class="pip-label" style="margin-bottom:.5rem">Player</div>
+    <div class="g-bar"><div class="g-bar-fill" style="width:38%"></div></div>
+    <div class="g-row"><span>Health</span><span class="hi">46 / 120</span></div>
+    <div class="g-row"><span>Caps</span><span>340 ¤</span></div>
+    <div class="g-row"><span>Guards</span><span>2</span></div>
+    <div class="g-row"><span>Brahmin</span><span>1</span></div>
+  </div>
+  <div class="g-panel">
+    <div class="pip-label" style="margin-bottom:.5rem">Combat Summary — Turn 9</div>
+    <div class="g-row"><span>Enemies defeated</span><span class="hi">4 Raiders</span></div>
+    <div class="g-row"><span>Caps looted</span><span class="hi">+128 ¤</span></div>
+    <div class="g-row"><span>XP earned</span><span class="hi">+240 XP</span></div>
+    <div class="g-row" style="margin-top:.4rem">
+      <div class="pip-label" style="margin-bottom:.35rem">Loot found</div>
+    </div>
+    <div class="g-row"><span>RadAway</span><span class="hi">×2</span></div>
+    <div class="g-row"><span>Stimpak</span><span class="hi">×1</span></div>
+  </div>
+  <div class="g-panel">
+    <div class="pip-label" style="margin-bottom:.5rem">Pack — 12 / 12</div>
+    <div class="g-row"><span>Jet</span><span>×4</span></div>
+    <div class="g-row"><span>Psycho</span><span>×3</span></div>
+    <div class="g-row"><span>Mentats</span><span>×2</span></div>
+    <div class="g-row"><span>Buffout</span><span>×3</span></div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="overlay">
+  <div class="modal">
+
+    <div class="modal-header">!! INVENTORY FULL !!</div>
+
+    <!-- Capacity -->
+    <div>
+      <div class="cap-row">
+        <span class="pip-label">Pack Capacity</span>
+        <span class="cap-count" id="cap-count">14 / 12</span>
+      </div>
+      <div class="cap-track">
+        <div class="cap-fill" id="cap-fill" style="width:100%;background:var(--pip-red)"></div>
+      </div>
+      <div class="cap-hint" id="cap-hint" style="color:var(--pip-red)">Drop 2 more items to make room.</div>
+    </div>
+
+    <!-- INCOMING — interactive, amber -->
+    <div class="item-section incoming-section">
+      <div class="pip-label" style="margin-bottom:.4rem">Loot Found — Take What You Can Carry</div>
+
+      <div class="item-row">
+        <span class="iname" id="n-radaway">RadAway</span>
+        <span class="iqty" id="q-radaway">×2</span>
+        <button class="ibtn ibtn-skip"   id="s-radaway"  onclick="skip('radaway')"  title="Take fewer">−</button>
+        <button class="ibtn ibtn-unskip" id="us-radaway" onclick="unskip('radaway')" disabled title="Take more">+</button>
+      </div>
+
+      <div class="item-row">
+        <span class="iname" id="n-stimpak">Stimpak</span>
+        <span class="iqty" id="q-stimpak">×1</span>
+        <button class="ibtn ibtn-skip"   id="s-stimpak"  onclick="skip('stimpak')"  title="Take fewer">−</button>
+        <button class="ibtn ibtn-unskip" id="us-stimpak" onclick="unskip('stimpak')" disabled title="Take more">+</button>
+      </div>
+
+      <div class="tally" id="in-tally" style="color:var(--pip-green-dim)"></div>
+    </div>
+
+    <!-- YOUR PACK — interactive, green -->
+    <div class="item-section">
+      <div class="pip-label" style="margin-bottom:.4rem">Your Pack — Drop to Make Room</div>
+
+      <div class="item-row">
+        <span class="iname" id="n-jet">Jet</span>
+        <span class="iqty" id="q-jet">×3</span>
+        <button class="ibtn ibtn-drop"    id="d-jet" onclick="drop('jet')">−</button>
+        <button class="ibtn ibtn-restore" id="r-jet" onclick="restore('jet')" disabled>+</button>
+      </div>
+
+      <div class="item-row">
+        <span class="iname" id="n-psycho">Psycho</span>
+        <span class="iqty" id="q-psycho">×2</span>
+        <button class="ibtn ibtn-drop"    id="d-psycho" onclick="drop('psycho')">−</button>
+        <button class="ibtn ibtn-restore" id="r-psycho" onclick="restore('psycho')" disabled>+</button>
+      </div>
+
+      <div class="item-row">
+        <span class="iname" id="n-mentats">Mentats</span>
+        <span class="iqty" id="q-mentats">×1</span>
+        <button class="ibtn ibtn-drop"    id="d-mentats" onclick="drop('mentats')">−</button>
+        <button class="ibtn ibtn-restore" id="r-mentats" onclick="restore('mentats')" disabled>+</button>
+      </div>
+
+      <div class="item-row">
+        <span class="iname" id="n-buffout">Buffout</span>
+        <span class="iqty" id="q-buffout">×2</span>
+        <button class="ibtn ibtn-drop"    id="d-buffout" onclick="drop('buffout')">−</button>
+        <button class="ibtn ibtn-restore" id="r-buffout" onclick="restore('buffout')" disabled>+</button>
+      </div>
+
+      <div class="tally" id="pack-tally" style="color:var(--pip-red)"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn-take locked" id="take-btn">NEED 2 MORE SLOTS</button>
+      <button class="btn-leave">LEAVE ALL</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──
+const CAPACITY  = 12;
+const packOwned = { jet:4, psycho:3, mentats:2, buffout:3 };   // 12 items — pack is full
+const lootMax   = { radaway:2, stimpak:1 };                     // 3 incoming → over by 3
+const packDrop  = { jet:0, psycho:0, mentats:0, buffout:0 };
+const lootSkip  = { radaway:0, stimpak:0 };
+
+const packLabels = { jet:'Jet', psycho:'Psycho', mentats:'Mentats', buffout:'Buffout' };
+const lootLabels = { radaway:'RadAway', stimpak:'Stimpak' };
+
+function drop(id)    { if (packDrop[id] < packOwned[id]) { packDrop[id]++; render(); } }
+function restore(id) { if (packDrop[id] > 0)             { packDrop[id]--; render(); } }
+function skip(id)    { if (lootSkip[id] < lootMax[id])   { lootSkip[id]++; render(); } }
+function unskip(id)  { if (lootSkip[id] > 0)             { lootSkip[id]--; render(); } }
+
+render(); // sync display with JS state on load
+
+function render() {
+  const currentUsed  = Object.values(packOwned).reduce((s,n)=>s+n, 0); // 8
+  const totalDropped = Object.values(packDrop).reduce((s,n)=>s+n, 0);
+  const totalTaking  = Object.keys(lootMax).reduce((s,id)=>s+(lootMax[id]-lootSkip[id]),0);
+  const projected    = currentUsed - totalDropped + totalTaking;
+  const needed       = Math.max(0, projected - CAPACITY);
+  const hasRoom      = needed === 0;
+  const pct          = Math.min(100, Math.round(projected / CAPACITY * 100));
+
+  // Capacity bar
+  const countEl = document.getElementById('cap-count');
+  countEl.textContent = projected + ' / ' + CAPACITY;
+  countEl.style.color = hasRoom ? 'var(--pip-green-mid)' : 'var(--pip-red)';
+  document.getElementById('cap-fill').style.width      = pct + '%';
+  document.getElementById('cap-fill').style.background = hasRoom ? 'var(--pip-green-mid)' : 'var(--pip-red)';
+  const hint = document.getElementById('cap-hint');
+  if (hasRoom) {
+    hint.textContent = totalTaking > 0
+      ? 'Pack has room. Ready to take loot.'
+      : 'Nothing selected to take.';
+    hint.style.color = 'var(--pip-green-dim)';
+  } else {
+    hint.textContent = 'Drop ' + needed + ' more ' + (needed===1?'item':'items') + ', or take fewer from loot.';
+    hint.style.color = 'var(--pip-red)';
+  }
+
+  // Loot rows
+  for (const id of Object.keys(lootMax)) {
+    const taking = lootMax[id] - lootSkip[id];
+    const nameEl  = document.getElementById('n-' + id);
+    const qtyEl   = document.getElementById('q-' + id);
+    const skipBtn = document.getElementById('s-' + id);
+    const unBtn   = document.getElementById('us-' + id);
+
+    nameEl.textContent = lootLabels[id];
+    nameEl.className   = 'iname' + (taking === 0 ? ' gone' : '');
+    qtyEl.textContent  = '×' + taking;
+    qtyEl.className    = 'iqty' + (taking === 0 ? ' zero' : '');
+    skipBtn.disabled   = taking === 0;
+    unBtn.disabled     = lootSkip[id] === 0;
+  }
+
+  // Loot tally
+  const skippedParts = Object.keys(lootSkip)
+    .filter(id => lootSkip[id] > 0)
+    .map(id => lootSkip[id] + '× ' + lootLabels[id]);
+  const inTally = document.getElementById('in-tally');
+  inTally.textContent = skippedParts.length > 0
+    ? 'Leaving behind: ' + skippedParts.join(', ') + '.'
+    : '';
+
+  // Pack rows
+  for (const id of Object.keys(packOwned)) {
+    const eff     = packOwned[id] - packDrop[id];
+    const nameEl  = document.getElementById('n-' + id);
+    const qtyEl   = document.getElementById('q-' + id);
+    const dropBtn = document.getElementById('d-' + id);
+    const restBtn = document.getElementById('r-' + id);
+
+    nameEl.textContent = packLabels[id];
+    nameEl.className   = 'iname' + (eff === 0 ? ' gone' : '');
+    qtyEl.textContent  = '×' + eff;
+    qtyEl.className    = 'iqty' + (eff === 0 ? ' zero' : '');
+    dropBtn.disabled   = eff === 0;
+    restBtn.disabled   = packDrop[id] === 0;
+  }
+
+  // Pack tally
+  const droppedParts = Object.keys(packDrop)
+    .filter(id => packDrop[id] > 0)
+    .map(id => packDrop[id] + '× ' + packLabels[id]);
+  const packTally = document.getElementById('pack-tally');
+  packTally.textContent = droppedParts.length > 0
+    ? 'Dropping: ' + droppedParts.join(', ') + '.'
+    : '';
+
+  // Take button
+  const takeBtn = document.getElementById('take-btn');
+  const takingAny = totalTaking > 0;
+  if (hasRoom && takingAny) {
+    takeBtn.textContent = 'TAKE ' + totalTaking + ' ITEM' + (totalTaking !== 1 ? 'S' : '');
+    takeBtn.className   = 'btn-take ready';
+  } else if (hasRoom && !takingAny) {
+    takeBtn.textContent = 'NOTHING SELECTED';
+    takeBtn.className   = 'btn-take locked';
+  } else {
+    takeBtn.textContent = 'NEED ' + needed + ' MORE SLOT' + (needed !== 1 ? 'S' : '');
+    takeBtn.className   = 'btn-take locked';
+  }
+}
+</script>
+</body>
+</html>

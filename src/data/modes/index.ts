@@ -6,17 +6,17 @@ import type { TransitQuote } from './commonwealth/quotes'
 import { ARMORS, ARMOR_IDS } from '../armors'
 
 import { SETTLEMENTS as CW_SETTLEMENTS, ROADS as CW_ROADS, SETTLEMENT_IDS as CW_SETTLEMENT_IDS } from './commonwealth/settlements'
-import { GUNS as CW_GUNS, GUN_IDS as CW_GUN_IDS, AMMO_PRICE as CW_AMMO_PRICE, AMMO_WITH_PURCHASE as CW_AMMO_WITH_PURCHASE } from './commonwealth/guns'
+import { GUNS as CW_GUNS, GUN_IDS as CW_GUN_IDS } from './commonwealth/guns'
 import { TRAVEL_EVENT_DEFS as CW_EVENTS } from './commonwealth/events'
 import { TRANSIT_QUOTES as CW_QUOTES } from './commonwealth/quotes'
 
 import { SETTLEMENTS as CAP_SETTLEMENTS, ROADS as CAP_ROADS, SETTLEMENT_IDS as CAP_SETTLEMENT_IDS } from './capital_wasteland/settlements'
-import { GUNS as CAP_GUNS, GUN_IDS as CAP_GUN_IDS, AMMO_PRICE as CAP_AMMO_PRICE, AMMO_WITH_PURCHASE as CAP_AMMO_WITH_PURCHASE } from './capital_wasteland/guns'
+import { GUNS as CAP_GUNS, GUN_IDS as CAP_GUN_IDS } from './capital_wasteland/guns'
 import { TRAVEL_EVENT_DEFS as CAP_EVENTS } from './capital_wasteland/events'
 import { TRANSIT_QUOTES as CAP_QUOTES } from './capital_wasteland/quotes'
 
 import { SETTLEMENTS as MOJ_SETTLEMENTS, ROADS as MOJ_ROADS, SETTLEMENT_IDS as MOJ_SETTLEMENT_IDS } from './mojave_wasteland/settlements'
-import { GUNS as MOJ_GUNS, GUN_IDS as MOJ_GUN_IDS, AMMO_PRICE as MOJ_AMMO_PRICE, AMMO_WITH_PURCHASE as MOJ_AMMO_WITH_PURCHASE } from './mojave_wasteland/guns'
+import { GUNS as MOJ_GUNS, GUN_IDS as MOJ_GUN_IDS } from './mojave_wasteland/guns'
 import { TRAVEL_EVENT_DEFS as MOJ_EVENTS } from './mojave_wasteland/events'
 import { TRANSIT_QUOTES as MOJ_QUOTES } from './mojave_wasteland/quotes'
 
@@ -88,8 +88,6 @@ export interface GameModeConfig {
   roads: Road[]
   guns: Record<string, GunDefinition>
   gunIds: string[]
-  ammoPrice: number
-  ammoWithPurchase: number
   armors: Record<string, ArmorDefinition>
   armorIds: string[]
   startingLocation: string
@@ -142,16 +140,16 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   surplusMultiplierMax: 0.55,
   enemies: [
     { id: 'raider',              name: 'Raider',               caps: [20, 150],   lootChems: ['jet', 'psycho', 'buffout', 'radx', 'radaway'] },
-    { id: 'feral_ghoul',         name: 'Feral Ghoul',          caps: [0, 20],     lootChems: ['radaway', 'radx'], countMultiplier: 1.5 },
+    { id: 'feral_ghoul',         name: 'Feral Ghoul',          caps: [1, 20],     lootChems: ['radaway', 'radx'], countMultiplier: 1.75 },
     { id: 'super_mutant',        name: 'Super Mutant',         caps: [10, 80],    lootChems: ['psycho', 'buffout', 'stimpak'] },
     { id: 'yao_guai',            name: 'Yao Guai',             caps: [0, 0],      lootChems: [] },
     { id: 'brotherhood_paladin', name: 'Brotherhood Paladin',  caps: [500, 1000], lootChems: ['stimpak', 'medx'], eventOnly: true },
   ],
   enemyStats: {
-    raider:              { health: 40,  damage: [10, 30], xpReward: 15 },
-    feral_ghoul:         { health: 20,  damage: [6, 16],  xpReward: 8  },
-    super_mutant:        { health: 70,  damage: [15, 35], xpReward: 25 },
-    yao_guai:            { health: 85,  damage: [28, 48], xpReward: 40 },
+    raider:              { health: 40,  damage: [10, 30], xpReward: 25 },
+    feral_ghoul:         { health: 20,  damage: [6, 16],  xpReward: 15  },
+    super_mutant:        { health: 70,  damage: [15, 35], xpReward: 50 },
+    yao_guai:            { health: 85,  damage: [28, 48], xpReward: 70 },
     brotherhood_paladin: { health: 130, damage: [30, 55], xpReward: 100 },
   },
   availableChemIds: ['jet', 'psycho', 'medx', 'buffout', 'mentats', 'radx', 'radaway', 'stimpak', 'ultrajet', 'daytripper', 'gwinnett_ale'],
@@ -160,8 +158,6 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   roads: CW_ROADS,
   guns: CW_GUNS,
   gunIds: CW_GUN_IDS,
-  ammoPrice: CW_AMMO_PRICE,
-  ammoWithPurchase: CW_AMMO_WITH_PURCHASE,
   armors: ARMORS,
   armorIds: ARMOR_IDS,
   startingLocation: 'diamond_city',
@@ -220,8 +216,6 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
   roads: CAP_ROADS,
   guns: CAP_GUNS,
   gunIds: CAP_GUN_IDS,
-  ammoPrice: CAP_AMMO_PRICE,
-  ammoWithPurchase: CAP_AMMO_WITH_PURCHASE,
   startingLocation: 'rivet_city',
   travelEvents: CAP_EVENTS,
   transitQuotes: CAP_QUOTES,
@@ -287,8 +281,6 @@ const MOJAVE_WASTELAND_MODE: GameModeConfig = {
   roads: MOJ_ROADS,
   guns: MOJ_GUNS,
   gunIds: MOJ_GUN_IDS,
-  ammoPrice: MOJ_AMMO_PRICE,
-  ammoWithPurchase: MOJ_AMMO_WITH_PURCHASE,
   startingLocation: 'goodsprings',
   travelEvents: MOJ_EVENTS,
   transitQuotes: MOJ_QUOTES,

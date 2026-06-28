@@ -99,6 +99,18 @@ export function resolveFight(
   if (player.gun.ammo === 0) {
     return { player, combat: { ...combat, log: [...combat.log, "You squeeze the trigger — click. No ammo."] }, animSteps: [] }
   }
+  if ((player.gun.cooldownRemaining ?? 0) > 0) {
+    const remaining = player.gun.cooldownRemaining! - 1
+    const updatedGun = { ...player.gun, cooldownRemaining: remaining }
+    const msg = remaining > 0
+      ? `Reloading ${player.gun.name}… (${remaining} turn${remaining > 1 ? 's' : ''} remaining)`
+      : `Reloading ${player.gun.name}… Ready next turn.`
+    return {
+      player: { ...player, gun: updatedGun },
+      combat: { ...combat, log: [...combat.log, msg] },
+      animSteps: [],
+    }
+  }
 
   const log: string[] = []
   const animSteps: AnimStep[] = []
@@ -112,24 +124,28 @@ export function resolveFight(
   let damageDealt = 0
 
   // ── Player fires ─────────────────────────────────────────────────────────
+  const shotsPerTurn = gun.shotsPerTurn ?? 1
   const playerCanFire = gun.ammo >= gun.ammoPerShot
   if (playerCanFire) {
     gun.ammo -= gun.ammoPerShot
-    const target = updatedEnemies.find(e => !e.dead)
-    if (target) {
-      const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+    if (gun.cooldownTurns) gun.cooldownRemaining = gun.cooldownTurns
+    const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+    for (let s = 0; s < shotsPerTurn; s++) {
+      const target = updatedEnemies.find(e => !e.dead)
+      if (!target) break
+      const shotLabel = shotsPerTurn > 1 ? ` (shot ${s + 1})` : ''
       if (rng() < effectiveAccuracy) {
         const dealt = Math.min(gun.damage, target.health)
         damageDealt += dealt
         target.health = Math.max(0, target.health - gun.damage)
         target.dead = target.health <= 0
         const logLine = target.dead
-          ? `You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`
-          : `You fire the ${gun.name} at ${target.name}. Hit! (${gun.damage} damage)`
+          ? `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`
+          : `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage)`
         log.push(logLine)
         animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
       } else {
-        const logLine = `You fire the ${gun.name} at ${target.name}. Missed.`
+        const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
         log.push(logLine)
         animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
       }

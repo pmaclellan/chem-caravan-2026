@@ -1,6 +1,6 @@
 export { SETTLEMENTS, ROADS, SETTLEMENT_IDS } from './settlements'
 export type { Settlement, Road } from './settlements'
-export { GUNS, GUN_IDS, AMMO_PRICE, AMMO_WITH_PURCHASE } from './guns'
+export { GUNS, GUN_IDS } from './guns'
 export type { GunDefinition } from './guns'
 export { TRAVEL_EVENT_DEFS, STASH_CHEMS, STASH_QUANTITY_MIN, STASH_QUANTITY_MAX, BROTHERHOOD_TOLL } from './events'
 export type { TravelEventDefinition } from './events'

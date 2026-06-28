@@ -171,7 +171,6 @@ export function buyBrahmin(
 export function buyGun(
   player: PlayerState,
   gunDef: GunDefinition,
-  ammoWithPurchase = 20,
 ): { player: PlayerState; error?: string } {
   if (player.ownedGuns?.[gunDef.id]) return { player, error: "You already own this gun." }
   if (player.caps < gunDef.price) return { player, error: "Not enough caps." }
@@ -180,8 +179,11 @@ export function buyGun(
     name: gunDef.name,
     accuracy: gunDef.accuracy,
     damage: gunDef.damage,
-    ammo: ammoWithPurchase,
+    ammo: gunDef.ammoWithPurchase,
     ammoPerShot: gunDef.ammoPerShot,
+    ammoPrice: gunDef.ammoPrice,
+    ...(gunDef.shotsPerTurn   ? { shotsPerTurn:   gunDef.shotsPerTurn   } : {}),
+    ...(gunDef.cooldownTurns  ? { cooldownTurns:  gunDef.cooldownTurns  } : {}),
   }
   // Flush current gun's ammo into ownedGuns before equipping the new one
   const ownedGuns = { ...(player.ownedGuns ?? {}), [gunDef.id]: newGunState }
@@ -284,10 +286,9 @@ export function healMount(
 export function buyAmmo(
   player: PlayerState,
   rounds: number,
-  ammoPrice = 5,
 ): { player: PlayerState; error?: string } {
   if (!player.gun) return { player, error: "You don't have a gun." }
-  const cost = rounds * ammoPrice
+  const cost = rounds * player.gun.ammoPrice
   if (player.caps < cost) return { player, error: "Not enough caps." }
   return {
     player: { ...player, caps: player.caps - cost, gun: { ...player.gun, ammo: player.gun.ammo + rounds } },
