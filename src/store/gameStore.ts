@@ -71,7 +71,7 @@ interface GameStore {
   gameId: string | null
   gameState: GameState | null
   activeGameSummaries: Record<GameModeId, ActiveGameSummary | null> | null
-  freePlaySummary: ActiveGameSummary | null
+  freePlaySummaries: Record<GameModeId, ActiveGameSummary | null>
   isSaving: boolean
   saveError: string | null
   toast: string | null
@@ -233,7 +233,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     gameId: null,
     gameState: null,
     activeGameSummaries: null,
-    freePlaySummary: null,
+    freePlaySummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null },
     isSaving: false,
     saveError: null,
     toast: null,
@@ -243,13 +243,14 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     startNewGame: async (characterName, userId, modeId = 'commonwealth', gameType = 'standard') => {
       if (gameType === 'free_play') {
-        // One active free play slot total — archive any existing free play games
+        // Archive existing free play game for this mode only
         const { data: existing } = await supabase
           .from('games')
           .select('id')
           .eq('user_id', userId)
           .eq('status', 'active')
           .eq('game_type', 'free_play')
+          .eq('mode', modeId)
 
         if (existing && existing.length > 0) {
           await supabase.from('games').update({ status: 'bankrupt' }).in('id', existing.map(r => r.id))
@@ -326,7 +327,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         .order('created_at', { ascending: false })
 
       if (error || !data) {
-        set({ activeGameSummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null }, freePlaySummary: null })
+        set({ activeGameSummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null }, freePlaySummaries: { commonwealth: null, capital_wasteland: null, mojave_wasteland: null } })
         return
       }
 
@@ -335,34 +336,27 @@ export const useGameStore = create<GameStore>((set, get) => {
         capital_wasteland: null,
         mojave_wasteland: null,
       }
-      let freePlaySummary: ActiveGameSummary | null = null
+      const freePlaySummaries: Record<GameModeId, ActiveGameSummary | null> = {
+        commonwealth: null, capital_wasteland: null, mojave_wasteland: null,
+      }
 
       for (const row of data as GameRow[]) {
         const modeId = (row.mode ?? row.state?.mode) as GameModeId | undefined
         if (!modeId) continue
-
+        const summary: ActiveGameSummary = {
+          id: row.id,
+          characterName: row.character_name,
+          turn: row.state?.world?.turn ?? 0,
+          modeId,
+        }
         if ((row.game_type ?? 'standard') === 'free_play') {
-          if (!freePlaySummary) {
-            freePlaySummary = {
-              id: row.id,
-              characterName: row.character_name,
-              turn: row.state?.world?.turn ?? 0,
-              modeId,
-            }
-          }
+          if (!freePlaySummaries[modeId]) freePlaySummaries[modeId] = summary
         } else {
-          if (summaries[modeId] === null) {
-            summaries[modeId] = {
-              id: row.id,
-              characterName: row.character_name,
-              turn: row.state?.world?.turn ?? 0,
-              modeId,
-            }
-          }
+          if (!summaries[modeId]) summaries[modeId] = summary
         }
       }
 
-      set({ activeGameSummaries: summaries, freePlaySummary })
+      set({ activeGameSummaries: summaries, freePlaySummaries })
     },
 
     loadGameById: async (gameId) => {
