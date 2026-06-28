@@ -51,7 +51,7 @@ export const GUNS: Record<string, GunDefinition> = {
     name: 'Minigun',
     price: 2200,
     accuracy: 0.35,
-    damage: 40,
+    damage: 60,
     ammoPerShot: 3,
     shotsPerTurn: 3,
     strayChance: 0.40,
