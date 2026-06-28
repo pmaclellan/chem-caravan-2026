@@ -202,7 +202,7 @@ describe('resolveFight', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
     // Player has 2 ammo, 3 guards — player uses 1, guard 1 uses 1, guard 2 and 3 get nothing
-    const player = makePlayer({ guards: 3, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 2, ammoPerShot: 1 } })
+    const player = makePlayer({ guards: 3, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 2, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.5, testMode)
     const { player: result } = resolveFight(player, combat, testMode)
     expect(result.gun!.ammo).toBe(0)
