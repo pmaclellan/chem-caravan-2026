@@ -88,10 +88,15 @@ export default function Home() {
 
   const existingRun = gameType === 'standard'
     ? activeGameSummaries?.[selectedMode]
-    : freePlaySummary
+    : freePlaySummary?.modeId === selectedMode ? freePlaySummary : null
+
+  // A FP run exists for a DIFFERENT mode — starting here would abandon it
+  const conflictingFpRun = gameType === 'free_play' && freePlaySummary?.modeId !== selectedMode
+    ? freePlaySummary
+    : null
 
   function requestNewGame() {
-    if (existingRun) {
+    if (existingRun || conflictingFpRun) {
       setConfirmAbandon(true)
     } else {
       setShowNewGame(true)
@@ -266,7 +271,9 @@ export default function Home() {
               {confirmAbandon && (
                 <div className="border border-pip-red rounded p-3 space-y-2">
                   <div className="text-pip-red text-sm font-display">
-                    ABANDON active run as {existingRun?.characterName}?
+                    ABANDON {conflictingFpRun
+                      ? `${GAME_MODES[conflictingFpRun.modeId].name} Free Play run as ${conflictingFpRun.characterName}?`
+                      : `active run as ${existingRun?.characterName}?`}
                   </div>
                   <div className="flex gap-2">
                     <button
