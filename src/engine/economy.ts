@@ -185,6 +185,7 @@ export function buyGun(
     ...(gunDef.shotsPerTurn   ? { shotsPerTurn:   gunDef.shotsPerTurn   } : {}),
     ...(gunDef.cooldownTurns  ? { cooldownTurns:  gunDef.cooldownTurns  } : {}),
     ...(gunDef.splashRatios   ? { splashRatios:   gunDef.splashRatios   } : {}),
+    ...(gunDef.strayChance    ? { strayChance:    gunDef.strayChance    } : {}),
   }
   // Flush current gun's ammo into ownedGuns before equipping the new one
   const ownedGuns = { ...(player.ownedGuns ?? {}), [gunDef.id]: newGunState }

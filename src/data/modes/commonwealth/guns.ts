@@ -10,6 +10,7 @@ export interface GunDefinition {
   shotsPerTurn?: number    // fires this many shot rolls per trigger pull (minigun)
   cooldownTurns?: number   // turns of reload after firing (missile launcher)
   splashRatios?: number[]  // on hit: apply these fractions of base damage to subsequent alive enemies
+  strayChance?: number     // on miss: chance a stray shot hits a random other alive enemy instead
   description: string
 }
 
@@ -88,9 +89,10 @@ export const GUNS: Record<string, GunDefinition> = {
     damage: 40,
     ammoPerShot: 3,
     shotsPerTurn: 3,
+    strayChance: 0.40,
     ammoPrice: 4,
     ammoWithPurchase: 60,
-    description: "Fires three rounds per pull. Rarely hits with all three. When it does, nothing survives.",
+    description: "Sprays three rounds per pull. Low accuracy on each, but misses can clip other enemies in the group.",
   },
   missile_launcher: {
     id: 'missile_launcher',
