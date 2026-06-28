@@ -30,6 +30,7 @@ import {
   buyPowerArmorGuard,
   buyBrahmin,
   buyGun,
+  equipGun as equipGunFn,
   buyAmmo,
   buyArmor,
   repairArmor,
@@ -121,6 +122,7 @@ interface GameStore {
   purchasePowerArmorGuard: (count: number) => void
   purchaseBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
+  equipGun: (gunId: string) => void
   purchaseAmmo: (rounds: number) => void
   purchaseArmor: (armorId: string) => void
   repairArmor: () => void
@@ -151,6 +153,14 @@ function normalizeState(state: GameState): GameState {
       hasSaddle: state.player.hasSaddle ?? false,
       mount: state.player.mount ?? null,
       conditions: state.player.conditions ?? [],
+      ownedGuns: (() => {
+        const owned = state.player.ownedGuns ?? {}
+        // Migrate saves that predate ownedGuns: if player has a gun, register it
+        if (state.player.gun && !owned[state.player.gun.id]) {
+          return { ...owned, [state.player.gun.id]: state.player.gun }
+        }
+        return owned
+      })(),
     },
   }
 }
@@ -786,6 +796,15 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyGun(state.player, gunDef, mc.ammoWithPurchase)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Purchased ${gunDef.name} with ${mc.ammoWithPurchase} rounds.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    equipGun: (gunId) => {
+      mutate(state => {
+        const { player, error } = equipGunFn(state.player, gunId)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: `Equipped ${player.gun!.name}.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },

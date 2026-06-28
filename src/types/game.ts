@@ -81,6 +81,7 @@ export interface PlayerState {
   ageOfDebt: number  // turns elapsed since debt was first taken
   inventory: Record<string, InventoryEntry>
   gun: GunState | null
+  ownedGuns: Record<string, GunState>  // all purchased guns keyed by id; ammo persists when unequipped
   armor: ArmorState | null
   tamingTool: TamingToolState | null
   hasSaddle: boolean
