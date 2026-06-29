@@ -138,12 +138,12 @@ describe('dropExcessInventory', () => {
 describe('loseBrahmin', () => {
   it('decrements brahmin', () => {
     const player = makePlayer({ brahmin: 2 })
-    expect(loseBrahmin(player).brahmin).toBe(1)
+    expect(loseBrahmin(player).player.brahmin).toBe(1)
   })
 
   it('does not go below 0', () => {
     const player = makePlayer({ brahmin: 0 })
-    expect(loseBrahmin(player).brahmin).toBe(0)
+    expect(loseBrahmin(player).player.brahmin).toBe(0)
   })
 
   it('trims inventory when capacity drops', () => {
@@ -152,8 +152,9 @@ describe('loseBrahmin', () => {
       brahmin: 1,
       inventory: { jet: { quantity: 25, pricePaid: 80 } },
     })
-    const result = loseBrahmin(player)
+    const { player: result, dropped } = loseBrahmin(player)
     expect(result.brahmin).toBe(0)
     expect(totalInventoryItems(result.inventory)).toBeLessThanOrEqual(20)
+    expect(Object.values(dropped).reduce((s, n) => s + n, 0)).toBe(5)
   })
 })
