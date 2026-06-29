@@ -47,6 +47,9 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 150,
+    priceModifier: 0.90,
+    stockMultiplier: 1.4,      // sin city of the Commonwealth — up to 1.4× normal stock
+    availabilityBonus: 0.20,   // more chems reliably in stock
     imageUrl: '/assets/settlements/commonwealth/goodneighbor.webp',
   },
   park_street_station: {
@@ -72,6 +75,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 0,
+    stockMultiplier: 1.2,      // major trading hub of the Commonwealth — up to 1.2× normal stock
     imageUrl: '/assets/settlements/commonwealth/bunker_hill.webp',
   },
   covenant: {
@@ -133,6 +137,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 100,
+    stockMultiplier: 0.8,      // limited stock due to remote location
     imageUrl: '/assets/settlements/commonwealth/the_castle.webp',
     priceModifier: 1.20,
   },
@@ -172,6 +177,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     doctorCost: 0,
     imageUrl: '/assets/settlements/commonwealth/somerville_place.webp',
     priceModifier: 1.50,
+    stockMultiplier: 0.8,      // limited stock due to remote location
   }
 }
 

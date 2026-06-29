@@ -22,11 +22,11 @@ interface LeaderboardRow {
 // Minimum game_version (major*10000+minor*100+patch) required per mode.
 // Rows with NULL game_version (pre-versioning) are always excluded by the gte filter.
 const MIN_GAME_VERSION: Partial<Record<LbTab, number>> & { default: number } = {
-  default:           500,  // v0.5.0
-  commonwealth:      500,
-  capital_wasteland: 500,
-  mojave_wasteland:  500,
-  global:            500,
+  default:           900,  // v0.9.0
+  commonwealth:      900,
+  capital_wasteland: 900,
+  mojave_wasteland:  900,
+  global:            900,
 }
 
 const TABS: { id: LbTab; label: string }[] = [
