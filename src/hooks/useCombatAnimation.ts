@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { AnimStep, EnemyUnit } from '../types/game'
 
 const INTER_SHOT_MS      = 620   // gap between each shot starting
+const BURST_INTER_MS     = 130   // gap between shots within a burst (rapid fire)
 const SHOOTER_FLASH_MS   = 280   // how long the shooter glows before the bullet lands
 const TARGET_FLASH_DELAY = 220   // after shooter flash, when the enemy reacts (hit or dodge)
 const RETALIATION_PAUSE  = 900   // extra pause before enemies strike back
@@ -194,6 +195,40 @@ export function useCombatAnimation(
         }
 
         offset += INTER_SHOT_MS
+
+      } else if (step.kind === 'burst') {
+        // ── Rapid-fire burst — shots staggered by BURST_INTER_MS, all close together ──
+        // Player fires once (ammo already deducted as a block)
+        workingAmmo = Math.max(0, workingAmmo - step.shots.length)
+        const ammoAtBurst = workingAmmo
+        timersRef.current.push(setTimeout(() => {
+          setState(s => ({ ...s, activeShooterIdx: -1, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtBurst }))
+        }, offset))
+
+        // Each shot in the burst lands BURST_INTER_MS apart
+        step.shots.forEach((shot, si) => {
+          const tHit = offset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
+          timersRef.current.push(setTimeout(() => {
+            if (shot.hit && shot.targetId) {
+              workingHealth[shot.targetId]  = shot.targetHealthAfter
+              workingHitKeys[shot.targetId] = (workingHitKeys[shot.targetId] ?? 0) + 1
+              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'hit' }
+            } else if (!shot.hit && shot.targetId) {
+              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
+            }
+            setState(s => ({
+              ...s,
+              activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
+              displayEnemyHealth: shot.hit ? { ...workingHealth } : s.displayEnemyHealth,
+              enemyHitKeys:       shot.hit ? { ...workingHitKeys } : s.enemyHitKeys,
+              enemyAnimInfo:      { ...workingAnimInfo },
+            }))
+            onLogLineRef.current?.(shot.logLine)
+          }, tHit))
+        })
+
+        // Advance offset past the entire burst duration
+        offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
 
       } else if (step.kind === 'blast') {
         // ── Blast (e.g. missile launcher) — primary + splash land simultaneously ──
