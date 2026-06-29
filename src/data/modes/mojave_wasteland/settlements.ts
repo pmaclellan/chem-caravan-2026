@@ -13,6 +13,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: false,
     doctorCost: 300,
+    availabilityBonus: 0.20,   // more chems reliably in stock
     imageUrl: '/assets/settlements/mojave/the_strip.webp',
   },
   freeside: {
@@ -26,6 +27,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 300,
+    availabilityBonus: 0.20,   // more chems reliably in stock
     imageUrl: '/assets/settlements/mojave/Freeside.webp',
   },
   goodsprings: {
@@ -127,6 +129,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     doctorCost: 100,
     imageUrl: '/assets/settlements/mojave/Red_Rock_Canyon.webp',
     priceModifier: 0.80,
+    stockMultiplier: 1.4,
+    availabilityBonus: 0.20,   // more chems reliably in stock
   },
   sloan: {
     id: 'sloan',

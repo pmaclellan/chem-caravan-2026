@@ -65,6 +65,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: false,
     doctorCost: 150,
+    priceModifier: 0.80,
+    availabilityBonus: 0.10,   // more chems reliably in stock
     imageUrl: '/assets/settlements/capital/Underworld_prehistoric_animals.webp',
   },
   washington_monument: {
@@ -89,6 +91,8 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 0,
+    availabilityBonus: 0.20,   // more chems reliably in stock
+    priceModifier: 1.10,
     imageUrl: '/assets/settlements/capital/Paradise_Falls_Main_compound_gate.webp',
   },
   canterbury_commons: {
@@ -101,6 +105,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: false,
     hasFollowers: true,
     doctorCost: 0,
+    availabilityBonus: 0.10,   // more chems reliably in stock
     imageUrl: '/assets/settlements/capital/Canterbury_commons1.webp',
   },
   little_lamplight: {
@@ -113,6 +118,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: false,
     hasFollowers: false,
     doctorCost: 0,
+    availabilityBonus: -0.10,   // fewer chems reliably in stock
     imageUrl: '/assets/settlements/capital/Little_Lamplight_exterior.webp',
   },
   big_town: {
@@ -149,6 +155,7 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     hasArmory: false,
     hasFollowers: false,
     doctorCost: 0,
+    availabilityBonus: -0.20,   // fewer chems reliably in stock
     imageUrl: '/assets/settlements/capital/Girdershade_general_view.webp',
   },
 }

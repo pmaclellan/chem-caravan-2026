@@ -76,6 +76,7 @@ export const GUNS: Record<string, GunDefinition> = {
     name: 'Laser Musket',
     price: 1500,
     accuracy: 0.45,
+    strayChance: 0.30,
     damage: 130,
     ammoPerShot: 2,
     ammoPrice: 15,
