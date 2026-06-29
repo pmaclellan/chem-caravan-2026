@@ -3,24 +3,37 @@ import type { GameModeConfig } from '../data/modes'
 import type { MarketEvent, SettlementMarket, WorldState } from '../types/game'
 import { rng, rngBetween, rngInt, rngPick } from './rng'
 
-export function initializeMarket(turn: number, availableChemIds: string[], priceModifier = 1.0): SettlementMarket {
+export function initializeMarket(
+  turn: number,
+  availableChemIds: string[],
+  priceModifier = 1.0,
+  stockMultiplier = 1.0,
+  availabilityBonus = 0,
+): SettlementMarket {
   const prices: Record<string, number> = {}
   const stock: Record<string, number> = {}
 
   for (const chemId of availableChemIds) {
     const chem = CHEMS[chemId]
-    if (rng() < chem.availability) {
+    if (rng() < Math.min(1, chem.availability + availabilityBonus)) {
       const variance = (rng() - 0.5) * 2 * chem.priceVariance
       prices[chemId] = Math.round((chem.basePrice * (1 + variance) * priceModifier) / 5) * 5
-      stock[chemId] = rngInt(1, chem.maxStock)
+      stock[chemId] = rngInt(1, Math.max(1, Math.round(chem.maxStock * stockMultiplier)))
     }
   }
 
   return { prices, stock, lastRefreshed: turn }
 }
 
-export function refreshMarket(_existing: SettlementMarket, turn: number, availableChemIds: string[], priceModifier = 1.0): SettlementMarket {
-  return initializeMarket(turn, availableChemIds, priceModifier)
+export function refreshMarket(
+  _existing: SettlementMarket,
+  turn: number,
+  availableChemIds: string[],
+  priceModifier = 1.0,
+  stockMultiplier = 1.0,
+  availabilityBonus = 0,
+): SettlementMarket {
+  return initializeMarket(turn, availableChemIds, priceModifier, stockMultiplier, availabilityBonus)
 }
 
 export function applyMarketEvents(

@@ -9,7 +9,9 @@ export interface Settlement {
   hasFollowers: boolean
   doctorCost: number    // caps to heal fully
   imageUrl: string | null
-  priceModifier?: number  // optional multiplier applied to all chem prices at this settlement (e.g. 0.80 = 20% off)
+  priceModifier?: number        // multiplier on all chem prices (e.g. 0.80 = 20% cheaper)
+  stockMultiplier?: number      // multiplier on max stock per chem (e.g. 2.0 = up to 2× normal quantity)
+  availabilityBonus?: number    // flat bonus added to each chem's availability roll (e.g. 0.20 = 20% more likely to be in stock)
 }
 
 export interface Road {

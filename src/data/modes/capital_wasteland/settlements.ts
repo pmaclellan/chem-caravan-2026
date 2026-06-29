@@ -9,10 +9,11 @@ export const SETTLEMENTS: Record<string, Settlement> = {
     faction: 'Independent',
     hasDoctor: true,
     hasLoanshark: true,
-
     hasArmory: true,
     hasFollowers: true,
     doctorCost: 200,
+    stockMultiplier: 2.0,      // largest market in the Capital Wasteland — up to 2× normal stock
+    availabilityBonus: 0.20,   // more chems reliably in stock
     imageUrl: '/assets/settlements/capital/Rivet_City_Market.webp',
   },
   megaton: {
