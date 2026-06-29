@@ -10,7 +10,6 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
   const mc       = GAME_MODES[mode]
   const store    = useGameStore()
 
-  // Per-gun ammo qty inputs
   const [ammoQty, setAmmoQty] = useState<Record<string, number>>({})
   const getQty = (id: string) => ammoQty[id] ?? 10
   const setQty = (id: string, v: number) => setAmmoQty(q => ({ ...q, [id]: Math.max(1, v) }))
@@ -18,23 +17,28 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
   const hasPA = player.armor?.id === 'power_armor'
 
   return (
-    <div className="border border-pip-border p-3 rounded space-y-1">
-      <div className="pip-label mb-2">ARMORY</div>
+    <div className="border border-pip-border p-3 rounded space-y-3">
+      <div className="pip-label">ARMORY</div>
 
       {/* ── Guns ─────────────────────────────────────────────────────────── */}
-      <div className="space-y-px">
-        {mc.gunIds.map(gunId => {
+      <div className="border border-pip-border-dim rounded overflow-hidden">
+        {mc.gunIds.map((gunId, i) => {
           const def      = mc.guns[gunId]
           const equipped = player.gun?.id === gunId
           const owned    = !!player.ownedGuns?.[gunId]
           const ammo     = equipped ? (player.gun?.ammo ?? 0) : (player.ownedGuns?.[gunId]?.ammo ?? 0)
           const paLocked = !!def.requiresPowerArmor && !hasPA
+          const isLast   = i === mc.gunIds.length - 1
 
-          const mechanic = def.shotsPerTurn && def.shotsPerTurn > 1
-            ? `${def.shotsPerTurn} shots/turn`
-            : def.ammoPerShot > 1 ? `${def.ammoPerShot} rds/shot` : null
-          const cooldownLabel = def.cooldownTurns ? `${def.cooldownTurns}-turn reload` : null
-          const strayLabel    = def.strayChance   ? `${Math.round(def.strayChance * 100)}% stray` : null
+          const statParts: string[] = [
+            `Acc ${Math.round(def.accuracy * 100)}%`,
+            `${def.damage} dmg`,
+          ]
+          if (def.shotsPerTurn && def.shotsPerTurn > 1) statParts.push(`${def.shotsPerTurn} shots/turn`)
+          else if (def.ammoPerShot > 1)                  statParts.push(`${def.ammoPerShot} rds/shot`)
+          if (def.strayChance)   statParts.push(`${Math.round(def.strayChance * 100)}% stray`)
+          if (def.cooldownTurns) statParts.push(`${def.cooldownTurns}-turn reload`)
+          const statsStr = statParts.join(' · ')
 
           const qty  = getQty(gunId)
           const cost = qty * def.ammoPrice
@@ -42,61 +46,84 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
           return (
             <div
               key={gunId}
-              className={`rounded px-2 py-2 transition-colors ${
-                equipped
-                  ? 'bg-pip-border-dim border-l-2 border-pip-green'
-                  : 'border-l-2 border-transparent'
-              }`}
+              className={[
+                !isLast ? 'border-b border-pip-border-dim' : '',
+                equipped ? 'border-l-2 border-l-pip-green' : 'border-l-2 border-l-transparent',
+              ].join(' ')}
+              style={equipped ? { background: 'rgba(74,123,54,0.08)' } : undefined}
             >
-              {/* Row 1: name + action */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-pip-green text-sm font-display leading-tight min-w-0 truncate">
-                  {equipped && <span className="text-pip-green mr-1 opacity-60">▶</span>}
-                  {def.name}
-                </div>
-
-                {equipped ? (
-                  <span className={`pip-btn text-xs flex-shrink-0 opacity-60 cursor-default text-[10px] px-2 py-0.5${paLocked ? ' border-pip-red text-pip-red' : ''}`}>
-                    {paLocked ? 'NO PA' : 'EQUIPPED'}
-                  </span>
-                ) : owned ? (
-                  <button
-                    className="pip-btn text-[10px] px-2 py-0.5 flex-shrink-0"
-                    disabled={paLocked}
-                    onClick={() => store.equipGun(gunId)}
-                  >
-                    EQUIP
-                  </button>
+              {/* ── Main row ── */}
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                {owned ? (
+                  /* Owned: name prominent, stats below on second row */
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5">
+                      {equipped && (
+                        <span className="text-pip-green text-[10px] font-mono opacity-70 flex-shrink-0">▶</span>
+                      )}
+                      <span className="font-display text-sm text-pip-green leading-tight truncate">
+                        {def.name}
+                      </span>
+                      {def.requiresPowerArmor && (
+                        <span className={`text-[9px] font-mono flex-shrink-0 ${hasPA ? 'text-pip-green-dim' : 'text-pip-red'}`}>
+                          [PA]
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] font-mono text-pip-green-dim leading-tight mt-0.5">
+                      {statsStr}
+                    </div>
+                  </div>
                 ) : (
-                  <button
-                    className="pip-btn-amber text-[10px] px-2 py-0.5 flex-shrink-0"
-                    disabled={player.caps < def.price || paLocked}
-                    onClick={() => store.purchaseGun(gunId)}
-                  >
-                    {def.price.toLocaleString()} ¤
-                  </button>
+                  /* Unowned: single compact line — name · stats inline */
+                  <div className="flex-1 min-w-0 flex items-baseline gap-1.5 flex-wrap">
+                    <span className="font-display text-sm text-pip-green-dim leading-tight whitespace-nowrap">
+                      {def.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-pip-border leading-tight">
+                      {statsStr}
+                      {def.requiresPowerArmor && (
+                        <span className={`ml-1 ${hasPA ? '' : 'text-pip-red'}`}>[PA]</span>
+                      )}
+                    </span>
+                  </div>
                 )}
+
+                {/* Action button */}
+                <div className="flex-shrink-0">
+                  {equipped ? (
+                    <span className="text-[10px] font-mono text-pip-green opacity-50 tracking-widest">
+                      EQUIPPED
+                    </span>
+                  ) : owned ? (
+                    <button
+                      className="pip-btn text-[10px] px-2 py-0.5"
+                      disabled={paLocked}
+                      onClick={() => store.equipGun(gunId)}
+                    >
+                      EQUIP
+                    </button>
+                  ) : (
+                    <button
+                      className="pip-btn-amber text-[10px] px-2 py-0.5"
+                      disabled={player.caps < def.price || paLocked}
+                      onClick={() => store.purchaseGun(gunId)}
+                    >
+                      {def.price.toLocaleString()} ¤
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Row 2: stats */}
-              <div className="text-[10px] text-pip-green-dim font-mono mt-0.5 leading-tight">
-                Acc {Math.round(def.accuracy * 100)}%
-                {' · '}{def.damage} dmg
-                {mechanic    && ` · ${mechanic}`}
-                {strayLabel  && ` · ${strayLabel}`}
-                {cooldownLabel && ` · ${cooldownLabel}`}
-                {def.requiresPowerArmor && <span className="text-pip-red"> · req. PA</span>}
-              </div>
-
-              {/* Row 3: inline ammo controls (owned guns only) */}
+              {/* ── Ammo strip (owned guns only) ── */}
               {owned && (
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 px-2 pb-1.5 flex-wrap">
                   <span className="text-[10px] font-mono text-pip-green-dim whitespace-nowrap">
-                    ◈ {ammo} rds · {def.ammoPrice}¤/rd
+                    ◈ {ammo} rds · {def.ammoPrice} ¤/rd
                   </span>
                   <div className="flex items-center gap-1 ml-auto">
                     <button
-                      className="w-5 h-5 text-xs border border-pip-border text-pip-green-dim rounded leading-none hover:border-pip-green hover:text-pip-green transition-colors"
+                      className="w-5 h-5 text-[11px] border border-pip-border-dim text-pip-green-dim rounded-sm leading-none hover:border-pip-green hover:text-pip-green transition-colors flex items-center justify-center"
                       onClick={() => setQty(gunId, qty - 1)}
                     >−</button>
                     <input
@@ -104,10 +131,10 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                       min={1}
                       value={qty}
                       onChange={e => setQty(gunId, parseInt(e.target.value) || 1)}
-                      className="pip-input w-10 text-center text-xs px-1 py-0.5 h-5"
+                      className="pip-input w-10 text-center text-[10px] px-1 py-0 h-5"
                     />
                     <button
-                      className="w-5 h-5 text-xs border border-pip-border text-pip-green-dim rounded leading-none hover:border-pip-green hover:text-pip-green transition-colors"
+                      className="w-5 h-5 text-[11px] border border-pip-border-dim text-pip-green-dim rounded-sm leading-none hover:border-pip-green hover:text-pip-green transition-colors flex items-center justify-center"
                       onClick={() => setQty(gunId, qty + 1)}
                     >+</button>
                     <button
@@ -126,7 +153,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
       </div>
 
       {/* ── Armor ────────────────────────────────────────────────────────── */}
-      <div className="border-t border-pip-border pt-2 mt-2 space-y-2">
+      <div className="border-t border-pip-border pt-2 space-y-2">
         <div className="pip-label">ARMOR</div>
         {mc.armorIds.map(armorId => {
           const armor    = mc.armors[armorId]
