@@ -5,8 +5,19 @@ import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
 import { minEnemyCount, runEscapeChance } from './tuning'
 
-const SPAWN_COUNT_FACTOR   = 7     // base: dangerLevel × SPAWN_COUNT_FACTOR
+const SPAWN_COUNT_FACTOR = 5  // base: dangerLevel × SPAWN_COUNT_FACTOR
 
+export function computeEnemyCount(
+  dangerLevel: number,
+  countMultiplier: number,
+  scaleFactor: number,
+  turn: number,
+  gameType: GameType,
+): number {
+  const baseCount = Math.max(1, Math.round(dangerLevel * SPAWN_COUNT_FACTOR))
+  const formulaCount = Math.max(1, Math.round(baseCount * countMultiplier * scaleFactor))
+  return Math.max(formulaCount, minEnemyCount(turn, dangerLevel, gameType))
+}
 
 export function initiateCombat(
   dangerLevel: number,
@@ -29,9 +40,7 @@ export function initiateCombat(
     ? (modeConfig.enemies.find(e => e.id === forcedEnemyTypeId) ?? rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
     : (rngWeightedPick(weightedPool) ?? modeConfig.enemies[0])
 
-  const baseCount = Math.max(1, Math.round(dangerLevel * SPAWN_COUNT_FACTOR))
-  const formulaCount = Math.max(1, Math.round(baseCount * (enemyType.countMultiplier ?? 1) * scaleFactor))
-  const count = forcedCount ?? Math.max(formulaCount, minEnemyCount(turn, dangerLevel, gameType))
+  const count = forcedCount ?? computeEnemyCount(dangerLevel, enemyType.countMultiplier ?? 1, scaleFactor, turn, gameType)
 
   const stats = modeConfig.enemyStats[enemyType.id] ?? { health: 40, damage: [10, 30] as [number, number] }
 

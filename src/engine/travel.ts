@@ -4,7 +4,7 @@ import type { Road } from '../data/modes'
 import type { GameType, PlayerState, TravelEvent } from '../types/game'
 import { CHEMS } from '../data/chems'
 import { rng, rngInt, rngPick, rngWeightedPick } from './rng'
-import { minEnemyCount } from './tuning'
+import { computeEnemyCount } from './combat'
 
 export function getAdjacentRoads(mc: GameModeConfig, settlementId: string): Road[] {
   return mc.roads.filter(r => r.from === settlementId || r.to === settlementId)
@@ -62,7 +62,7 @@ export function selectTravelEvent(
 
   // Combat roll — dangerLevel scaled by free play difficulty ramp.
   if (rng() < Math.min(1, road.dangerLevel * scaleFactor)) {
-    return buildEventPayload('raider_ambush', 'AMBUSH', 'Armed hostiles block the road ahead.', modeConfig, road, turn, gameType)
+    return buildEventPayload('raider_ambush', 'AMBUSH', 'Armed hostiles block the road ahead.', modeConfig, road, turn, gameType, scaleFactor)
   }
 
   // Non-combat event roll — only reached when no ambush this trip.
@@ -117,6 +117,7 @@ function buildEventPayload(
   road?: Road,
   turn = 0,
   gameType: GameType = 'standard',
+  scaleFactor = 1,
 ): TravelEvent {
   const stashChemsDef = modeConfig.travelEvents.find(e => e.type === 'chem_stash')
   const stashChems = stashChemsDef ? getStashChems(modeConfig) : ['jet', 'psycho']
@@ -136,9 +137,7 @@ function buildEventPayload(
         .map(e => ({ ...e, weight: road?.enemyWeights?.[e.id] ?? 1 }))
       const picked = rngWeightedPick(weightedPool) ?? modeConfig.enemies[0]
       const dangerLevel = road?.dangerLevel ?? 0.5
-      const maxCount = Math.max(2, Math.ceil(dangerLevel * 4))
-      const floorCount = minEnemyCount(turn, dangerLevel, gameType)
-      const count = Math.max(rngInt(1, maxCount), floorCount)
+      const count = computeEnemyCount(dangerLevel, picked.countMultiplier ?? 1, scaleFactor, turn, gameType)
       const ambushTitle = AMBUSH_TITLES[picked.id] ?? title
       const ambushDesc  = AMBUSH_LINES[picked.id]?.(count) ?? description
       return { type, title: ambushTitle, description: ambushDesc, payload: { enemyTypeId: picked.id, count } }
