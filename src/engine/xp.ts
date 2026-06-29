@@ -4,18 +4,19 @@ export const XpEventType = {
   RoadTravel:          'road_travel',
   CombatVictory:       'combat_victory',
   SettlementDiscovery: 'settlement_discovery',
-  DebtSurvival:        'debt_survival',
+  DebtPayoff:          'debt_payoff',
   TradeProfit:         'trade_profit',
 } as const
 
 export type XpEventType = typeof XpEventType[keyof typeof XpEventType]
 
 const XP_CONFIG = {
-  ROAD_TRAVEL_FACTOR:   30,   // floor(dangerLevel × scaleFactor × 30) — small risk bonus vs. combat
-  COMBAT_BASE:          50,   // flat victory bonus, multiplied by scaleFactor
-  SETTLEMENT_DISCOVERY: 50,   // flat first-visit bonus
-  DEBT_SURVIVAL:        100,  // flat survived-enforcement bonus
-  TRADE_PROFIT_DIVISOR:  5,   // floor(profit / 5)
+  ROAD_TRAVEL_FACTOR:    30,   // floor(dangerLevel × scaleFactor × 30)
+  COMBAT_BASE:           50,   // flat victory bonus per fight
+  COMBAT_COUNT_BONUS:    0.10, // each enemy beyond the first multiplies kill XP by an extra 10%
+  SETTLEMENT_DISCOVERY:  50,   // flat first-visit bonus
+  DEBT_PAYOFF:           500,  // one-time bonus for clearing debt to zero
+  TRADE_PROFIT_DIVISOR:   3,   // floor(profit / 3)
 } as const
 
 // scaleFactor = 1 in standard games; ramps up in Free Play as turns increase.
@@ -26,21 +27,23 @@ export function getScaleFactor(turn: number, gameType: GameType): number {
 
 export type XpEventParams =
   | { type: 'road_travel';          dangerLevel: number; scaleFactor: number }
-  | { type: 'combat_victory';       xpFromKills: number; scaleFactor: number }
+  | { type: 'combat_victory';       xpFromKills: number; killCount: number }
   | { type: 'settlement_discovery'; settlementName: string }
-  | { type: 'debt_survival' }
+  | { type: 'debt_payoff' }
   | { type: 'trade_profit';         profit: number }
 
 export function calculateXp(event: XpEventParams): number {
   switch (event.type) {
     case XpEventType.RoadTravel:
       return Math.floor(event.dangerLevel * event.scaleFactor * XP_CONFIG.ROAD_TRAVEL_FACTOR)
-    case XpEventType.CombatVictory:
-      return Math.floor((XP_CONFIG.COMBAT_BASE + event.xpFromKills) * event.scaleFactor)
+    case XpEventType.CombatVictory: {
+      const countBonus = 1 + XP_CONFIG.COMBAT_COUNT_BONUS * Math.max(0, event.killCount - 1)
+      return Math.floor((XP_CONFIG.COMBAT_BASE + event.xpFromKills * countBonus))
+    }
     case XpEventType.SettlementDiscovery:
       return XP_CONFIG.SETTLEMENT_DISCOVERY
-    case XpEventType.DebtSurvival:
-      return XP_CONFIG.DEBT_SURVIVAL
+    case XpEventType.DebtPayoff:
+      return XP_CONFIG.DEBT_PAYOFF
     case XpEventType.TradeProfit:
       return Math.floor(event.profit / XP_CONFIG.TRADE_PROFIT_DIVISOR)
   }
@@ -54,8 +57,8 @@ function logMessage(event: XpEventParams, amount: number): string {
       return `+${amount} XP — combat victory!`
     case XpEventType.SettlementDiscovery:
       return `+${amount} XP — first visit to ${event.settlementName}!`
-    case XpEventType.DebtSurvival:
-      return `+${amount} XP — survived debt enforcement.`
+    case XpEventType.DebtPayoff:
+      return `+${amount} XP — debt cleared!`
     case XpEventType.TradeProfit:
       return `+${amount} XP — trade profit.`
   }

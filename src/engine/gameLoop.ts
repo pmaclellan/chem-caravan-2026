@@ -212,7 +212,7 @@ export function continueTravel(state: GameState): GameState {
   if (xpMsg1) log.push(makeLog(state.world.turn, xpMsg1, 'profit'))
 
   // Select a travel event
-  const event = selectTravelEvent(road, player, mc, sf)
+  const event = selectTravelEvent(road, player, mc, sf, state.world.turn, state.gameType)
   if (event) {
     return {
       ...state,
@@ -408,10 +408,6 @@ export function resolveDebtCollector(state: GameState): GameState {
     debtWarnings: warnings + 1,
   }
 
-  const { player: p3, logMessage: xpMsg3 } = awardXp(player, { type: XpEventType.DebtSurvival })
-  player = p3
-  if (xpMsg3) log.push(makeLog(turn, xpMsg3, 'profit'))
-
   return completeTravel({ ...state, player, log }, dest ?? state.player.location)
 }
 
@@ -464,12 +460,10 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
   }
 
   if (combat.phase === 'won') {
-    const sf = getScaleFactor(turn, state.gameType)
     const mc = GAME_MODES[state.mode]
-    const xpFromKills = combat.enemies
-      .filter(e => e.dead)
-      .reduce((sum, e) => sum + (mc.enemyStats[e.typeId]?.xpReward ?? 15), 0)
-    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, xpFromKills, scaleFactor: sf })
+    const killedEnemies = combat.enemies.filter(e => e.dead)
+    const xpFromKills = killedEnemies.reduce((sum, e) => sum + (mc.enemyStats[e.typeId]?.xpReward ?? 15), 0)
+    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, xpFromKills, killCount: killedEnemies.length })
     const xpGained = p4.xp - player.xp
     player = p4
     combat = { ...combat, xpGained }
