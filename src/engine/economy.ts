@@ -1,7 +1,8 @@
 import type { GunDefinition } from '../data/guns'
-import type { DebtEnforcementEntry } from '../data/modes'
+import type { DebtEnforcementEntry, GameModeConfig } from '../data/modes'
 import type { ArmorDefinition, GunState, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
 import type { TamingToolDefinition } from '../data/mounts'
+import { CHEMS } from '../data/chems'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
 export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
@@ -315,6 +316,75 @@ export function resolveGameStatus(
 export function payBrotherhoodToll(player: PlayerState, toll: number): { player: PlayerState; paid: boolean } {
   if (player.caps < toll) return { player, paid: false }
   return { player: { ...player, caps: player.caps - toll }, paid: true }
+}
+
+export function inventoryBaseValue(inventory: PlayerState['inventory']): number {
+  return Object.entries(inventory).reduce((sum, [chemId, entry]) => {
+    return sum + (CHEMS[chemId]?.basePrice ?? 0) * entry.quantity
+  }, 0)
+}
+
+export function totalGuardSalary(player: PlayerState, mc: GameModeConfig): number {
+  return player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
+}
+
+export function applyGuardSalary(
+  player: PlayerState,
+  mc: GameModeConfig,
+): { player: PlayerState; logs: Array<{ message: string; type: 'info' | 'danger' }> } {
+  const salary = totalGuardSalary(player, mc)
+  if (salary === 0) return { player, logs: [] }
+
+  const logs: Array<{ message: string; type: 'info' | 'danger' }> = []
+
+  // Can pay outright
+  if (player.caps >= salary) {
+    return {
+      player: { ...player, caps: player.caps - salary },
+      logs: [{ message: `Guard salary paid: -${salary} ¤ (${player.guards}g${(player.powerArmorGuards ?? 0) > 0 ? ` +${player.powerArmorGuards}PA` : ''})`, type: 'info' }],
+    }
+  }
+
+  // Check collateral: caps + inventory at base price
+  const collateral = player.caps + inventoryBaseValue(player.inventory)
+  if (collateral >= salary) {
+    return {
+      player,
+      logs: [{ message: `Guards defer payment — your pack covers their wages. (-${salary} ¤ owed next sale)`, type: 'info' }],
+    }
+  }
+
+  // Can't cover — desert cheapest guards first until the remainder is affordable
+  let guards    = player.guards
+  let paGuards  = player.powerArmorGuards ?? 0
+  let deserted  = 0
+  let paDeserted = 0
+
+  while (guards + paGuards > 0) {
+    const remaining = guards * mc.guardSalaryPerTurn + paGuards * mc.powerArmorGuardSalaryPerTurn
+    if (player.caps + inventoryBaseValue(player.inventory) >= remaining) break
+    if (guards > 0) { guards--; deserted++ }
+    else             { paGuards--; paDeserted++ }
+  }
+
+  if (deserted > 0)   logs.push({ message: `${deserted} guard${deserted > 1 ? 's' : ''} deserted — couldn't cover their salary.`, type: 'danger' })
+  if (paDeserted > 0) logs.push({ message: `${paDeserted} Power Armor guard${paDeserted > 1 ? 's' : ''} deserted — couldn't cover their salary.`, type: 'danger' })
+
+  const remainingSalary = guards * mc.guardSalaryPerTurn + paGuards * mc.powerArmorGuardSalaryPerTurn
+  const updatedPlayer: PlayerState = {
+    ...player,
+    guards,
+    powerArmorGuards: paGuards,
+    caps: Math.max(0, player.caps - remainingSalary),
+  }
+
+  if (remainingSalary > 0 && player.caps >= remainingSalary) {
+    logs.push({ message: `Guard salary paid: -${remainingSalary} ¤`, type: 'info' })
+  } else if (remainingSalary > 0) {
+    logs.push({ message: `Guards defer payment — your pack covers the remainder.`, type: 'info' })
+  }
+
+  return { player: updatedPlayer, logs }
 }
 
 export function addChemStash(

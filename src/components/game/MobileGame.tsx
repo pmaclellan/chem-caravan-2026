@@ -221,6 +221,19 @@ export default function MobileGame() {
               <div className="text-pip-green text-sm font-display">
                 {player.guards} guards{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''} · {player.brahmin} brahmin
               </div>
+              {(() => {
+                const mc = GAME_MODES[gameState.mode]
+                const salary = player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
+                const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : 0
+                if (salary === 0) return null
+                return (
+                  <div className={`text-xs font-mono mt-0.5 ${
+                    turnsCovered < 2 ? 'text-pip-red' : turnsCovered < 4 ? 'text-pip-amber' : 'text-pip-green-dim'
+                  }`}>
+                    {salary} ¤/turn salary · ~{turnsCovered}t covered by caps
+                  </div>
+                )
+              })()}
               <div className="text-xs text-pip-green-dim">Pack {used}/{capacity}</div>
             </div>
           </div>

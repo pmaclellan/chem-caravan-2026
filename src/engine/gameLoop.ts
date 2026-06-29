@@ -3,7 +3,7 @@ import type { GameModeConfig } from '../data/modes'
 import type { GameModeId, GameState, GameType, LogEntry, MarketEvent, PlayerState, TravelEvent, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
-import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore } from './economy'
+import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore, applyGuardSalary } from './economy'
 import { initiateCombat } from './combat'
 import { awardXp, getScaleFactor, XpEventType } from './xp'
 import { rng } from './rng'
@@ -248,8 +248,14 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     },
   }
 
+  // Guard salary — deduct each turn, desert if can't cover
+  const { player: playerAfterSalary, logs: salaryLogs } = applyGuardSalary(player, mc)
+  player = playerAfterSalary
+  const log = [...state.log]
+  for (const { message, type } of salaryLogs) log.push(makeLog(turn, message, type))
+
   const destName = mc.settlements[destinationId]?.name ?? destinationId
-  const log = [...state.log, makeLog(turn, `Arrived at ${destName}.`, 'info')]
+  log.push(makeLog(turn, `Arrived at ${destName}.`, 'info'))
 
   // Settlement discovery XP (first visit per run)
   const visited = player.visitedSettlements ?? []

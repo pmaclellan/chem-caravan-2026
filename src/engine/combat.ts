@@ -220,11 +220,9 @@ export function resolveFight(
     log.push(`Not enough ammo to fire the ${gun.name}.`)
   }
 
-  // ── Guards fire (each costs 1 ammo from shared pool) ─────────────────────
+  // ── Guards fire with their own sidearms (no shared ammo pool) ───────────
   const allGuardCount = guards + powerArmorGuards
   for (let g = 0; g < allGuardCount; g++) {
-    if (gun.ammo === 0) break
-    gun.ammo -= 1
     const target = updatedEnemies.find(e => !e.dead)
     if (!target) break
     const isPAGuard = g >= guards
