@@ -128,15 +128,20 @@ export function resolveFight(
 
   // ── Player fires ─────────────────────────────────────────────────────────
   const shotsPerTurn = gun.shotsPerTurn ?? 1
+  const isBurst = shotsPerTurn > 1
   const playerCanFire = gun.ammo >= gun.ammoPerShot
   if (playerCanFire) {
     gun.ammo -= gun.ammoPerShot
     if (gun.cooldownTurns) gun.cooldownRemaining = gun.cooldownTurns
     const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+
+    // Collect burst shots to emit as a single burst animStep
+    const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
+
     for (let s = 0; s < shotsPerTurn; s++) {
       const target = updatedEnemies.find(e => !e.dead)
       if (!target) break
-      const shotLabel = shotsPerTurn > 1 ? ` (shot ${s + 1})` : ''
+      const shotLabel = isBurst ? ` (shot ${s + 1})` : ''
       if (rng() < effectiveAccuracy) {
         const dealt = Math.min(gun.damage, target.health)
         damageDealt += dealt
@@ -166,7 +171,9 @@ export function resolveFight(
           }
         }
 
-        if (splashHits.length > 0) {
+        if (isBurst) {
+          burstShots.push({ targetId: target.id, hit: true, damage: dealt, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+        } else if (splashHits.length > 0) {
           animSteps.push({ kind: 'blast', primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
         } else {
           animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
@@ -174,9 +181,9 @@ export function resolveFight(
       } else {
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
         log.push(logLine)
-        animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
 
         // Stray shot — missed primary but may clip a random other alive enemy
+        let strayShot: typeof burstShots[0] | null = null
         if (gun.strayChance && rng() < gun.strayChance) {
           const others = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
           if (others.length > 0) {
@@ -189,10 +196,25 @@ export function resolveFight(
               ? `Stray round clips ${stray.name} for ${gun.damage} damage — ${stray.name} is dead!`
               : `Stray round clips ${stray.name} for ${gun.damage} damage.`
             log.push(strayLine)
-            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: strayDealt, targetId: stray.id, targetDied: stray.dead, targetHealthAfter: stray.health, logLine: strayLine })
+            strayShot = { targetId: stray.id, hit: true, damage: strayDealt, targetDied: stray.dead, targetHealthAfter: stray.health, logLine: strayLine }
+          }
+        }
+
+        if (isBurst) {
+          // Miss: push the miss shot; if there's a stray, push it as a hit immediately after
+          burstShots.push({ targetId: target.id, hit: false, damage: 0, targetDied: false, targetHealthAfter: target.health, logLine })
+          if (strayShot) burstShots.push(strayShot)
+        } else {
+          animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+          if (strayShot) {
+            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: strayShot.damage, targetId: strayShot.targetId, targetDied: strayShot.targetDied, targetHealthAfter: strayShot.targetHealthAfter, logLine: strayShot.logLine })
           }
         }
       }
+    }
+
+    if (isBurst && burstShots.length > 0) {
+      animSteps.push({ kind: 'burst', shots: burstShots })
     }
   } else {
     log.push(`Not enough ammo to fire the ${gun.name}.`)

@@ -172,6 +172,17 @@ export type AnimStep =
       venomDotDamage?: number
     }
   | {
+      kind: 'burst'   // rapid multi-shot (minigun) — all shots animate in quick succession
+      shots: Array<{
+        targetId: string | null
+        hit: boolean
+        damage: number
+        targetDied: boolean
+        targetHealthAfter: number
+        logLine: string
+      }>
+    }
+  | {
       kind: 'blast'
       // Primary target (direct hit)
       primaryTargetId: string
