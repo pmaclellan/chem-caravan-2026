@@ -349,9 +349,7 @@ export default function CombatPanel({ player, combat }: Props) {
                 >
                   <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-blue)' }}>
                     {!dead && <GuardGlow flashKey={anim.guardFireKeys[globalIdx] ?? 0} isPAGuard={true} />}
-                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
-                      <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
-                    </svg>
+                    <img src="/assets/icons/icons8-minigun-100.png" alt="PA Guard" className="w-6 h-6 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(28%) sepia(40%) saturate(700%) hue-rotate(183deg) brightness(0.9)' }} />
                   </div>
                   <div className="h-1 rounded w-full" style={{ backgroundColor: dead ? 'var(--pip-border)' : 'var(--pip-blue)', transition: 'background-color 400ms' }} />
                   <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-blue)', opacity: 0.7 }}>PA</div>
