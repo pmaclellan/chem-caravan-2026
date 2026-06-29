@@ -124,6 +124,7 @@ interface GameStore {
   purchaseGun: (gunId: string) => void
   equipGun: (gunId: string) => void
   purchaseAmmo: (rounds: number) => void
+  purchaseAmmoForGun: (gunId: string, rounds: number) => void
   purchaseArmor: (armorId: string) => void
   repairArmor: () => void
   retire: () => void
@@ -821,6 +822,26 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyAmmo(state.player, rounds)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Bought ${rounds} rounds.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    purchaseAmmoForGun: (gunId, rounds) => {
+      mutate(state => {
+        const isEquipped = state.player.gun?.id === gunId
+        const gunState   = isEquipped ? state.player.gun! : state.player.ownedGuns?.[gunId]
+        if (!gunState) return state
+        const cost = rounds * gunState.ammoPrice
+        if (state.player.caps < cost) { set({ toast: 'Not enough caps.' }); return state }
+        const updatedGun = { ...gunState, ammo: gunState.ammo + rounds }
+        const ownedGuns  = { ...state.player.ownedGuns, [gunId]: updatedGun }
+        const player = {
+          ...state.player,
+          caps:      state.player.caps - cost,
+          ownedGuns,
+          gun: isEquipped ? updatedGun : state.player.gun,
+        }
+        const log = [...state.log, { turn: state.world.turn, message: `Bought ${rounds} rounds for ${gunState.name}.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
