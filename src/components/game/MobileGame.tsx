@@ -222,7 +222,7 @@ export default function MobileGame() {
                 {player.guards} guards{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''} · {player.brahmin} brahmin
               </div>
               {(() => {
-                const mc = GAME_MODES[gameState.mode]
+                const mc = GAME_MODES[gameState!.mode]
                 const salary = player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
                 const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : 0
                 if (salary === 0) return null

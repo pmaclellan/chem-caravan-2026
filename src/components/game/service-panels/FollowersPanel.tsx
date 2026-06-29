@@ -4,7 +4,6 @@ import { useGameStore } from '../../../store/gameStore'
 import { totalGuardSalary, inventoryBaseValue } from '../../../engine/economy'
 
 export function FollowersPanel({ player }: { player: PlayerState }) {
-  const mode = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const mc   = useGameStore(s => s.gameState ? GAME_MODES[s.gameState.mode] : GAME_MODES['commonwealth'])
   const store = useGameStore()
 
