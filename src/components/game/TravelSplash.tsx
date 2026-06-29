@@ -28,21 +28,41 @@ export default function TravelSplash({ quote, destination }: Props) {
         — on the road —
       </div>
 
-      {quote ? (
-        <div className="max-w-lg w-full text-center">
-          <div
-            className="border-t border-b border-pip-border py-6 px-4"
-            style={{ borderColor: 'rgba(138, 96, 32, 0.45)' }}
-          >
-            <p className="font-display text-pip-green leading-relaxed" style={{ fontSize: '1.15rem' }}>
-              "{quote.text}"
+      {quote ? (() => {
+        const isTip = quote.speaker === 'Omniscient Guide'
+        return (
+          <div className="max-w-lg w-full text-center">
+            {isTip && (
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <div className="h-px flex-1" style={{ background: 'rgba(196,80,26,0.4)' }} />
+                <span className="font-display text-pip-amber text-xs tracking-widest px-2">◈ GUIDE TIP</span>
+                <div className="h-px flex-1" style={{ background: 'rgba(196,80,26,0.4)' }} />
+              </div>
+            )}
+            <div
+              className="py-6 px-4"
+              style={{
+                borderTop: isTip ? '1px solid rgba(196,80,26,0.6)' : '1px solid rgba(138,96,32,0.45)',
+                borderBottom: isTip ? '1px solid rgba(196,80,26,0.6)' : '1px solid rgba(138,96,32,0.45)',
+                background: isTip ? 'rgba(196,80,26,0.05)' : undefined,
+              }}
+            >
+              <p
+                className="font-display leading-relaxed"
+                style={{
+                  fontSize: '1.15rem',
+                  color: isTip ? 'var(--pip-amber)' : 'var(--pip-green)',
+                }}
+              >
+                {isTip ? quote.text : `"${quote.text}"`}
+              </p>
+            </div>
+            <p className="text-xs mt-3 italic" style={{ color: isTip ? 'rgba(196,80,26,0.6)' : 'var(--pip-green-dim)' }}>
+              {isTip ? '— Omniscient Guide' : `— ${quote.speaker}, overheard on the road`}
             </p>
           </div>
-          <p className="text-pip-green-dim text-xs mt-3 italic">
-            — {quote.speaker}, overheard on the road
-          </p>
-        </div>
-      ) : (
+        )
+      })() : (
         <div className="text-pip-green-dim text-xs opacity-50">...</div>
       )}
 
