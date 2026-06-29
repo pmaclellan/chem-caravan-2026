@@ -514,7 +514,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       const mc = GAME_MODES[state.mode]
       const { player, combat, animSteps } = resolveFight(state.player, state.combat, mc)
       if (animSteps.length === 0) {
-        // No animation (e.g. weapon on cooldown) — apply immediately
+        // No animation (e.g. guards all dead, no enemies) — apply immediately
         mutate(s => afterCombat(s, { player, combat }))
       } else {
         set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
