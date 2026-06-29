@@ -104,7 +104,7 @@ export const GUNS: Record<string, GunDefinition> = {
     damage: 220,
     ammoPerShot: 1,
     cooldownTurns: 2,
-    splashRatios: [0.30, 0.20, 0.10],
+    splashRatios: [0.20, 0.13, 0.07],
     requiresPowerArmor: true,
     ammoPrice: 60,
     ammoWithPurchase: 5,
