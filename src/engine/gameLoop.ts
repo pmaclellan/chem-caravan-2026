@@ -73,7 +73,8 @@ export function initializeGame(
 
   const settlements: WorldState['settlements'] = {}
   for (const id of mc.settlementIds) {
-    settlements[id] = initializeMarket(1, mc.availableChemIds, mc.settlements[id]?.priceModifier)
+    const s = mc.settlements[id]
+    settlements[id] = initializeMarket(1, mc.availableChemIds, s?.priceModifier, s?.stockMultiplier, s?.availabilityBonus)
   }
 
   // Seed 2 market events on turn 1 as advance intelligence for the player
@@ -240,7 +241,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     settlements: {
       ...world.settlements,
       [destinationId]: applyMarketEvents(
-        refreshMarket(world.settlements[destinationId], turn, mc.availableChemIds, mc.settlements[destinationId]?.priceModifier),
+        refreshMarket(world.settlements[destinationId], turn, mc.availableChemIds, mc.settlements[destinationId]?.priceModifier, mc.settlements[destinationId]?.stockMultiplier, mc.settlements[destinationId]?.availabilityBonus),
         world.activeMarketEvents,
         destinationId,
       ),
