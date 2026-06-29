@@ -102,19 +102,6 @@ export function resolveFight(
   if (player.gun.requiresPowerArmor && player.armor?.id !== 'power_armor') {
     return { player, combat: { ...combat, log: [...combat.log, `${player.gun.name} requires Power Armor to wield. Equip Power Armor first.`] }, animSteps: [] }
   }
-  if ((player.gun.cooldownRemaining ?? 0) > 0) {
-    const remaining = player.gun.cooldownRemaining! - 1
-    const updatedGun = { ...player.gun, cooldownRemaining: remaining }
-    const msg = remaining > 0
-      ? `Reloading ${player.gun.name}… (${remaining} turn${remaining > 1 ? 's' : ''} remaining)`
-      : `Reloading ${player.gun.name}… Ready next turn.`
-    return {
-      player: { ...player, gun: updatedGun },
-      combat: { ...combat, log: [...combat.log, msg] },
-      animSteps: [],
-    }
-  }
-
   const log: string[] = []
   const animSteps: AnimStep[] = []
   const updatedEnemies = combat.enemies.map(e => ({ ...e }))
@@ -129,8 +116,16 @@ export function resolveFight(
   // ── Player fires ─────────────────────────────────────────────────────────
   const shotsPerTurn = gun.shotsPerTurn ?? 1
   const isBurst = shotsPerTurn > 1
-  const playerCanFire = gun.ammo >= gun.ammoPerShot
-  if (playerCanFire) {
+  const inCooldown = (gun.cooldownRemaining ?? 0) > 0
+  const playerCanFire = !inCooldown && gun.ammo >= gun.ammoPerShot
+  if (inCooldown) {
+    const remaining = gun.cooldownRemaining! - 1
+    gun = { ...gun, cooldownRemaining: remaining }
+    const msg = remaining > 0
+      ? `Reloading ${gun.name}… (${remaining} turn${remaining > 1 ? 's' : ''} remaining)`
+      : `Reloading ${gun.name}… Ready next turn.`
+    log.push(msg)
+  } else if (playerCanFire) {
     gun.ammo -= gun.ammoPerShot
     if (gun.cooldownTurns) gun.cooldownRemaining = gun.cooldownTurns
     const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy

@@ -143,7 +143,8 @@ export default function CombatPanel({ player, combat }: Props) {
 
   const isResolved  = combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost'
   const isResolving = combat.phase === 'resolving'
-  const canFight    = !!player.gun && player.gun.ammo > 0 && !isResolving
+  const gunCooldown = player.gun?.cooldownRemaining ?? 0
+  const canFight    = !!player.gun && (player.gun.ammo > 0 || gunCooldown > 0) && !isResolving
 
   const runChancePct = Math.round(runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin) * 100)
 
@@ -432,9 +433,11 @@ export default function CombatPanel({ player, combat }: Props) {
           <button className="pip-btn-danger flex-1" disabled={!canFight} onClick={fight}>
             {isResolving
               ? 'FIRING...'
-              : canFight
-                ? `FIGHT — ${player.gun!.name} (${player.gun!.ammo} ammo)`
-                : 'NO GUN / NO AMMO'}
+              : gunCooldown > 0
+                ? `RELOADING — ${gunCooldown} turn${gunCooldown > 1 ? 's' : ''} left`
+                : canFight
+                  ? `FIGHT — ${player.gun!.name} (${player.gun!.ammo} ammo)`
+                  : 'NO GUN / NO AMMO'}
           </button>
           {canTame && (
             <button className="pip-btn-amber" onClick={openTamingMinigame} style={{ flexShrink: 0, fontSize: '0.9rem', padding: '2px 12px' }}>
