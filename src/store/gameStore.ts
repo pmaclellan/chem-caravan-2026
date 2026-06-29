@@ -758,9 +758,16 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     payDebt: (amount) => {
       mutate(state => {
-        const { player, error } = repayDebt(state.player, amount)
+        const { player: paid, error } = repayDebt(state.player, amount)
         if (error) { set({ toast: error }); return state }
-        const log = [...state.log, { turn: state.world.turn, message: `Paid ${amount} caps toward debt. Remaining: ${player.debt}.`, type: 'profit' as const }]
+        const log = [...state.log, { turn: state.world.turn, message: `Paid ${amount} caps toward debt. Remaining: ${paid.debt}.`, type: 'profit' as const }]
+        const debtCleared = paid.debt === 0 && !state.player.debtEverCleared
+        let player = debtCleared ? { ...paid, debtEverCleared: true } : paid
+        if (debtCleared) {
+          const { player: withXp, logMessage: xpMsg } = awardXp(player, { type: XpEventType.DebtPayoff })
+          player = withXp
+          if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
+        }
         return { ...state, player, log }
       })
     },

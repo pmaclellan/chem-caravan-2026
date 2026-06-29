@@ -101,6 +101,7 @@ export interface PlayerState {
   debtWindowCapsPaid?: number   // cumulative caps paid in the current payment window
   debtWindowStartAge?: number   // ageOfDebt when the current payment window opened
   debtWindowMinPayment?: number // minimum payment required for the current window (fixed at window open)
+  debtEverCleared?: boolean     // true once the player has paid off debt to zero for the first time
   conditions?: PlayerCondition[]  // persistent status effects (e.g. radscorpion venom)
 }
 
