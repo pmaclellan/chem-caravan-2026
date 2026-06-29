@@ -52,11 +52,13 @@ export interface GameModeConfig {
   capacityPerBrahmin: number
   debtEnforcement: DebtEnforcementEntry[]
   guardCost: number
+  guardSalaryPerTurn: number
   guardHealth: number       // HP absorbed per guard per attack as mitigation
   guardAccuracy: number     // hit chance for each guard's attack roll
   guardDamage: [number, number]
   maxGuards: number
   powerArmorGuardCost: number
+  powerArmorGuardSalaryPerTurn: number
   powerArmorGuardHealth: number
   maxPowerArmorGuards: number
   brahminCost: number
@@ -114,12 +116,14 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     { age: 10, damage: 50,  message: "They're back, and less patient this time. They break two ribs." },
     { age: 12, damage: 999, message: "The last thing you see is the caps logo on a Triggerman's ring." },
   ],
-  guardCost: 400,
+  guardCost: 150,
+  guardSalaryPerTurn: 35,
   guardHealth: 50,
   guardAccuracy: 0.55,
   guardDamage: [20, 35],
   maxGuards: 5,
-  powerArmorGuardCost: 2500,
+  powerArmorGuardCost: 800,
+  powerArmorGuardSalaryPerTurn: 100,
   powerArmorGuardHealth: 150,
   maxPowerArmorGuards: 3,
   brahminCost: 250,

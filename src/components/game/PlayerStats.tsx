@@ -1,4 +1,7 @@
 import type { PlayerState } from '../../types/game'
+import { useGameStore } from '../../store/gameStore'
+import { GAME_MODES } from '../../data/modes'
+import { totalGuardSalary } from '../../engine/economy'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { FlashText } from '../ui/FlashText'
 import { CapsIcon } from '../ui/CapsIcon'
@@ -6,7 +9,10 @@ import { CapsIcon } from '../ui/CapsIcon'
 interface Props { player: PlayerState; turn: number; maxTurns: number | null }
 
 export default function PlayerStats({ player, turn, maxTurns }: Props) {
-  const hpPct = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
+  const mode   = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
+  const mc     = GAME_MODES[mode]
+  const salary = totalGuardSalary(player, mc)
+  const hpPct  = Math.max(0, Math.round((player.health / player.maxHealth) * 100))
   const hpColor = hpPct > 60 ? 'bg-pip-green' : hpPct > 30 ? 'bg-pip-amber' : 'bg-pip-red'
   const debtColor = player.debt > 0
     ? (player.ageOfDebt >= 10 ? 'text-pip-red' : player.ageOfDebt >= 5 ? 'text-pip-amber' : 'text-pip-green')
@@ -77,8 +83,20 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
       <div className="border-t border-pip-border pt-2 flex flex-col gap-1">
         <div className="flex justify-between">
           <span className="pip-label">Guards</span>
-          <span className="text-pip-green font-display">{player.guards}</span>
+          <span className="text-pip-green font-display">
+            {player.guards}{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''}
+          </span>
         </div>
+        {salary > 0 && (
+          <div className="flex justify-between">
+            <span className="pip-label text-pip-green-dim">Salary</span>
+            <span className={`font-mono text-xs self-center ${
+              player.caps < salary * 2 ? 'text-pip-amber' : 'text-pip-green-dim'
+            }`}>
+              {salary} ¤/turn
+            </span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="pip-label">Brahmin</span>
           <span className="text-pip-green font-display">{player.brahmin}</span>
