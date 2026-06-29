@@ -195,6 +195,39 @@ export function useCombatAnimation(
 
         offset += INTER_SHOT_MS
 
+      } else if (step.kind === 'blast') {
+        // ── Blast (e.g. missile launcher) — primary + splash land simultaneously ──
+        workingAmmo = Math.max(0, workingAmmo - 1)
+        const ammoAtShot = workingAmmo
+
+        // Player fires
+        timersRef.current.push(setTimeout(() => {
+          setState(s => ({ ...s, activeShooterIdx: -1, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+        }, offset))
+
+        // All targets react at the same moment
+        timersRef.current.push(setTimeout(() => {
+          workingHealth[step.primaryTargetId] = step.primaryHealthAfter
+          workingHitKeys[step.primaryTargetId] = (workingHitKeys[step.primaryTargetId] ?? 0) + 1
+          workingAnimInfo[step.primaryTargetId] = { key: (workingAnimInfo[step.primaryTargetId]?.key ?? 0) + 1, type: 'hit' }
+          for (const sh of step.splashHits) {
+            workingHealth[sh.targetId] = sh.healthAfter
+            workingHitKeys[sh.targetId] = (workingHitKeys[sh.targetId] ?? 0) + 1
+            workingAnimInfo[sh.targetId] = { key: (workingAnimInfo[sh.targetId]?.key ?? 0) + 1, type: 'hit' }
+          }
+          setState(s => ({
+            ...s,
+            activeTargetId:     step.primaryTargetId,
+            displayEnemyHealth: { ...workingHealth },
+            enemyHitKeys:       { ...workingHitKeys },
+            enemyAnimInfo:      { ...workingAnimInfo },
+          }))
+          onLogLineRef.current?.(step.logLine)
+          for (const sh of step.splashHits) onLogLineRef.current?.(sh.logLine)
+        }, offset + TARGET_FLASH_DELAY))
+
+        offset += INTER_SHOT_MS
+
       } else {
         // ── Enemy retaliation — two sub-phases ──────────────────────────────
         offset += RETALIATION_PAUSE

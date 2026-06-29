@@ -146,9 +146,9 @@ export function resolveFight(
           ? `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`
           : `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage)`
         log.push(logLine)
-        animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
 
         // Splash damage — hits subsequent alive enemies at decreasing ratios
+        const splashHits: Array<{ targetId: string; damage: number; died: boolean; healthAfter: number; logLine: string }> = []
         if (gun.splashRatios && gun.splashRatios.length > 0) {
           const splashTargets = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
           for (let si = 0; si < Math.min(gun.splashRatios.length, splashTargets.length); si++) {
@@ -162,8 +162,14 @@ export function resolveFight(
               ? `Blast wave hits ${st.name} for ${splashDmg} damage — ${st.name} is dead!`
               : `Blast wave hits ${st.name} for ${splashDmg} damage.`
             log.push(splashLine)
-            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: splashDealt, targetId: st.id, targetDied: st.dead, targetHealthAfter: st.health, logLine: splashLine })
+            splashHits.push({ targetId: st.id, damage: splashDealt, died: st.dead, healthAfter: st.health, logLine: splashLine })
           }
+        }
+
+        if (splashHits.length > 0) {
+          animSteps.push({ kind: 'blast', primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
+        } else {
+          animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
         }
       } else {
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
