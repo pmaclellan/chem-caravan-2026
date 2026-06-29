@@ -227,25 +227,55 @@ export function resolveFight(
   // ── Guards fire with their own sidearms (no shared ammo pool) ───────────
   const allGuardCount = guards + powerArmorGuards
   for (let g = 0; g < allGuardCount; g++) {
-    const target = updatedEnemies.find(e => !e.dead)
-    if (!target) break
     const isPAGuard = g >= guards
     const label = isPAGuard ? `PA Guard ${g - guards + 1}` : `Guard ${g + 1}`
-    if (rng() < modeConfig.guardAccuracy) {
-      const guardDmg = rngInt(modeConfig.guardDamage[0], modeConfig.guardDamage[1])
-      const dealt = Math.min(guardDmg, target.health)
-      damageDealt += dealt
-      target.health = Math.max(0, target.health - guardDmg)
-      target.dead = target.health <= 0
-      const logLine = target.dead
-        ? `${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`
-        : `${label} fires. Hit! (${guardDmg} damage)`
-      log.push(logLine)
-      animSteps.push({ kind: 'shot', by: isPAGuard ? 'pa_guard' : 'guard', guardIdx: g, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+
+    if (isPAGuard) {
+      const shots = modeConfig.powerArmorGuardShotsPerTurn
+      const acc   = modeConfig.powerArmorGuardAccuracy
+      const dmgRange = modeConfig.powerArmorGuardDamage
+      const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
+      for (let s = 0; s < shots; s++) {
+        const t = updatedEnemies.find(e => !e.dead)
+        if (!t) break
+        if (rng() < acc) {
+          const dmg = rngInt(dmgRange[0], dmgRange[1])
+          const dealt = Math.min(dmg, t.health)
+          damageDealt += dealt
+          t.health = Math.max(0, t.health - dmg)
+          t.dead = t.health <= 0
+          const logLine = t.dead
+            ? `${label} fires. Hit! (${dmg} damage) — ${t.name} is dead!`
+            : `${label} fires. Hit! (${dmg} damage)`
+          log.push(logLine)
+          burstShots.push({ targetId: t.id, hit: true, damage: dealt, targetDied: t.dead, targetHealthAfter: t.health, logLine })
+        } else {
+          const t2 = updatedEnemies.find(e => !e.dead)
+          const logLine = `${label} fires. Missed.`
+          log.push(logLine)
+          burstShots.push({ targetId: t2?.id ?? null, hit: false, damage: 0, targetDied: false, targetHealthAfter: t2?.health ?? 0, logLine })
+        }
+      }
+      if (burstShots.length > 0) animSteps.push({ kind: 'pa_burst', guardIdx: g, shots: burstShots })
     } else {
-      const logLine = `${label} fires. Missed.`
-      log.push(logLine)
-      animSteps.push({ kind: 'shot', by: isPAGuard ? 'pa_guard' : 'guard', guardIdx: g, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+      const target = updatedEnemies.find(e => !e.dead)
+      if (!target) break
+      if (rng() < modeConfig.guardAccuracy) {
+        const guardDmg = rngInt(modeConfig.guardDamage[0], modeConfig.guardDamage[1])
+        const dealt = Math.min(guardDmg, target.health)
+        damageDealt += dealt
+        target.health = Math.max(0, target.health - guardDmg)
+        target.dead = target.health <= 0
+        const logLine = target.dead
+          ? `${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`
+          : `${label} fires. Hit! (${guardDmg} damage)`
+        log.push(logLine)
+        animSteps.push({ kind: 'shot', by: 'guard', guardIdx: g, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+      } else {
+        const logLine = `${label} fires. Missed.`
+        log.push(logLine)
+        animSteps.push({ kind: 'shot', by: 'guard', guardIdx: g, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+      }
     }
   }
 

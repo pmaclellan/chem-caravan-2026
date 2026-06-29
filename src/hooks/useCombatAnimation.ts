@@ -230,6 +230,37 @@ export function useCombatAnimation(
         // Advance offset past the entire burst duration
         offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
 
+      } else if (step.kind === 'pa_burst') {
+        // ── PA guard minigun burst — guard card glows, then shots land in rapid succession ──
+        const guardIdx = step.guardIdx
+        timersRef.current.push(setTimeout(() => {
+          workingFireKeys[guardIdx] = (workingFireKeys[guardIdx] ?? 0) + 1
+          setState(s => ({ ...s, activeShooterIdx: guardIdx, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+        }, offset))
+
+        step.shots.forEach((shot, si) => {
+          const tHit = offset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
+          timersRef.current.push(setTimeout(() => {
+            if (shot.hit && shot.targetId) {
+              workingHealth[shot.targetId]  = shot.targetHealthAfter
+              workingHitKeys[shot.targetId] = (workingHitKeys[shot.targetId] ?? 0) + 1
+              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'hit' }
+            } else if (!shot.hit && shot.targetId) {
+              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
+            }
+            setState(s => ({
+              ...s,
+              activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
+              displayEnemyHealth: shot.hit ? { ...workingHealth } : s.displayEnemyHealth,
+              enemyHitKeys:       shot.hit ? { ...workingHitKeys } : s.enemyHitKeys,
+              enemyAnimInfo:      { ...workingAnimInfo },
+            }))
+            onLogLineRef.current?.(shot.logLine)
+          }, tHit))
+        })
+
+        offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
+
       } else if (step.kind === 'blast') {
         // ── Blast (e.g. missile launcher) — primary + splash land simultaneously ──
         workingAmmo = Math.max(0, workingAmmo - 1)

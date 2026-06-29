@@ -60,6 +60,9 @@ export interface GameModeConfig {
   powerArmorGuardCost: number
   powerArmorGuardSalaryPerTurn: number
   powerArmorGuardHealth: number
+  powerArmorGuardDamage: [number, number]
+  powerArmorGuardAccuracy: number
+  powerArmorGuardShotsPerTurn: number
   maxPowerArmorGuards: number
   brahminCost: number
   maxBrahmin: number
@@ -125,6 +128,9 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   powerArmorGuardCost: 800,
   powerArmorGuardSalaryPerTurn: 100,
   powerArmorGuardHealth: 150,
+  powerArmorGuardDamage: [15, 25],
+  powerArmorGuardAccuracy: 0.65,
+  powerArmorGuardShotsPerTurn: 4,
   maxPowerArmorGuards: 3,
   brahminCost: 250,
   maxBrahmin: 5,

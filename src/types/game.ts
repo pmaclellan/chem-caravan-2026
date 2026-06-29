@@ -184,6 +184,18 @@ export type AnimStep =
       }>
     }
   | {
+      kind: 'pa_burst'  // PA guard minigun burst — same timing as burst, keyed to a guard slot
+      guardIdx: number
+      shots: Array<{
+        targetId: string | null
+        hit: boolean
+        damage: number
+        targetDied: boolean
+        targetHealthAfter: number
+        logLine: string
+      }>
+    }
+  | {
       kind: 'blast'
       // Primary target (direct hit)
       primaryTargetId: string
