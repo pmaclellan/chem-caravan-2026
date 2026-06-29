@@ -190,7 +190,7 @@ export const ROADS: Road[] = [
     to: 'goodneighbor',
     dangerLevel: 0.54,
     description: "Short route through derelict combat zone territory.",
-    enemyWeights: { super_mutant: 3, raider: 2 },
+    enemyWeights: { super_mutant: 3, raider: 2, feral_ghoul: 1 },
   },
   {
     id: 'dc_pss',
@@ -208,6 +208,7 @@ export const ROADS: Road[] = [
     to: 'jamaica_plain',
     dangerLevel: 0.56,
     description: "Exposed highway run through raider-heavy south Boston.",
+    enemyWeights: { raider: 3, super_mutant: 2, feral_ghoul: 1, yao_guai: 1 },
   },
   {
     id: 'dc_cps',
@@ -216,6 +217,7 @@ export const ROADS: Road[] = [
     to: 'cambridge_police_station',
     dangerLevel: 0.32,
     description: "Relatively safe merchant road. Caravans run this daily.",
+    enemyWeights: { raider: 4, super_mutant: 1 },
   },
   {
     id: 'dc_v81',
@@ -224,7 +226,7 @@ export const ROADS: Road[] = [
     to: 'vault_81',
     dangerLevel: 0.48,
     description: "Along the Charles River. Gunners patrol this stretch.",
-    enemyWeights: { raider: 4, yao_guai: 1 },
+    enemyWeights: { raider: 4, yao_guai: 1, feral_ghoul: 1 },
   },
   {
     id: 'sp_v81',
@@ -233,7 +235,7 @@ export const ROADS: Road[] = [
     to: 'vault_81',
     dangerLevel: 0.58,
     description: "Down the old Yankee Divisional Highway. Bit of a nasty route.",
-    enemyWeights: { raider: 2, yao_guai: 3 },
+    enemyWeights: { raider: 2, yao_guai: 3, feral_ghoul: 1 },
   },
   {
     id: 'gn_bh',
@@ -242,6 +244,7 @@ export const ROADS: Road[] = [
     to: 'bunker_hill',
     dangerLevel: 0.28,
     description: "North End streets. Reasonably patrolled by Triggermen.",
+    enemyWeights: { raider: 1 },
   },
   {
     id: 'sh_con',
@@ -250,7 +253,7 @@ export const ROADS: Road[] = [
     to: 'concord',
     dangerLevel: 0.44,
     description: "Through Lexington ruins. Feral ghouls are common.",
-    enemyWeights: { feral_ghoul: 3, raider: 1 , yao_guai: 1 },
+    enemyWeights: { feral_ghoul: 2, raider: 1 , yao_guai: 1 },
   },
   {
     id: 'sh_cov',
@@ -259,6 +262,7 @@ export const ROADS: Road[] = [
     to: 'covenant',
     dangerLevel: 0.24,
     description: "Farmland route. Relatively open and safe.",
+    enemyWeights: { raider: 3, feral_ghoul: 1, yao_guai: 1 },
   },
   {
     id: 'bh_cov',
@@ -267,6 +271,7 @@ export const ROADS: Road[] = [
     to: 'covenant',
     dangerLevel: 0.24,
     description: "Up the old interstate. Relatively open and safe.",
+    enemyWeights: { raider: 3, feral_ghoul: 1 },
   },
   {
     id: 'tc_jp',
@@ -275,6 +280,7 @@ export const ROADS: Road[] = [
     to: 'jamaica_plain',
     dangerLevel: 0.52,
     description: "Coastal road through raider territory.",
+    enemyWeights: { raider: 3, super_mutant: 1, yao_guai: 1 },
   },
   {
     id: 'bh_cps',
@@ -283,6 +289,7 @@ export const ROADS: Road[] = [
     to: 'cambridge_police_station',
     dangerLevel: 0.32,
     description: "Relatively safe merchant road. Caravans run this daily.",
+    enemyWeights: { raider: 4, super_mutant: 1 },
   },
   {
     id: 'con_cps',
@@ -291,6 +298,7 @@ export const ROADS: Road[] = [
     to: 'cambridge_police_station',
     dangerLevel: 0.42,
     description: "Out through the wastes to the old Concord Ruins.",
+    enemyWeights: { raider: 2, feral_ghoul: 2, super_mutant: 1, yao_guai: 1 },
   },
 ]
 
