@@ -162,6 +162,7 @@ export function resolveFight(
               ? `Blast wave hits ${st.name} for ${splashDmg} damage — ${st.name} is dead!`
               : `Blast wave hits ${st.name} for ${splashDmg} damage.`
             log.push(splashLine)
+            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: splashDealt, targetId: st.id, targetDied: st.dead, targetHealthAfter: st.health, logLine: splashLine })
           }
         }
       } else {
@@ -178,9 +179,11 @@ export function resolveFight(
             damageDealt += strayDealt
             stray.health = Math.max(0, stray.health - gun.damage)
             stray.dead = stray.health <= 0
-            log.push(stray.dead
+            const strayLine = stray.dead
               ? `Stray round clips ${stray.name} for ${gun.damage} damage — ${stray.name} is dead!`
-              : `Stray round clips ${stray.name} for ${gun.damage} damage.`)
+              : `Stray round clips ${stray.name} for ${gun.damage} damage.`
+            log.push(strayLine)
+            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: strayDealt, targetId: stray.id, targetDied: stray.dead, targetHealthAfter: stray.health, logLine: strayLine })
           }
         }
       }
