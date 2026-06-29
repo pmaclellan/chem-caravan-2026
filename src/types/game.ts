@@ -171,6 +171,17 @@ export type AnimStep =
       venomApplied?: boolean
       venomDotDamage?: number
     }
+  | {
+      kind: 'blast'
+      // Primary target (direct hit)
+      primaryTargetId: string
+      primaryDamage: number
+      primaryDied: boolean
+      primaryHealthAfter: number
+      // Splash targets — all animate simultaneously with the primary
+      splashHits: Array<{ targetId: string; damage: number; died: boolean; healthAfter: number; logLine: string }>
+      logLine: string   // primary hit log line
+    }
 
 export type LogType = 'info' | 'danger' | 'profit' | 'system'
 
