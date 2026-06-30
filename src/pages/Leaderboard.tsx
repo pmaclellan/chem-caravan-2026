@@ -15,7 +15,7 @@ interface LeaderboardRow {
   mode: GameModeId | null
   turns_reached: number | null
   created_at: string
-  state?: { endReason?: string | null; player?: { caps?: number } }
+  state?: { endReason?: string | null; player?: { caps?: number; xp?: number } }
 }
 
 
@@ -175,7 +175,7 @@ export default function Leaderboard() {
             >
               <div>#</div>
               <div className="col-span-2">Name</div>
-              <div>{isFreePlay ? 'XP / Caps' : 'Score'}</div>
+              <div>{isFreePlay ? 'XP / Caps' : 'Score / XP'}</div>
               {tab === 'global' && <div>Region</div>}
               <div>Turns</div>
             </div>
@@ -212,6 +212,11 @@ export default function Leaderboard() {
                     {isFreePlay && row.state?.player?.caps != null && (
                       <div className="text-xs text-pip-amber font-mono">
                         {row.state.player.caps.toLocaleString()} ¤
+                      </div>
+                    )}
+                    {!isFreePlay && row.state?.player?.xp != null && (
+                      <div className="text-xs text-pip-blue font-mono">
+                        {row.state.player.xp.toLocaleString()} XP
                       </div>
                     )}
                   </div>
