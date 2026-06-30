@@ -112,7 +112,6 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
           animation: 'sdPanelUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.1s both',
           opacity: 0,
         }}
-        onClick={e => e.stopPropagation()}
       >
         <div className="px-5 pt-4 pb-5 space-y-3">
 
