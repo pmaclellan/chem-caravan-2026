@@ -29,7 +29,11 @@ export function LoansharkPanel({ player }: { player: PlayerState }) {
     return n
   }
 
-  const setPreset = (n: number) => { setAmount(n); setRawAmount(String(n)) }
+  const setPreset = (n: number) => {
+    const v = player.debt > 0 ? Math.min(n, player.debt) : n
+    setAmount(v)
+    setRawAmount(String(v))
+  }
 
   return (
     <div className="border border-pip-border p-3 rounded space-y-3">
@@ -100,7 +104,7 @@ export function LoansharkPanel({ player }: { player: PlayerState }) {
           <button
             className="pip-btn"
             disabled={player.caps < Math.min(amount, player.debt)}
-            onClick={() => store.payDebt(resolveAmount())}
+            onClick={() => store.payDebt(Math.min(resolveAmount(), player.debt))}
           >
             REPAY {Math.min(amount, player.debt)} ¤
           </button>
