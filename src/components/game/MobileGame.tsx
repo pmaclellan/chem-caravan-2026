@@ -204,8 +204,8 @@ export default function MobileGame() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="pip-label">Caps on hand</div>
-              <div className="font-display text-pip-amber text-xl">
-                <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="text-pip-amber">
+              <div className="font-display text-pip-blue text-xl">
+                <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="text-pip-blue">
                   {player.caps.toLocaleString()} <CapsIcon size={16} />
                 </FlashText>
               </div>
@@ -229,15 +229,17 @@ export default function MobileGame() {
                 const salary = player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
                 const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : 0
                 if (salary === 0) return null
+                const salaryColor = turnsCovered < 2 ? 'text-pip-red' : turnsCovered < 4 ? 'text-pip-amber' : 'text-pip-green-dim'
                 return (
-                  <div className={`text-xs font-mono mt-0.5 ${
-                    turnsCovered < 2 ? 'text-pip-red' : turnsCovered < 4 ? 'text-pip-amber' : 'text-pip-green-dim'
-                  }`}>
-                    {salary} ¤/turn salary · ~{turnsCovered}t covered by caps
+                  <div className="mt-1.5">
+                    <div className="pip-label text-[10px]">Payroll</div>
+                    <div className={`font-display text-base ${salaryColor}`}>
+                      {salary} ¤/turn
+                      <span className={`font-mono text-xs ml-2 ${salaryColor}`}>~{turnsCovered}t covered</span>
+                    </div>
                   </div>
                 )
               })()}
-              <div className="text-xs text-pip-green-dim">Pack {used}/{capacity}</div>
             </div>
           </div>
           {Object.keys(player.ownedGuns ?? {}).length > 0 && (
@@ -275,12 +277,16 @@ export default function MobileGame() {
         {/* Pack inventory */}
         <div className="rounded-lg border border-pip-border p-4 space-y-2" style={PANEL_STYLE}>
           <div className="flex items-baseline justify-between mb-1">
-            <div className="pip-label">Pack — {used}/{capacity} units</div>
+            <div className={`pip-label ${used >= capacity ? 'text-pip-red' : ''}`}>
+              Pack —{' '}
+              <span className={used >= capacity ? 'text-pip-red' : ''}>{used}/{capacity}</span>
+              {' '}units
+            </div>
             {(() => {
               const packValue = inventoryBaseValue(player.inventory)
               return packValue > 0 ? (
-                <span className="text-xs text-pip-green-dim flex items-center gap-0.5">
-                  Pack value <span className="text-pip-amber ml-0.5">{packValue.toLocaleString()}</span> <CapsIcon size={11} />
+                <span className="text-xs text-pip-blue flex items-center gap-0.5">
+                  Pack value <span className="ml-0.5">{packValue.toLocaleString()}</span> <CapsIcon size={11} />
                 </span>
               ) : null
             })()}
@@ -617,7 +623,7 @@ export default function MobileGame() {
               <span className="text-pip-green-dim text-xs ml-2">{settlement.faction}</span>
             </div>
             <div className="flex items-center gap-2">
-              <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-amber text-sm">
+              <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-blue text-sm">
                 {player.caps.toLocaleString()} <CapsIcon size={13} />
               </FlashText>
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>

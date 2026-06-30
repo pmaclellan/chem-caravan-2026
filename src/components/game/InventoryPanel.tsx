@@ -32,7 +32,7 @@ export default function InventoryPanel({ player, market }: Props) {
       </div>
       {packValue > 0 && (
         <div className="text-xs text-pip-green-dim flex items-center gap-1">
-          Pack value: <span className="text-pip-amber">{packValue.toLocaleString()}</span> <CapsIcon size={11} />
+          Pack value: <span className="text-pip-blue">{packValue.toLocaleString()}</span> <CapsIcon size={11} />
         </div>
       )}
 
