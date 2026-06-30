@@ -47,7 +47,7 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "The D.C. ruins roads are the most dangerous on the map. If you have to cross them, go heavy on guards and keep your gun loaded.", speaker: "Omniscient Guide" },
   { text: "Interest compounds every turn you carry debt. Paying it off faster isn't just safer — it's cheaper.", speaker: "Omniscient Guide" },
   { text: "Armor absorbs flat damage every hit. On dangerous roads it pays for itself quickly — but needs repairs after heavy encounters.", speaker: "Omniscient Guide" },
-  { text: "You can own multiple guns and switch between them at any settlement. If you run dry on ammo mid-run, a backup weapon with rounds left can save the caravan.", speaker: "Omniscient Guide" },
+  { text: "You can own multiple guns. Equip whichever you want before heading out — swap at any settlement. Running dry on ammo just means your guards carry the fight until you restock.", speaker: "Omniscient Guide" },
 ]
 
 export function pickQuote(): TransitQuote {

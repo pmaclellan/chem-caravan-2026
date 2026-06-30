@@ -30,50 +30,78 @@ export function HowToPlay({ onClose }: Props) {
           <section>
             <div className="pip-label mb-1">Objective</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Survive the wasteland for 30 turns. Buy and sell chems to pay off your debt and get rich.
+              Buy and sell chems across the wasteland, pay off your debt, and get rich. Standard
+              mode ends after 30 turns — final score is caps minus debt. Free Play has no turn
+              limit and scores by XP.
             </p>
           </section>
 
           <section>
             <div className="pip-label mb-1">Trading</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Each settlement has different prices. Buy low, sell high. Market events (shortages and
-              surpluses) create big profit windows — watch the log for tips.
+              Each settlement has different prices. Buy low, sell high. Market events (shortages
+              and surpluses) create big profit windows — watch the log. Prices are color-coded:{' '}
+              <span className="text-pip-blue">blue</span> = cheap (buy),{' '}
+              <span className="text-pip-amber">rust</span> = expensive (sell).
             </p>
           </section>
 
           <section>
             <div className="pip-label mb-1">Travel</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Moving between settlements costs caps and advances the turn counter. Each road has a
-              danger rating: higher danger = more events and tougher enemies. Guards improve your
-              survival odds; brahmin add carry capacity but slow your escape chance.
+              Each trip advances the turn. Guard salary is deducted every turn — keep enough caps
+              to cover it. Higher danger roads mean more combat and tougher enemies. Guards help
+              you fight and flee. Brahmin add carry capacity but slow your escape.
             </p>
           </section>
 
           <section>
             <div className="pip-label mb-1">Combat</div>
             <p className="text-pip-green-dim leading-relaxed">
-              You can FIGHT or RUN when ambushed. Your guards fire alongside you each turn, drawing
-              from the same ammo pool. Fighting lets you loot caps and chems from defeated enemies.
-              Running is risky with brahmin. Losing all health ends the game.
+              Choose FIGHT or RUN. Your gun fires first, then each guard fires their own sidearm
+              — guards carry their own ammo. No gun? Guards still fight for you. Guards absorb
+              hits before your HP does. Armor absorbs after guards. Winning loots caps and chems.
+            </p>
+          </section>
+
+          <section>
+            <div className="pip-label mb-1">Weapons</div>
+            <p className="text-pip-green-dim leading-relaxed">
+              Buy guns at Armories. Own multiple — equip whichever you want before heading out
+              and switch at any settlement. Running dry on ammo just means your guards carry
+              the fight until you restock.
             </p>
           </section>
 
           <section>
             <div className="pip-label mb-1">Services</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Doctors heal you. Banks let you deposit / withdraw (no interest). Loansharks extend
-              your debt — think carefully. Gun shops sell weapons and ammo for you and your guards.
-              Guards and brahmin are hired here.
+              <span className="text-pip-green">Doctors</span> heal HP.{' '}
+              <span className="text-pip-green">Loansharks</span> handle debt (interest compounds
+              every turn — pay it down fast).{' '}
+              <span className="text-pip-green">Armories</span> sell weapons, ammo, and armor.{' '}
+              <span className="text-pip-green">Followers</span> hire guards and brahmin.
+              Services vary by settlement — check the map icons.
+            </p>
+          </section>
+
+          <section>
+            <div className="pip-label mb-1">Debt</div>
+            <p className="text-pip-green-dim leading-relaxed">
+              Debt compounds every turn. After a grace period, payment windows open — miss too
+              many and enforcers start appearing on the road. Clearing debt entirely earns a
+              one-time XP bonus.
             </p>
           </section>
 
           <section>
             <div className="pip-label mb-1">Price Colors</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Prices are color-coded by where they fall in the full historical range for that chem:
-              blue = unusually cheap, dim = near base, rust = unusually expensive. Buy blue, sell rust.
+              Prices are color-coded across their full historical range:{' '}
+              <span className="text-pip-blue">blue</span> = unusually cheap,
+              dim = near base price,{' '}
+              <span className="text-pip-amber">rust</span> = unusually expensive.
+              Buy blue, sell rust.
             </p>
           </section>
         </div>
