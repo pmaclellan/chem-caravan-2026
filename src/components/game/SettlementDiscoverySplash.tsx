@@ -48,22 +48,20 @@ function useTypewriter(text: string, charDelay = 55, startDelay = 300) {
   return { displayed, done }
 }
 
-function useCountUp(target: number, duration = 700, startDelay = 0) {
+function useCountUp(target: number, duration = 700, enabled = false) {
   const [val, setVal] = useState(0)
   useEffect(() => {
-    if (target === 0) return
+    if (target === 0 || !enabled) return
     let raf: number
-    const timeout = setTimeout(() => {
-      const t0 = performance.now()
-      const step = (now: number) => {
-        const p = Math.min((now - t0) / duration, 1)
-        setVal(Math.round(target * (1 - Math.pow(1 - p, 3))))
-        if (p < 1) raf = requestAnimationFrame(step)
-      }
-      raf = requestAnimationFrame(step)
-    }, startDelay)
-    return () => { clearTimeout(timeout); cancelAnimationFrame(raf) }
-  }, [target, duration, startDelay])
+    const t0 = performance.now()
+    const step = (now: number) => {
+      const p = Math.min((now - t0) / duration, 1)
+      setVal(Math.round(target * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration, enabled])
   return val
 }
 
@@ -94,7 +92,13 @@ interface Props {
 
 export default function SettlementDiscoverySplash({ settlement, xpGained, onDismiss }: Props) {
   const { displayed: typedName, done: typingDone } = useTypewriter(settlement.name.toUpperCase(), 55, 350)
-  const xpCounted = useCountUp(xpGained, 700, 650)
+  const [xpReady, setXpReady] = useState(false)
+  useEffect(() => {
+    if (!typingDone) return
+    const t = setTimeout(() => setXpReady(true), 250)
+    return () => clearTimeout(t)
+  }, [typingDone])
+  const xpCounted = useCountUp(xpGained, 700, xpReady)
   const tips = deriveTips(settlement)
 
   return (
@@ -210,14 +214,16 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
             </div>
           )}
 
-          {/* XP reward */}
+          {/* XP reward — appears after typewriter finishes */}
           <div
             className="flex items-center justify-between border rounded px-3 py-2.5 mt-1"
             style={{
               borderColor: 'var(--pip-blue)',
               backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 40%, transparent)',
-              animation: 'sdFadeIn 0.35s ease 0.68s both, sdXpGlow 2.5s ease-in-out 1.2s infinite',
-              opacity: 0,
+              opacity: xpReady ? 1 : 0,
+              transform: xpReady ? 'translateY(0)' : 'translateY(8px)',
+              transition: 'opacity 0.35s ease, transform 0.35s ease',
+              animation: xpReady ? 'sdXpGlow 2.5s ease-in-out 0.4s infinite' : 'none',
             }}
           >
             <div>
@@ -232,9 +238,12 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
           {/* Dismiss hint */}
           <div
             className="text-center text-pip-green-dim text-xs opacity-50"
-            style={{ animation: 'sdFadeIn 0.35s ease 0.85s both', opacity: 0 }}
+            style={{
+              opacity: xpReady ? 0.5 : 0,
+              transition: 'opacity 0.5s ease 0.3s',
+            }}
           >
-            tap to continue
+            tap anywhere to continue
           </div>
         </div>
       </div>
