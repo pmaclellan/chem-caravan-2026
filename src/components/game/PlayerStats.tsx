@@ -1,14 +1,20 @@
-import type { PlayerState } from '../../types/game'
+import type { PlayerState, SettlementMarket } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
+import { CHEMS } from '../../data/chems'
 import { totalGuardSalary } from '../../engine/economy'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { FlashText } from '../ui/FlashText'
 import { CapsIcon } from '../ui/CapsIcon'
 
-interface Props { player: PlayerState; turn: number; maxTurns: number | null }
+interface Props {
+  player: PlayerState
+  turn: number
+  maxTurns: number | null
+  market: SettlementMarket
+}
 
-export default function PlayerStats({ player, turn, maxTurns }: Props) {
+export default function PlayerStats({ player, turn, maxTurns, market }: Props) {
   const mode   = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const mc     = GAME_MODES[mode]
   const salary = totalGuardSalary(player, mc)
@@ -20,6 +26,12 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
 
   const { flashKey: capsFlash, direction: capsDir } = useValueFlash(player.caps)
   const capsVariant = capsDir === 'up' ? 'green' : 'amber'
+
+  const fmv = Object.entries(player.inventory).reduce((sum, [chemId, entry]) => {
+    if (entry.quantity === 0) return sum
+    const price = market.prices[chemId] ?? CHEMS[chemId]?.basePrice ?? 0
+    return sum + price * entry.quantity
+  }, 0)
 
   return (
     <div className="pip-panel flex flex-col gap-3 h-full">
@@ -63,11 +75,16 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
 
       <div className="border-t border-pip-border pt-2">
         <div className="pip-label">Caps on Hand</div>
-        <div className="pip-value">
-          <FlashText flashKey={capsFlash} variant={capsVariant} className="text-pip-amber">
+        <div className="pip-value flex items-center gap-1.5">
+          <FlashText flashKey={capsFlash} variant={capsVariant} className="text-pip-amber flex items-center gap-1.5">
             {player.caps.toLocaleString()} <CapsIcon size={16} />
           </FlashText>
         </div>
+        {fmv > 0 && (
+          <div className="text-xs text-pip-green-dim mt-0.5">
+            Pack FMV: <span className="text-pip-amber">{fmv.toLocaleString()} ¤</span>
+          </div>
+        )}
       </div>
 
       <div>
@@ -80,28 +97,28 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         )}
       </div>
 
-      <div className="border-t border-pip-border pt-2 flex flex-col gap-1">
-        <div className="flex justify-between">
+      <div className="border-t border-pip-border pt-2 flex flex-col gap-2">
+        <div className="flex justify-between items-center">
           <span className="pip-label">Guards</span>
           <span className="text-pip-green font-display">
             {player.guards}{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''}
           </span>
         </div>
         {salary > 0 && (
-          <div className="flex justify-between">
-            <span className="pip-label text-pip-green-dim">Salary</span>
-            <span className={`font-mono text-xs self-center ${
+          <div className="flex justify-between items-center">
+            <span className="pip-label text-pip-green-dim">Payroll</span>
+            <span className={`font-mono text-xs flex items-center gap-1 ${
               player.caps < salary * 2 ? 'text-pip-amber' : 'text-pip-green-dim'
             }`}>
-              {salary} ¤/turn
+              <CapsIcon size={11} /> {salary} / turn
             </span>
           </div>
         )}
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <span className="pip-label">Brahmin</span>
           <span className="text-pip-green font-display">{player.brahmin}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <span className="pip-label">Capacity</span>
           <span className="text-pip-green font-display">{20 + player.brahmin * 10}</span>
         </div>

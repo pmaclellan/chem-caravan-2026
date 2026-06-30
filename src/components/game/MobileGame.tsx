@@ -271,7 +271,21 @@ export default function MobileGame() {
 
         {/* Pack inventory */}
         <div className="rounded-lg border border-pip-border p-4 space-y-2" style={PANEL_STYLE}>
-          <div className="pip-label mb-1">Pack — {used}/{capacity} units</div>
+          <div className="flex items-baseline justify-between mb-1">
+            <div className="pip-label">Pack — {used}/{capacity} units</div>
+            {(() => {
+              const fmv = Object.entries(player.inventory).reduce((sum, [chemId, entry]) => {
+                if (entry.quantity === 0) return sum
+                const price = market.prices[chemId] ?? CHEMS[chemId]?.basePrice ?? 0
+                return sum + price * entry.quantity
+              }, 0)
+              return fmv > 0 ? (
+                <span className="text-xs text-pip-green-dim flex items-center gap-0.5">
+                  FMV <span className="text-pip-amber ml-0.5">{fmv.toLocaleString()}</span> <CapsIcon size={11} />
+                </span>
+              ) : null
+            })()}
+          </div>
 
           {packEntries.length === 0 ? (
             <div className="text-pip-green-dim text-sm">Nothing in your pack.</div>
