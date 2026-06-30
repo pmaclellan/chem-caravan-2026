@@ -3,6 +3,7 @@ import { CHEMS } from '../../data/chems'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { useMapFlash } from '../../hooks/useMapFlash'
 import { FlashOverlay } from '../ui/FlashOverlay'
+import { CapsIcon } from '../ui/CapsIcon'
 
 interface Props {
   player: PlayerState
@@ -13,6 +14,11 @@ export default function InventoryPanel({ player, market }: Props) {
   const capacity = calculateCapacity(player.brahmin)
   const used = totalInventoryItems(player.inventory)
   const entries = Object.entries(player.inventory).filter(([, v]) => v.quantity > 0)
+
+  const fmv = entries.reduce((sum, [chemId, entry]) => {
+    const price = market.prices[chemId] ?? CHEMS[chemId]?.basePrice ?? 0
+    return sum + price * entry.quantity
+  }, 0)
 
   // Track quantity changes for each chem
   const quantities = Object.fromEntries(
@@ -26,6 +32,11 @@ export default function InventoryPanel({ player, market }: Props) {
         INVENTORY
         <span className="text-pip-green-dim text-sm ml-2">{used}/{capacity}</span>
       </div>
+      {fmv > 0 && (
+        <div className="text-xs text-pip-green-dim flex items-center gap-1">
+          FMV: <span className="text-pip-amber">{fmv.toLocaleString()}</span> <CapsIcon size={11} />
+        </div>
+      )}
 
       {entries.length === 0 ? (
         <div className="text-pip-green-dim text-xs">Nothing in your pack.</div>
