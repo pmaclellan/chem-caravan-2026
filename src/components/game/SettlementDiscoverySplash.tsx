@@ -10,10 +10,9 @@ const KEYFRAMES = `
     from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes sdNameIn {
-    0%   { opacity: 0; transform: translateX(-16px) skewX(-4deg); }
-    60%  { opacity: 1; transform: translateX(2px) skewX(0.5deg); }
-    100% { opacity: 1; transform: translateX(0) skewX(0); }
+  @keyframes sdCursor {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
   }
   @keyframes sdFadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -28,6 +27,26 @@ const KEYFRAMES = `
     50%       { box-shadow: 0 0 18px var(--pip-blue), inset 0 0 14px rgba(42,90,138,0.14); }
   }
 `
+
+function useTypewriter(text: string, charDelay = 55, startDelay = 300) {
+  const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    setDisplayed('')
+    setDone(false)
+    const timeout = setTimeout(() => {
+      let i = 0
+      const interval = setInterval(() => {
+        i++
+        setDisplayed(text.slice(0, i))
+        if (i >= text.length) { clearInterval(interval); setDone(true) }
+      }, charDelay)
+      return () => clearInterval(interval)
+    }, startDelay)
+    return () => clearTimeout(timeout)
+  }, [text, charDelay, startDelay])
+  return { displayed, done }
+}
 
 function useCountUp(target: number, duration = 700, startDelay = 0) {
   const [val, setVal] = useState(0)
@@ -74,6 +93,7 @@ interface Props {
 }
 
 export default function SettlementDiscoverySplash({ settlement, xpGained, onDismiss }: Props) {
+  const { displayed: typedName, done: typingDone } = useTypewriter(settlement.name.toUpperCase(), 55, 350)
   const xpCounted = useCountUp(xpGained, 700, 650)
   const tips = deriveTips(settlement)
 
@@ -129,16 +149,23 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
             <div className="h-px flex-1" style={{ backgroundColor: 'var(--pip-border-dim)' }} />
           </div>
 
-          {/* Settlement name */}
+          {/* Settlement name — typewriter reveal */}
           <div
             className="font-display text-pip-green leading-none"
-            style={{
-              fontSize: 'clamp(1.7rem, 7vw, 2.4rem)',
-              animation: 'sdNameIn 0.5s cubic-bezier(0.22,1,0.36,1) 0.25s both',
-              opacity: 0,
-            }}
+            style={{ fontSize: 'clamp(1.7rem, 7vw, 2.4rem)' }}
           >
-            {settlement.name.toUpperCase()}
+            {typedName}
+            {!typingDone && (
+              <span
+                className="inline-block w-0.5 ml-0.5 align-baseline"
+                style={{
+                  height: '0.85em',
+                  backgroundColor: 'var(--pip-green)',
+                  animation: 'sdCursor 0.6s step-end infinite',
+                  verticalAlign: 'text-bottom',
+                }}
+              />
+            )}
           </div>
 
           {/* Faction */}
