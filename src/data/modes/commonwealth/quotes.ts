@@ -51,7 +51,7 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "The price color on each chem tells you where it sits relative to the market average. Green is cheap. Red is expensive. Positions shift every turn.", speaker: "Omniscient Guide" },
   { text: "Armor absorbs flat damage every hit. On dangerous roads it pays for itself quickly — but it needs repairs after heavy encounters.", speaker: "Omniscient Guide" },
   { text: "If your pack is full when you find a chem stash, you can swap items on the spot. Drop something low-value, take something better.", speaker: "Omniscient Guide" },
-  { text: "Doctors heal you fully for a fixed price. Stimpaks heal you on the road for free. If you're heading somewhere with a doctor, save your Stimpaks.", speaker: "Omniscient Guide" },
+
   { text: "Power Armor guards cost more than regular guards but absorb enormous punishment. Worth it on the highest-danger roads.", speaker: "Omniscient Guide" },
   { text: "The Triggermen start with warnings. Miss enough payment windows and they stop warning.", speaker: "Omniscient Guide" },
   { text: "Gwinnett Ale is cheap and plentiful across the Commonwealth — easy early cash flow. Stimpaks and Ultrajet are where the real margins are, if you can afford to stock them.", speaker: "Omniscient Guide" },
