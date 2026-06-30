@@ -19,8 +19,8 @@ const KEYFRAMES = `
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes dfXpGlow {
-    0%, 100% { box-shadow: 0 0 8px var(--pip-amber), inset 0 0 10px rgba(196,80,26,0.07); }
-    50%       { box-shadow: 0 0 28px var(--pip-amber), inset 0 0 22px rgba(196,80,26,0.16); }
+    0%, 100% { box-shadow: 0 0 8px var(--pip-blue), inset 0 0 10px rgba(42,90,138,0.07); }
+    50%       { box-shadow: 0 0 28px var(--pip-blue), inset 0 0 22px rgba(42,90,138,0.16); }
   }
   @keyframes dfBtnPulse {
     0%, 100% { opacity: 1; box-shadow: none; }
@@ -154,7 +154,7 @@ export default function DebtFreedomModal({ xpGained, onDismiss }: Props) {
         <div
           className="rounded border px-5 py-4 flex items-center justify-between mb-5"
           style={{
-            borderColor: 'var(--pip-amber)',
+            borderColor: 'var(--pip-blue)',
             backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 55%, transparent)',
             animation: 'dfRise 0.4s ease 0.88s both, dfXpGlow 2.8s ease-in-out 1.35s infinite',
             opacity: 0,
@@ -165,7 +165,7 @@ export default function DebtFreedomModal({ xpGained, onDismiss }: Props) {
             <div className="text-pip-green-dim text-xs opacity-60 mt-0.5">debt cleared bonus</div>
           </div>
           <span
-            className="font-display tabular-nums text-pip-amber"
+            className="font-display tabular-nums text-pip-blue"
             style={{ fontSize: '2.6rem', lineHeight: 1 }}
           >
             +{xpCounted.toLocaleString()}
