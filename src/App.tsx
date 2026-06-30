@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
 import HowToPlayPage from './pages/HowToPlay'
+import SetPasswordModal from './components/auth/SetPasswordModal'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore()
@@ -23,5 +24,10 @@ const router = createBrowserRouter([
 export default function App() {
   const initialize = useAuthStore(s => s.initialize)
   useEffect(() => { initialize() }, [initialize])
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <RouterProvider router={router} />
+      <SetPasswordModal />
+    </>
+  )
 }
