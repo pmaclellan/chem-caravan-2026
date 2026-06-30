@@ -106,6 +106,8 @@ export function initializeGame(
     gameOverReason: null,
     endReason: null,
     log,
+    pendingDebtFreedom: null,
+    pendingDiscovery: null,
   }
 }
 
