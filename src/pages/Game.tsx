@@ -107,7 +107,7 @@ export default function Game() {
       <div className="flex gap-2 flex-1 min-h-0" style={{ height: 'calc(100vh - 80px)' }}>
         {/* Left: Player Stats */}
         <div className="w-52 flex-shrink-0 overflow-y-auto">
-          <PlayerStats player={player} turn={world.turn} maxTurns={world.maxTurns} market={market} />
+          <PlayerStats player={player} turn={world.turn} maxTurns={world.maxTurns} />
         </div>
 
         {/* Center: Main action */}

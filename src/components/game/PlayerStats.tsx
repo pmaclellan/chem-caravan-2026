@@ -1,8 +1,7 @@
-import type { PlayerState, SettlementMarket } from '../../types/game'
+import type { PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
-import { CHEMS } from '../../data/chems'
-import { totalGuardSalary } from '../../engine/economy'
+import { totalGuardSalary, inventoryBaseValue } from '../../engine/economy'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { FlashText } from '../ui/FlashText'
 import { CapsIcon } from '../ui/CapsIcon'
@@ -11,10 +10,9 @@ interface Props {
   player: PlayerState
   turn: number
   maxTurns: number | null
-  market: SettlementMarket
 }
 
-export default function PlayerStats({ player, turn, maxTurns, market }: Props) {
+export default function PlayerStats({ player, turn, maxTurns }: Props) {
   const mode   = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const mc     = GAME_MODES[mode]
   const salary = totalGuardSalary(player, mc)
@@ -27,11 +25,7 @@ export default function PlayerStats({ player, turn, maxTurns, market }: Props) {
   const { flashKey: capsFlash, direction: capsDir } = useValueFlash(player.caps)
   const capsVariant = capsDir === 'up' ? 'green' : 'amber'
 
-  const fmv = Object.entries(player.inventory).reduce((sum, [chemId, entry]) => {
-    if (entry.quantity === 0) return sum
-    const price = market.prices[chemId] ?? CHEMS[chemId]?.basePrice ?? 0
-    return sum + price * entry.quantity
-  }, 0)
+  const packValue = inventoryBaseValue(player.inventory)
 
   return (
     <div className="pip-panel flex flex-col gap-3 h-full">
@@ -80,9 +74,9 @@ export default function PlayerStats({ player, turn, maxTurns, market }: Props) {
             {player.caps.toLocaleString()} <CapsIcon size={16} />
           </FlashText>
         </div>
-        {fmv > 0 && (
+        {packValue > 0 && (
           <div className="text-xs text-pip-green-dim mt-0.5">
-            Pack FMV: <span className="text-pip-amber">{fmv.toLocaleString()} ¤</span>
+            Pack value: <span className="text-pip-amber">{packValue.toLocaleString()} ¤</span>
           </div>
         )}
       </div>
