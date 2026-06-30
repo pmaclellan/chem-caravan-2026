@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Settlement } from '../../data/modes'
 
-const AUTO_DISMISS_MS = 5500
-
 const KEYFRAMES = `
   @keyframes sdOverlay {
     from { opacity: 0; }
@@ -28,10 +26,6 @@ const KEYFRAMES = `
   @keyframes sdXpGlow {
     0%, 100% { box-shadow: 0 0 6px var(--pip-blue), inset 0 0 6px rgba(42,90,138,0.06); }
     50%       { box-shadow: 0 0 18px var(--pip-blue), inset 0 0 14px rgba(42,90,138,0.14); }
-  }
-  @keyframes sdTimerBar {
-    from { transform: scaleX(1); }
-    to   { transform: scaleX(0); }
   }
 `
 
@@ -87,11 +81,6 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
   const xpCounted = useCountUp(xpGained, 700, 650)
   const tips = deriveTips(settlement)
 
-  useEffect(() => {
-    const t = setTimeout(onDismiss, AUTO_DISMISS_MS)
-    return () => clearTimeout(t)
-  }, [onDismiss])
-
   return (
     <div
       className="fixed inset-0 z-40 flex items-end sm:items-center justify-center"
@@ -129,18 +118,6 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Progress timer bar — sits at very top of panel */}
-        <div className="overflow-hidden rounded-t" style={{ height: '3px', backgroundColor: 'var(--pip-border-dim)' }}>
-          <div
-            className="h-full"
-            style={{
-              backgroundColor: 'var(--pip-amber)',
-              transformOrigin: 'left',
-              animation: `sdTimerBar ${AUTO_DISMISS_MS}ms linear 0.1s both`,
-            }}
-          />
-        </div>
-
         <div className="px-5 pt-4 pb-5 space-y-3">
 
           {/* "NEW LOCATION" badge */}
