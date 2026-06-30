@@ -26,15 +26,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isPasswordRecovery: false,
 
   initialize: async () => {
-    const { data } = await supabase.auth.getSession()
-    set({ session: data.session, user: data.session?.user ?? null, isLoading: false })
-
+    // Listener must be registered before getSession() so we catch
+    // PASSWORD_RECOVERY before it fires during code exchange
     supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null })
       if (event === 'PASSWORD_RECOVERY') {
         set({ isPasswordRecovery: true })
       }
     })
+
+    const { data } = await supabase.auth.getSession()
+    set({ session: data.session, user: data.session?.user ?? null, isLoading: false })
   },
 
   signUp: async (email, password) => {
