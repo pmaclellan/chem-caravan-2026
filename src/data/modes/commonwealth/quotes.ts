@@ -56,7 +56,7 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "The Triggermen start with warnings. Miss enough payment windows and they stop warning.", speaker: "Omniscient Guide" },
   { text: "Gwinnett Ale is cheap and plentiful across the Commonwealth — easy early cash flow. Stimpaks and Ultrajet are where the real margins are, if you can afford to stock them.", speaker: "Omniscient Guide" },
   { text: "Bunker Hill sits at the center of the Commonwealth's trade routes. If you're not sure where to sell, start there.", speaker: "Omniscient Guide" },
-  { text: "You can own multiple guns and switch between them at any settlement. If you run dry on ammo mid-run, a backup weapon with rounds left can save the caravan.", speaker: "Omniscient Guide" },
+  { text: "You can own multiple guns. Equip whichever you want before heading out — swap at any settlement. Running dry on ammo just means your guards carry the fight until you restock.", speaker: "Omniscient Guide" },
 ]
 
 export function pickQuote(): TransitQuote {

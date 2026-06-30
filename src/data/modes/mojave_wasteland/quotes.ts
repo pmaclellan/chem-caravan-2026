@@ -47,7 +47,7 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "Legion Assassins operate on an escalating contract. Miss a payment window and they find you. Miss two and they don't leave you walking.", speaker: "Omniscient Guide" },
   { text: "Turbo and Rocket are Mojave-exclusive. The demand is local, but the margins on both are exceptional if you can find them cheap and sell at Camp McCarran or Novac.", speaker: "Omniscient Guide" },
   { text: "Interest compounds every turn you carry debt. Paying it off faster isn't just safer — it's cheaper.", speaker: "Omniscient Guide" },
-  { text: "You can own multiple guns and switch between them at any settlement. If you run dry on ammo mid-run, a backup weapon with rounds left can save the caravan.", speaker: "Omniscient Guide" },
+  { text: "You can own multiple guns. Equip whichever you want before heading out — swap at any settlement. Running dry on ammo just means your guards carry the fight until you restock.", speaker: "Omniscient Guide" },
 ]
 
 export function pickQuote(): TransitQuote {
