@@ -87,7 +87,8 @@
       "Bash(cwebp -q 85 /tmp/tenpenny.png -o public/assets/settlements/capital/Fo3_Tenpenny_Tower.webp)",
       "Bash(cwebp --version)",
       "Bash(cwebp -resize 1000 0 -q 82 -preset photo primm.webp -o primm_small.webp)",
-      "Bash(gh issue *)"
+      "Bash(gh issue *)",
+      "Bash(grep -v \"^\\\\-\\\\-$\")"
     ],
     "additionalDirectories": [
       "/Users/pmaclellan"

@@ -16,6 +16,8 @@ import CombatSummaryPanel from './CombatSummaryPanel'
 import EventPanel from './EventPanel'
 import TravelSplash from './TravelSplash'
 import SettlementMap from './SettlementMap'
+import DebtFreedomModal from './DebtFreedomModal'
+import SettlementDiscoverySplash from './SettlementDiscoverySplash'
 import { CapsIcon } from '../ui/CapsIcon'
 import { DoctorPanel } from './service-panels/DoctorPanel'
 import { LoansharkPanel } from './service-panels/LoansharkPanel'
@@ -51,7 +53,7 @@ export default function MobileGame() {
   const [serviceOpen, setServiceOpen] = useState<string | null>(null)
 
   const store = useGameStore()
-  const { gameState, buy, sell, travelTo, toast } = store
+  const { gameState, buy, sell, travelTo, toast, dismissDebtFreedom, dismissDiscovery } = store
 
   const phase    = gameState?.phase ?? null
   const location = gameState?.player.location ?? null
@@ -660,6 +662,18 @@ export default function MobileGame() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Celebration overlays */}
+      {gameState.pendingDebtFreedom != null && (
+        <DebtFreedomModal xpGained={gameState.pendingDebtFreedom} onDismiss={dismissDebtFreedom} />
+      )}
+      {gameState.pendingDiscovery && (
+        <SettlementDiscoverySplash
+          settlement={mc.settlements[gameState.pendingDiscovery.settlementId]}
+          xpGained={gameState.pendingDiscovery.xpGained}
+          onDismiss={dismissDiscovery}
+        />
       )}
     </div>
   )

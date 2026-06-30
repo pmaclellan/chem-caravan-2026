@@ -131,6 +131,10 @@ interface GameStore {
   buyAntivenom: () => void
   useAntivenom: () => void
 
+  // Celebration modals
+  dismissDebtFreedom: () => void
+  dismissDiscovery: () => void
+
   // Internal
   _setToast: (msg: string | null) => void
 }
@@ -167,6 +171,8 @@ function normalizeState(state: GameState): GameState {
         )
       })(),
     },
+    pendingDebtFreedom: state.pendingDebtFreedom ?? null,
+    pendingDiscovery: state.pendingDiscovery ?? null,
   }
 }
 
@@ -763,12 +769,14 @@ export const useGameStore = create<GameStore>((set, get) => {
         const log = [...state.log, { turn: state.world.turn, message: `Paid ${amount} caps toward debt. Remaining: ${paid.debt}.`, type: 'profit' as const }]
         const debtCleared = paid.debt === 0 && !state.player.debtEverCleared
         let player = debtCleared ? { ...paid, debtEverCleared: true } : paid
+        let pendingDebtFreedom: number | null = null
         if (debtCleared) {
           const { player: withXp, logMessage: xpMsg } = awardXp(player, { type: XpEventType.DebtPayoff })
           player = withXp
+          pendingDebtFreedom = withXp.xp - paid.xp
           if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
-        return { ...state, player, log }
+        return { ...state, player, log, pendingDebtFreedom }
       })
     },
 
@@ -876,6 +884,14 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     retire: () => {
       mutate(state => retireGameFn(state))
+    },
+
+    dismissDebtFreedom: () => {
+      mutate(state => ({ ...state, pendingDebtFreedom: null }))
+    },
+
+    dismissDiscovery: () => {
+      mutate(state => ({ ...state, pendingDiscovery: null }))
     },
 
     _setToast: (msg) => set({ toast: msg }),

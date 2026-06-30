@@ -16,13 +16,15 @@ import InventoryPanel from '../components/game/InventoryPanel'
 import GameLog from '../components/game/GameLog'
 import TravelSplash from '../components/game/TravelSplash'
 import MobileGame from '../components/game/MobileGame'
+import DebtFreedomModal from '../components/game/DebtFreedomModal'
+import SettlementDiscoverySplash from '../components/game/SettlementDiscoverySplash'
 
 type ActiveTab = 'market' | 'travel' | 'services'
 
 export default function Game() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { gameState, loadActiveGame, toast, _setToast, retire } = useGameStore()
+  const { gameState, loadActiveGame, toast, _setToast, retire, dismissDebtFreedom, dismissDiscovery } = useGameStore()
   const [tab, setTab] = useState<ActiveTab>('market')
   const isMobile = useIsMobile()
 
@@ -190,6 +192,18 @@ export default function Game() {
           </div>
         </div>
       </div>
+
+      {/* Celebration overlays */}
+      {gameState.pendingDebtFreedom != null && (
+        <DebtFreedomModal xpGained={gameState.pendingDebtFreedom} onDismiss={dismissDebtFreedom} />
+      )}
+      {gameState.pendingDiscovery && (
+        <SettlementDiscoverySplash
+          settlement={mc.settlements[gameState.pendingDiscovery.settlementId]}
+          xpGained={gameState.pendingDiscovery.xpGained}
+          onDismiss={dismissDiscovery}
+        />
+      )}
     </div>
   )
 }

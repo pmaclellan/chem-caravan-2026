@@ -37,7 +37,7 @@ export const GUNS: Record<string, GunDefinition> = {
   },
   anti_materiel_rifle: {
     id: 'anti_materiel_rifle',
-    name: 'Anti-Materiel Rifle',
+    name: 'Anti-Material Rifle',
     price: 1500,
     accuracy: 0.85,
     damage: 110,
