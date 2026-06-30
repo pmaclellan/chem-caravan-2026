@@ -259,9 +259,12 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
 
   // Settlement discovery XP (first visit per run)
   const visited = player.visitedSettlements ?? []
+  let pendingDiscovery: GameState['pendingDiscovery'] = null
   if (!visited.includes(destinationId)) {
     const { player: p2, logMessage: xpMsg2 } = awardXp(player, { type: XpEventType.SettlementDiscovery, settlementName: destName })
+    const xpGained = p2.xp - player.xp
     player = { ...p2, visitedSettlements: [...visited, destinationId] }
+    pendingDiscovery = { settlementId: destinationId, xpGained }
     if (xpMsg2) log.push(makeLog(turn, xpMsg2, 'profit'))
   } else {
     player = { ...player, visitedSettlements: visited }
@@ -299,6 +302,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     pendingDestination: null,
     combat: null,
     log,
+    pendingDiscovery,
   }
 }
 

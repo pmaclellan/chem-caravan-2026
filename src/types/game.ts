@@ -266,6 +266,8 @@ export interface GameState {
   gameOverReason: GameOverReason | null
   endReason: string | null    // human-readable end reason for death screen + leaderboard
   log: LogEntry[]
+  pendingDebtFreedom: number | null        // XP amount to celebrate when debt first cleared
+  pendingDiscovery: { settlementId: string; xpGained: number } | null  // first-visit reward splash
 }
 
 // Shape of a row in the Supabase games table (subset of columns we care about client-side)
