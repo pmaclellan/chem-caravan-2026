@@ -64,10 +64,6 @@ function deriveTips(s: Settlement): string[] {
   }
   if (s.availabilityBonus !== undefined && s.availabilityBonus > 0)
     tips.push('Higher chem availability — more variety in stock')
-  if (s.hasDoctor)   tips.push('Doctor on site — heal up between runs')
-  if (s.hasLoanshark) tips.push('Loanshark available — borrow or repay debt')
-  if (s.hasArmory)   tips.push('Armory here — buy weapons and ammo')
-  if (s.hasFollowers) tips.push('Hire guards and brahmin here')
   return tips
 }
 
@@ -203,7 +199,7 @@ export default function SettlementDiscoverySplash({ settlement, xpGained, onDism
               <div className="text-pip-green-dim text-xs opacity-60">first visit</div>
             </div>
             <span className="font-display text-pip-blue tabular-nums" style={{ fontSize: '1.8rem', lineHeight: 1 }}>
-              +{xpCounted}
+              +{xpCounted} XP
             </span>
           </div>
 
