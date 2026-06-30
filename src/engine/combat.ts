@@ -102,13 +102,7 @@ export function resolveFight(
   combat: CombatState,
   modeConfig: GameModeConfig,
 ): { player: PlayerState; combat: CombatState; animSteps: AnimStep[] } {
-  if (!player.gun) {
-    return { player, combat: { ...combat, log: [...combat.log, "You have no weapon!"] }, animSteps: [] }
-  }
-  if (player.gun.ammo === 0) {
-    return { player, combat: { ...combat, log: [...combat.log, "You squeeze the trigger — click. No ammo."] }, animSteps: [] }
-  }
-  if (player.gun.requiresPowerArmor && player.armor?.id !== 'power_armor') {
+  if (player.gun?.requiresPowerArmor && player.armor?.id !== 'power_armor') {
     return { player, combat: { ...combat, log: [...combat.log, `${player.gun.name} requires Power Armor to wield. Equip Power Armor first.`] }, animSteps: [] }
   }
   const log: string[] = []
@@ -117,12 +111,13 @@ export function resolveFight(
   let { capsPool } = combat
   let { health, guards } = player
   let powerArmorGuards = player.powerArmorGuards ?? 0
-  let gun = { ...player.gun }
+  let gun = player.gun ? { ...player.gun } : null
   let armor = player.armor ? { ...player.armor } : null
   let mount = player.mount ? { ...player.mount } : null
   let damageDealt = 0
 
-  // ── Player fires ─────────────────────────────────────────────────────────
+  // ── Player fires (only if armed) ─────────────────────────────────────────
+  if (gun) {
   const shotsPerTurn = gun.shotsPerTurn ?? 1
   const isBurst = shotsPerTurn > 1
   const inCooldown = (gun.cooldownRemaining ?? 0) > 0
@@ -223,6 +218,7 @@ export function resolveFight(
   } else {
     log.push(`Not enough ammo to fire the ${gun.name}.`)
   }
+  } // end if (gun)
 
   // ── Guards fire with their own sidearms (no shared ammo pool) ───────────
   const allGuardCount = guards + powerArmorGuards
@@ -380,7 +376,7 @@ export function resolveFight(
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun, armor, mount }
+  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun: gun ?? null, armor: armor ?? null, mount: mount ?? null }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
