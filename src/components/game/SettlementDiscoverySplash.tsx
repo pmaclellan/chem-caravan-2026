@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Settlement } from '../../types/game'
+import type { Settlement } from '../../data/modes'
 
 const AUTO_DISMISS_MS = 5500
 

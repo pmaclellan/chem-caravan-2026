@@ -290,6 +290,8 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
       pendingDestination: null,
       combat: null,
       log,
+      pendingDebtFreedom: null,
+      pendingDiscovery: null,
     }
   }
 
