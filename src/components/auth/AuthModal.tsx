@@ -96,6 +96,7 @@ export default function AuthModal({ onClose }: Props) {
               <label className="pip-label block mb-1">Email</label>
               <input
                 type="email"
+                name="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -110,6 +111,7 @@ export default function AuthModal({ onClose }: Props) {
                 <label className="pip-label block mb-1">Password</label>
                 <input
                   type="password"
+                  name="password"
                   required
                   minLength={6}
                   value={password}

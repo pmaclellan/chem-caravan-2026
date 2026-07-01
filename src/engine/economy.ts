@@ -309,9 +309,9 @@ export function calculateNetWorth(player: PlayerState, mc: GameModeConfig): numb
   return player.caps + inventoryBaseValue(player.inventory) + gunsValue + armorValue - player.debt
 }
 
-// Standard mode score: net worth + XP. For free play (XP-only), score is computed in gameStore.
+// Standard mode score: net worth only. Free play score (XP-only) is computed in gameStore.
 export function calculateFinalScore(player: PlayerState, mc: GameModeConfig): number {
-  return calculateNetWorth(player, mc) + (player.xp ?? 0)
+  return calculateNetWorth(player, mc)
 }
 
 export function resolveGameStatus(

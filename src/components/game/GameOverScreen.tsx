@@ -90,8 +90,9 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   const armorValue = player.armor
     ? Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * (mc.armors[player.armor.id]?.price ?? 0))
     : 0
-  const netWorth   = calculateNetWorth(player, mc)
-  const finalScore = netWorth + (player.xp ?? 0)
+  const netWorth = calculateNetWorth(player, mc)
+  // Standard score = net worth; free play score = XP
+  const finalScore = isFreePlay ? (player.xp ?? 0) : netWorth
 
   const showInfo      = phase !== 'header'
   const showBreakdown = phase === 'breakdown' || phase === 'final' || phase === 'buttons'
@@ -99,16 +100,14 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   const showButtons   = phase === 'buttons'
 
   // Breakdown count-ups (staggered)
-  const capsVal     = useCountUp(player.caps,                 600,   0, showBreakdown)
-  const invVal      = useCountUp(inventoryValue,              600, 120, showBreakdown)
-  const gunsVal     = useCountUp(gunsValue,                   500, 240, showBreakdown)
-  const armorVal    = useCountUp(armorValue,                  500, 360, showBreakdown)
-  const debtVal     = useCountUp(player.debt,                 500, 480, showBreakdown)
-  const nwVal       = useCountUp(Math.abs(netWorth),          800, 680, showBreakdown)
+  const capsVal  = useCountUp(player.caps,       600,   0, showBreakdown)
+  const invVal   = useCountUp(inventoryValue,    600, 120, showBreakdown)
+  const gunsVal  = useCountUp(gunsValue,         500, 240, showBreakdown)
+  const armorVal = useCountUp(armorValue,        500, 360, showBreakdown)
+  const debtVal  = useCountUp(player.debt,       500, 480, showBreakdown)
 
-  // Final count-ups
-  const xpVal       = useCountUp(player.xp ?? 0,             600,   0, showFinal)
-  const scoreVal    = useCountUp(Math.abs(finalScore),       1000, 700, showFinal)
+  // Final score count-up (net worth for standard, XP for free play)
+  const scoreVal = useCountUp(Math.abs(finalScore), 1000, 700, showFinal)
 
   // Derived stats
   const hasStats = !!stats && statHasData(stats)
@@ -216,37 +215,40 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
             </div>
           )}
 
-          <div className="border-t border-pip-border pt-1.5 flex justify-between items-baseline">
-            <span className="pip-label">Net worth</span>
-            <span className={`font-mono text-lg ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
-              {netWorth < 0 ? '-' : ''}{nwVal.toLocaleString()} ¤
-            </span>
-          </div>
-
-          {/* Standard mode: XP addend + final score */}
+          {/* Standard: net worth IS the final score */}
           {!isFreePlay && (
+            <div className="border-t border-pip-border pt-2 flex justify-between items-center" style={fadeStyle(showFinal)}>
+              <span className="font-display tracking-widest text-pip-green-dim text-sm">FINAL SCORE</span>
+              <span className={`font-display text-3xl ${netWorth >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                {netWorth < 0 ? '-' : ''}{scoreVal.toLocaleString()} ¤
+              </span>
+            </div>
+          )}
+
+          {/* Free play: net worth as context, then XP as the score */}
+          {isFreePlay && (
             <>
-              <div className="flex justify-between text-sm" style={fadeStyle(showFinal)}>
-                <span className="pip-label">+ XP earned</span>
-                <span className="text-pip-blue font-mono">{xpVal.toLocaleString()}</span>
-              </div>
-              <div className="border-t border-pip-border pt-2 flex justify-between items-center" style={fadeStyle(showFinal, 300)}>
-                <span className="font-display tracking-widest text-pip-green-dim text-sm">FINAL SCORE</span>
-                <span className={`font-display text-3xl ${finalScore >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                  {finalScore < 0 ? '-' : ''}{scoreVal.toLocaleString()}
+              <div className="border-t border-pip-border pt-1.5 flex justify-between items-baseline">
+                <span className="pip-label">Net worth</span>
+                <span className={`font-mono text-lg ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
+                  {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
                 </span>
+              </div>
+              <div className="border-t border-pip-border pt-2 flex justify-between items-center" style={fadeStyle(showFinal)}>
+                <span className="font-display tracking-widest text-pip-green-dim text-sm">XP EARNED</span>
+                <span className="font-display text-3xl text-pip-blue">{scoreVal.toLocaleString()} XP</span>
               </div>
             </>
           )}
-
-          {/* Free play: XP as the score */}
-          {isFreePlay && (
-            <div className="border-t border-pip-border pt-2 flex justify-between items-center" style={fadeStyle(showFinal)}>
-              <span className="font-display tracking-widest text-pip-green-dim text-sm">XP EARNED</span>
-              <span className="font-display text-3xl text-pip-blue">{xpVal.toLocaleString()} XP</span>
-            </div>
-          )}
         </div>
+
+        {/* XP earned — informational for standard, not part of score */}
+        {!isFreePlay && (player.xp ?? 0) > 0 && (
+          <div className="flex justify-between text-sm" style={fadeStyle(showFinal)}>
+            <span className="pip-label">XP earned</span>
+            <span className="text-pip-blue font-mono">{(player.xp ?? 0).toLocaleString()} XP</span>
+          </div>
+        )}
 
         {/* Buttons */}
         <div style={{ ...fadeStyle(showButtons), pointerEvents: showButtons ? 'auto' : 'none' }}>

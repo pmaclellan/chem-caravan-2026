@@ -43,10 +43,7 @@ export default function HowToPlayPage() {
           <section>
             <div className="pip-label mb-1">Scoring</div>
             <p className="text-pip-green-dim leading-relaxed">
-              <span className="text-pip-green">Standard score = net worth + XP.</span>
-            </p>
-            <p className="text-pip-green-dim leading-relaxed mt-2">
-              Net worth is tallied at game end:
+              <span className="text-pip-green">Standard score = net worth</span>, tallied at game end:
             </p>
             <ul className="text-pip-green-dim leading-relaxed mt-1 ml-4 space-y-0.5 list-none">
               <li>+ Caps on hand</li>
@@ -56,14 +53,13 @@ export default function HowToPlayPage() {
               <li>− Debt remaining</li>
             </ul>
             <p className="text-pip-green-dim leading-relaxed mt-2">
-              XP adds on top — so fighting, exploring, and trading all contribute even if you
-              hold a lot of gear at the end. Power armor and heavy weapons count as assets, not
-              liabilities. There's no benefit to dumping your pack before the last turn.
+              Power armor and heavy weapons count as assets, not liabilities. There's no benefit
+              to dumping your pack before the last turn — buy good gear and hold it.
             </p>
             <p className="text-pip-green-dim leading-relaxed mt-2">
               <span className="text-pip-green">Free Play score = XP only</span> — earned from
               travel, combat, settlement discovery, trading at a profit, and clearing debt.
-              Net worth is shown on your end screen for context.
+              Net worth is shown on your end screen for context but doesn't affect rank.
             </p>
           </section>
 
@@ -149,8 +145,8 @@ export default function HowToPlayPage() {
             <p className="text-pip-green-dim leading-relaxed">
               XP is earned from: traveling dangerous roads, winning combat, discovering new
               settlements, clearing your debt in full, and selling chems at a profit. In Free Play,
-              XP is your entire score. In Standard, XP adds directly to your final score on top
-              of net worth — so combat and exploration are never wasted turns.
+              XP is your entire score. In Standard, XP tracks your accomplishments but doesn't
+              affect rank — think of it as a preview of what matters when you move to Free Play.
             </p>
           </section>
 
