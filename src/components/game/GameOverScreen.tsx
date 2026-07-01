@@ -61,6 +61,7 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
 
   const [phase, setPhase] = useState<Phase>('header')
   const [logOpen, setLogOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(false)
 
   useEffect(() => {
     const timers = [
@@ -253,31 +254,38 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
 
         {/* Achievements earned this run */}
         {showButtons && gameState.earnedAchievements.length > 0 && (
-          <div className="border border-pip-border rounded p-3">
-            <div className="pip-label mb-2 tracking-widest">
-              ACHIEVEMENTS — {gameState.earnedAchievements.length} UNLOCKED
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {gameState.earnedAchievements.map(ea => {
-                const def = ACHIEVEMENT_MAP[ea.id]
-                if (!def) return null
-                return (
-                  <div
-                    key={ea.id}
-                    title={`${def.name}: ${def.description} (+${def.xpReward} XP)`}
-                    className="flex items-center gap-1.5 border border-pip-amber rounded px-2 py-1"
-                  >
-                    <img
-                      src={`/assets/icons/${def.icon}`}
-                      alt=""
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ opacity: 0.8 }}
-                    />
-                    <span className="font-display text-pip-amber text-xs leading-tight">{def.name}</span>
-                  </div>
-                )
-              })}
-            </div>
+          <div>
+            <button
+              className="pip-btn w-full text-sm"
+              onClick={() => setAchievementsOpen(o => !o)}
+            >
+              {achievementsOpen
+                ? `HIDE ACHIEVEMENTS ▲`
+                : `${gameState.earnedAchievements.length} ACHIEVEMENT${gameState.earnedAchievements.length !== 1 ? 'S' : ''} UNLOCKED ▼`}
+            </button>
+            {achievementsOpen && (
+              <div className="border border-pip-border rounded mt-2 p-3 flex flex-wrap gap-2">
+                {gameState.earnedAchievements.map(ea => {
+                  const def = ACHIEVEMENT_MAP[ea.id]
+                  if (!def) return null
+                  return (
+                    <div
+                      key={ea.id}
+                      title={`${def.name}: ${def.description} (+${def.xpReward} XP)`}
+                      className="flex items-center gap-1.5 border border-pip-amber rounded px-2 py-1"
+                    >
+                      <img
+                        src={`/assets/icons/${def.icon}`}
+                        alt=""
+                        className="w-4 h-4 flex-shrink-0"
+                        style={{ opacity: 0.8 }}
+                      />
+                      <span className="font-display text-pip-amber text-xs leading-tight">{def.name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
