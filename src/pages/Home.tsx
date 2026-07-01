@@ -245,6 +245,11 @@ export default function Home() {
                   No turn limit · danger scales with time · score = XP earned
                 </div>
               )}
+              {!isFreePlay && (
+                <div className="text-xs text-pip-green-dim text-center opacity-65">
+                  30 turns · score = net worth + XP · economic optimization puzzle with a deadline
+                </div>
+              )}
               {!isFreePlay && !freePlayUnlockedForMode && (
                 <div className="text-xs text-pip-green-dim text-center opacity-60">
                   Beat {GAME_MODES[selectedMode].name} in Standard to unlock Free Play

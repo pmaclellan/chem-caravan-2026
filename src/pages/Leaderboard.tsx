@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import type { GameModeId } from '../types/game'
+import type { GameModeId, ArmorState, GunState, InventoryEntry } from '../types/game'
+import type { RunStats } from '../types/stats'
 import { GAME_MODES } from '../data/modes'
+import { inventoryBaseValue } from '../engine/economy'
 
 type LbTab = GameModeId | 'global'
 type GameTypeFilter = 'standard' | 'free_play'
+
+interface PlayerSnapshot {
+  caps?: number
+  xp?: number
+  debt?: number
+  armor?: ArmorState | null
+  ownedGuns?: Record<string, GunState>
+  inventory?: Record<string, InventoryEntry>
+}
 
 interface LeaderboardRow {
   id: string
@@ -15,9 +26,13 @@ interface LeaderboardRow {
   mode: GameModeId | null
   turns_reached: number | null
   created_at: string
-  state?: { endReason?: string | null; player?: { caps?: number; xp?: number } }
+  state?: {
+    endReason?: string | null
+    player?: PlayerSnapshot
+    stats?: RunStats
+    mode?: GameModeId
+  }
 }
-
 
 // Minimum game_version (major*10000+minor*100+patch) required per mode.
 // Rows with NULL game_version (pre-versioning) are always excluded by the gte filter.
@@ -42,6 +57,182 @@ const MODE_SHORT: Partial<Record<GameModeId, string>> = {
   mojave_wasteland:  'Moj',
 }
 
+function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isFreePlay: boolean; onClose: () => void }) {
+  const modeId = row.mode ?? row.state?.mode ?? 'commonwealth'
+  const mc = GAME_MODES[modeId]
+  const player = row.state?.player
+  const stats = row.state?.stats
+
+  const inventoryValue = player?.inventory ? inventoryBaseValue(player.inventory as Record<string, InventoryEntry>) : 0
+  const gunsValue = player?.ownedGuns
+    ? Object.values(player.ownedGuns).reduce((sum, gun) => sum + (mc.guns[gun.id]?.price ?? 0), 0)
+    : 0
+  const armorValue = player?.armor
+    ? Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * (mc.armors[player.armor.id]?.price ?? 0))
+    : 0
+
+  const netWorth = player
+    ? (player.caps ?? 0) + inventoryValue + gunsValue + armorValue - (player.debt ?? 0)
+    : null
+
+  const hasStats = !!stats && (stats.totalKills > 0 || stats.combatsFought > 0 || Object.keys(stats.chemsSold ?? {}).length > 0)
+
+  const favoriteGunEntry = stats && Object.keys(stats.killsByGun ?? {}).length > 0
+    ? Object.entries(stats.killsByGun).sort((a, b) => b[1] - a[1])[0]
+    : null
+  const favoriteWeapon = favoriteGunEntry
+    ? (favoriteGunEntry[0] === 'unarmed' ? 'Unarmed / guards' : (mc.guns[favoriteGunEntry[0]]?.name ?? favoriteGunEntry[0]))
+    : null
+
+  const topChems = stats
+    ? Object.entries(stats.chemsSold ?? {})
+        .filter(([, s]) => s.profitEarned > 0)
+        .sort((a, b) => b[1].profitEarned - a[1].profitEarned)
+        .slice(0, 3)
+    : []
+
+  const killsByEnemySorted = stats
+    ? Object.entries(stats.killsByEnemy ?? {}).sort((a, b) => b[1] - a[1])
+    : []
+
+  const date = new Date(row.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  const outcome = row.state?.endReason ?? (row.status === 'won' ? 'Turn limit reached' : 'Killed on the road')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-pip-bg opacity-80" />
+      <div
+        className="relative pip-panel max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4"
+        data-mode={modeId}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-display text-pip-green text-xl">{row.character_name}</div>
+            <div className="text-pip-green-dim text-xs font-mono">{mc.name} · {date}</div>
+          </div>
+          <button className="pip-btn text-xs" onClick={onClose}>CLOSE</button>
+        </div>
+
+        <div className="text-pip-green-dim text-sm italic">{outcome}</div>
+
+        {/* Score + turns */}
+        <div className="border border-pip-border rounded p-3 space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="pip-label">Turns survived</span>
+            <span className="text-pip-green">{row.turns_reached ?? '—'}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="pip-label">{isFreePlay ? 'XP (score)' : 'Final score'}</span>
+            <span className={`font-display text-xl ${isFreePlay ? 'text-pip-blue' : 'text-pip-amber'}`}>
+              {row.final_score.toLocaleString()}{isFreePlay ? ' XP' : ''}
+            </span>
+          </div>
+          {!isFreePlay && player?.xp != null && (
+            <div className="flex justify-between text-sm">
+              <span className="pip-label">XP earned</span>
+              <span className="text-pip-blue">{player.xp.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Net worth breakdown */}
+        {player && netWorth !== null && (
+          <div className="border border-pip-border rounded p-3 space-y-1.5">
+            <div className="pip-label mb-1 tracking-widest">NET WORTH</div>
+            <div className="flex justify-between text-sm">
+              <span className="pip-label">Caps</span>
+              <span className="text-pip-green font-mono">{(player.caps ?? 0).toLocaleString()} ¤</span>
+            </div>
+            {inventoryValue > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">+ Inventory</span>
+                <span className="text-pip-green font-mono">{inventoryValue.toLocaleString()} ¤</span>
+              </div>
+            )}
+            {gunsValue > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">+ Weapons</span>
+                <span className="text-pip-green font-mono">{gunsValue.toLocaleString()} ¤</span>
+              </div>
+            )}
+            {armorValue > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">+ Armor</span>
+                <span className="text-pip-green font-mono">{armorValue.toLocaleString()} ¤</span>
+              </div>
+            )}
+            {(player.debt ?? 0) > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">− Debt</span>
+                <span className="text-pip-red font-mono">-{(player.debt ?? 0).toLocaleString()} ¤</span>
+              </div>
+            )}
+            <div className="border-t border-pip-border pt-1.5 flex justify-between">
+              <span className="pip-label">Total</span>
+              <span className={`font-mono text-lg ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
+                {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Combat + trading stats */}
+        {hasStats && stats && (
+          <div className="border border-pip-border rounded p-3 space-y-1.5">
+            <div className="pip-label mb-1 tracking-widest">RUN STATS</div>
+            <div className="flex justify-between text-sm">
+              <span className="pip-label">Enemies killed</span>
+              <span className="text-pip-green">{stats.totalKills}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="pip-label">Combats won</span>
+              <span className="text-pip-green">{stats.combatsWon} / {stats.combatsFought}</span>
+            </div>
+            {stats.totalDamageDealt > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">Damage dealt / taken</span>
+                <span className="text-pip-green">{stats.totalDamageDealt} / {stats.totalDamageTaken}</span>
+              </div>
+            )}
+            {favoriteWeapon && (
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">Favorite weapon</span>
+                <span className="text-pip-green text-right max-w-[55%] truncate">{favoriteWeapon}</span>
+              </div>
+            )}
+            {killsByEnemySorted.length > 0 && (
+              <div className="mt-1 space-y-0.5">
+                <div className="pip-label text-xs">KILLS BY ENEMY</div>
+                {killsByEnemySorted.map(([typeId, count]) => {
+                  const enemyName = mc.enemies.find(e => e.id === typeId)?.name ?? typeId
+                  return (
+                    <div key={typeId} className="flex justify-between text-xs">
+                      <span className="text-pip-green-dim">{enemyName}</span>
+                      <span className="text-pip-green">{count}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {topChems.length > 0 && (
+              <div className="mt-1 space-y-0.5">
+                <div className="pip-label text-xs">TOP CHEMS BY PROFIT</div>
+                {topChems.map(([chemId, s]) => (
+                  <div key={chemId} className="flex justify-between text-xs">
+                    <span className="text-pip-green-dim">{chemId} <span className="opacity-60">({s.qty} sold)</span></span>
+                    <span className="text-pip-green">+{s.profitEarned.toLocaleString()} ¤</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Leaderboard() {
   const navigate  = useNavigate()
   const [gameTypeFilter, setGameTypeFilter] = useState<GameTypeFilter>('standard')
@@ -49,6 +240,7 @@ export default function Leaderboard() {
   const [rows,    setRows]    = useState<LeaderboardRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
+  const [selected, setSelected] = useState<LeaderboardRow | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -104,6 +296,10 @@ export default function Leaderboard() {
       </div>
       <div className="absolute inset-0 bg-pip-bg opacity-30" />
 
+      {selected && (
+        <RunDetailModal row={selected} isFreePlay={isFreePlay} onClose={() => setSelected(null)} />
+      )}
+
       <div className="relative max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h1 className="font-display text-4xl text-pip-green tracking-widest">LEADERBOARD</h1>
@@ -132,7 +328,12 @@ export default function Leaderboard() {
 
         {isFreePlay && (
           <div className="text-pip-amber text-xs font-mono mb-3 opacity-70">
-            Score = XP earned · caps on hand shown below · no turn limit
+            Score = XP earned · net worth shown in run detail · no turn limit
+          </div>
+        )}
+        {!isFreePlay && (
+          <div className="text-pip-green-dim text-xs font-mono mb-3 opacity-70">
+            Score = net worth (caps + inventory + weapons + armor − debt) + XP · click any run for details
           </div>
         )}
 
@@ -191,8 +392,9 @@ export default function Leaderboard() {
               return (
                 <div
                   key={row.id}
-                  className="grid gap-2 text-sm py-1.5 border-b border-pip-border-dim"
+                  className="grid gap-2 text-sm py-1.5 border-b border-pip-border-dim cursor-pointer hover:bg-pip-bg transition-colors rounded"
                   style={{ gridTemplateColumns: tab === 'global' ? '1.5rem 1fr 1fr 1fr 2rem 2.5rem' : '1.5rem 1fr 1fr 1fr 2.5rem' }}
+                  onClick={() => setSelected(row)}
                 >
                   <div className={`font-display text-lg ${
                     rank === 1 ? 'text-pip-amber' : rank <= 3 ? 'text-pip-green-mid' : 'text-pip-green-dim'
@@ -207,7 +409,7 @@ export default function Leaderboard() {
                     <div className={`font-display text-lg ${
                       isFreePlay ? 'text-pip-blue' : (score >= 0 ? 'text-pip-amber' : 'text-pip-red')
                     }`}>
-                      {score.toLocaleString()}{isFreePlay ? ' XP' : ' ¤'}
+                      {score.toLocaleString()}{isFreePlay ? ' XP' : ''}
                     </div>
                     {isFreePlay && row.state?.player?.caps != null && (
                       <div className="text-xs text-pip-amber font-mono">

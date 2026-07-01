@@ -18,6 +18,7 @@ import TravelSplash from '../components/game/TravelSplash'
 import MobileGame from '../components/game/MobileGame'
 import DebtFreedomModal from '../components/game/DebtFreedomModal'
 import SettlementDiscoverySplash from '../components/game/SettlementDiscoverySplash'
+import GameOverScreen from '../components/game/GameOverScreen'
 
 type ActiveTab = 'market' | 'travel' | 'services'
 
@@ -208,105 +209,3 @@ export default function Game() {
   )
 }
 
-function GameOverScreen({ gameState, onHome }: { gameState: import('../types/game').GameState; onHome: () => void }) {
-  const { player, gameOverReason, endReason, log } = gameState
-  const isFreePlay = gameState.gameType === 'free_play'
-  const score = player.caps - player.debt
-  const isRetired = gameOverReason === 'retired'
-  const isWin = gameOverReason === 'turns' || isRetired
-  const [logOpen, setLogOpen] = useState(false)
-
-  const subtitle = endReason ?? (
-    gameOverReason === 'retired' ? 'You chose to hang up your pack.' :
-    gameOverReason === 'turns'   ? 'Time ran out on your caravan run.' :
-    gameOverReason === 'combat'  ? 'You were killed on the road.' :
-    gameOverReason === 'debt'    ? 'Your debtors finally caught up with you.' :
-    'Game ended.'
-  )
-
-  const titleText =
-    isRetired          ? 'RETIRED' :
-    isFreePlay         ? 'RUN ENDED' :
-    isWin              ? 'GAME OVER' :
-    'YOU DIED'
-
-  const titleColor = isRetired ? 'text-pip-amber' : (isWin ? 'text-pip-green' : 'text-pip-red')
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-pip-bg" data-mode={gameState.mode}>
-      <div className="pip-panel max-w-md w-full text-center space-y-4">
-        <div className={`font-display text-5xl ${titleColor}`}>
-          {titleText}
-        </div>
-        {isFreePlay && <div className="text-pip-amber text-xs font-mono tracking-widest">FREE PLAY</div>}
-        <div className="text-pip-green-dim text-sm">{subtitle}</div>
-
-        <div className="border border-pip-border rounded p-4 space-y-2 text-left">
-          <div className="flex justify-between">
-            <span className="pip-label">Character</span>
-            <span className="text-pip-green">{player.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="pip-label">Turns survived</span>
-            <span className="text-pip-green">{gameState.world.turn}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="pip-label">Caps on hand</span>
-            <span className="text-pip-green">{player.caps.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="pip-label">Debt owed</span>
-            <span className="text-pip-red">-{player.debt.toLocaleString()}</span>
-          </div>
-
-          {isFreePlay ? (
-            <div className="flex justify-between border-t border-pip-border pt-2">
-              <span className="pip-label">XP EARNED</span>
-              <span className="font-display text-2xl text-pip-blue">{(player.xp ?? 0).toLocaleString()} XP</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex justify-between border-t border-pip-border pt-2">
-                <span className="pip-label">FINAL SCORE</span>
-                <span className={`font-display text-2xl ${score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                  {score.toLocaleString()} ¤
-                </span>
-              </div>
-              {(player.xp ?? 0) > 0 && (
-                <div className="flex justify-between">
-                  <span className="pip-label">XP earned</span>
-                  <span className="text-pip-blue text-sm">{(player.xp ?? 0).toLocaleString()} XP</span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="flex gap-3">
-          <button className="pip-btn flex-1" onClick={onHome}>MAIN MENU</button>
-          <button className="pip-btn flex-1" onClick={() => window.location.href = '/leaderboard'}>LEADERBOARD</button>
-        </div>
-
-        <button
-          className="pip-btn w-full text-sm"
-          onClick={() => setLogOpen(o => !o)}
-        >
-          {logOpen ? 'HIDE RUN LOG ▲' : `VIEW RUN LOG (${log.length} entries) ▼`}
-        </button>
-
-        {logOpen && (
-          <div className="border border-pip-border rounded text-left max-h-72 overflow-y-auto">
-            <div className="text-xs font-mono space-y-0.5 p-2">
-              {log.map((entry, i) => (
-                <div key={i} className={`log-${entry.type}`}>
-                  <span className="text-pip-green-dim">[T{String(entry.turn).padStart(2, '0')}]</span>{' '}
-                  {entry.message}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}

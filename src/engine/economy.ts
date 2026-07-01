@@ -299,8 +299,19 @@ export function buyAmmo(
   }
 }
 
-export function calculateFinalScore(player: PlayerState): number {
-  return player.caps - player.debt
+export function calculateNetWorth(player: PlayerState, mc: GameModeConfig): number {
+  const gunsValue = Object.values(player.ownedGuns ?? {}).reduce((sum, gun) => {
+    return sum + (mc.guns[gun.id]?.price ?? 0)
+  }, 0)
+  const armorValue = player.armor
+    ? Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * (mc.armors[player.armor.id]?.price ?? 0))
+    : 0
+  return player.caps + inventoryBaseValue(player.inventory) + gunsValue + armorValue - player.debt
+}
+
+// Standard mode score: net worth + XP. For free play (XP-only), score is computed in gameStore.
+export function calculateFinalScore(player: PlayerState, mc: GameModeConfig): number {
+  return calculateNetWorth(player, mc) + (player.xp ?? 0)
 }
 
 export function resolveGameStatus(
