@@ -689,7 +689,7 @@ export default function MobileGame() {
       )}
 
       {/* Achievement toast */}
-      <AchievementToast />
+      <AchievementToast onOpenDossier={() => setTab('dossier')} />
 
       {/* Celebration overlays */}
       {gameState.pendingDebtFreedom != null && (

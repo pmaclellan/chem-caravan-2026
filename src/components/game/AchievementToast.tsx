@@ -8,9 +8,13 @@ interface ToastItem {
   xpAwarded: number
 }
 
+interface Props {
+  onOpenDossier: () => void
+}
+
 let _key = 0
 
-export default function AchievementToast() {
+export default function AchievementToast({ onOpenDossier }: Props) {
   const [queue, setQueue] = useState<ToastItem[]>([])
   const [visible, setVisible] = useState(false)
 
@@ -46,31 +50,42 @@ export default function AchievementToast() {
   const def = ACHIEVEMENT_MAP[current.achievementId]
   if (!def) return null
 
+  function handleClick() {
+    setQueue([])
+    onOpenDossier()
+  }
+
   return (
     <div
-      className="fixed top-4 right-4 z-[60] max-w-xs transition-all duration-300"
+      className="fixed bottom-6 left-1/2 z-[60] max-w-xs w-full -translate-x-1/2 transition-all duration-300 cursor-pointer"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateX(0)' : 'translateX(24px)',
+        transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(12px)',
       }}
+      onClick={handleClick}
     >
-      <div className="pip-panel border border-pip-amber px-4 py-3 flex items-start gap-3 shadow-lg">
+      <div
+        className="pip-panel border border-pip-blue px-4 py-3 flex items-start gap-3"
+        style={{
+          boxShadow: '0 0 16px color-mix(in srgb, var(--pip-blue) 70%, transparent), 0 0 40px color-mix(in srgb, var(--pip-blue) 30%, transparent)',
+        }}
+      >
         <img
           src={`/assets/icons/${def.icon}`}
           alt=""
           className="w-8 h-8 flex-shrink-0 mt-0.5"
           style={{ opacity: 0.85 }}
         />
-        <div className="min-w-0">
-          <div className="font-display text-pip-amber text-xs tracking-widest mb-0.5">
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-pip-blue text-xs tracking-widest mb-0.5">
             ACHIEVEMENT UNLOCKED
           </div>
           <div className="font-display text-pip-green text-base leading-tight">{def.name}</div>
-          <div className="text-pip-green-dim text-xs mt-0.5">+{current.xpAwarded} XP</div>
+          <div className="text-pip-green-dim text-xs mt-0.5">+{current.xpAwarded} XP · tap to view all</div>
         </div>
         <button
           className="flex-shrink-0 text-pip-green-dim hover:text-pip-green text-xs mt-0.5"
-          onClick={() => setQueue(q => q.slice(1))}
+          onClick={e => { e.stopPropagation(); setQueue(q => q.slice(1)) }}
         >
           ✕
         </button>
