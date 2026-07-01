@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { GameModeId, ArmorState, GunState, InventoryEntry } from '../types/game'
 import type { RunStats } from '../types/stats'
+import type { EarnedAchievement } from '../types/achievement'
 import { GAME_MODES } from '../data/modes'
 import { inventoryBaseValue } from '../engine/economy'
+import AchievementsGrid from '../components/game/AchievementsGrid'
 
 type LbTab = GameModeId | 'global'
 type GameTypeFilter = 'standard' | 'free_play'
@@ -31,6 +33,7 @@ interface LeaderboardRow {
     player?: PlayerSnapshot
     stats?: RunStats
     mode?: GameModeId
+    earnedAchievements?: EarnedAchievement[]
   }
 }
 
@@ -57,11 +60,16 @@ const MODE_SHORT: Partial<Record<GameModeId, string>> = {
   mojave_wasteland:  'Moj',
 }
 
+type DetailTab = 'score' | 'stats' | 'achievements'
+
 function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isFreePlay: boolean; onClose: () => void }) {
+  const [detailTab, setDetailTab] = useState<DetailTab>('score')
+
   const modeId = row.mode ?? row.state?.mode ?? 'commonwealth'
   const mc = GAME_MODES[modeId]
   const player = row.state?.player
   const stats = row.state?.stats
+  const earnedAchievements = row.state?.earnedAchievements ?? []
 
   const inventoryValue = player?.inventory ? inventoryBaseValue(player.inventory as Record<string, InventoryEntry>) : 0
   const gunsValue = player?.ownedGuns
@@ -70,31 +78,11 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
   const armorValue = player?.armor
     ? Math.round((player.armor.armorPoints / player.armor.maxArmorPoints) * (mc.armors[player.armor.id]?.price ?? 0))
     : 0
-
   const netWorth = player
     ? (player.caps ?? 0) + inventoryValue + gunsValue + armorValue - (player.debt ?? 0)
     : null
 
   const hasStats = !!stats && (stats.totalKills > 0 || stats.combatsFought > 0 || Object.keys(stats.chemsSold ?? {}).length > 0)
-
-  const favoriteGunEntry = stats && Object.keys(stats.killsByGun ?? {}).length > 0
-    ? Object.entries(stats.killsByGun).sort((a, b) => b[1] - a[1])[0]
-    : null
-  const favoriteWeapon = favoriteGunEntry
-    ? (favoriteGunEntry[0] === 'unarmed' ? 'Unarmed / guards' : (mc.guns[favoriteGunEntry[0]]?.name ?? favoriteGunEntry[0]))
-    : null
-
-  const topChems = stats
-    ? Object.entries(stats.chemsSold ?? {})
-        .filter(([, s]) => s.profitEarned > 0)
-        .sort((a, b) => b[1].profitEarned - a[1].profitEarned)
-        .slice(0, 3)
-    : []
-
-  const killsByEnemySorted = stats
-    ? Object.entries(stats.killsByEnemy ?? {}).sort((a, b) => b[1] - a[1])
-    : []
-
   const date = new Date(row.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
   const outcome = row.state?.endReason ?? (row.status === 'won' ? 'Turn limit reached' : 'Killed on the road')
 
@@ -102,11 +90,13 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-pip-bg opacity-80" />
       <div
-        className="relative pip-panel max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4"
+        className="relative pip-panel max-w-sm w-full flex flex-col"
+        style={{ maxHeight: '90vh' }}
         data-mode={modeId}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start">
+        {/* Header */}
+        <div className="flex justify-between items-start flex-shrink-0 mb-2">
           <div>
             <div className="font-display text-pip-green text-xl">{row.character_name}</div>
             <div className="text-pip-green-dim text-xs font-mono">{mc.name} · {date}</div>
@@ -114,143 +104,172 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
           <button className="pip-btn text-xs" onClick={onClose}>CLOSE</button>
         </div>
 
-        <div className="text-pip-green-dim text-sm italic">{outcome}</div>
+        <div className="text-pip-green-dim text-xs italic flex-shrink-0 mb-2">{outcome}</div>
 
-        {/* Score breakdown — single box showing the full formula */}
-        <div className="border border-pip-border rounded p-3 space-y-1.5">
-          <div className="flex justify-between text-sm">
-            <span className="pip-label">Turns survived</span>
-            <span className="text-pip-green">{row.turns_reached ?? '—'}</span>
-          </div>
+        {/* Tab bar */}
+        <div className="flex gap-1 flex-shrink-0 border-b border-pip-border pb-2 mb-3">
+          {(['score', 'stats', 'achievements'] as DetailTab[]).map(t => (
+            <button
+              key={t}
+              className={`pip-btn text-xs px-2 py-1 ${detailTab === t ? 'bg-pip-green text-pip-bg-light' : ''}`}
+              onClick={() => setDetailTab(t)}
+            >
+              {t.toUpperCase()}
+            </button>
+          ))}
+        </div>
 
-          {/* Standard: net worth components → net worth → + XP → = score */}
-          {!isFreePlay && player && netWorth !== null && (
-            <>
-              <div className="border-t border-pip-border-dim pt-1.5 space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="pip-label">Caps</span>
-                  <span className="text-pip-green font-mono">{(player.caps ?? 0).toLocaleString()} ¤</span>
-                </div>
-                {inventoryValue > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="pip-label">+ Inventory</span>
-                    <span className="text-pip-green font-mono">{inventoryValue.toLocaleString()} ¤</span>
-                  </div>
-                )}
-                {gunsValue > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="pip-label">+ Weapons</span>
-                    <span className="text-pip-green font-mono">{gunsValue.toLocaleString()} ¤</span>
-                  </div>
-                )}
-                {armorValue > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="pip-label">+ Armor</span>
-                    <span className="text-pip-green font-mono">{armorValue.toLocaleString()} ¤</span>
-                  </div>
-                )}
-                {(player.debt ?? 0) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="pip-label">− Debt</span>
-                    <span className="text-pip-red font-mono">-{(player.debt ?? 0).toLocaleString()} ¤</span>
-                  </div>
-                )}
+        {/* Tab content */}
+        <div className="overflow-y-auto flex-1">
+
+          {/* SCORE tab */}
+          {detailTab === 'score' && (
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="pip-label">Turns survived</span>
+                <span className="text-pip-green">{row.turns_reached ?? '—'}</span>
               </div>
-              <div className="border-t border-pip-border pt-1.5 flex justify-between items-baseline">
-                <span className="pip-label tracking-widest">FINAL SCORE</span>
-                <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                  {row.final_score.toLocaleString()} ¤
-                </span>
-              </div>
-              {player.xp != null && player.xp > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="pip-label">XP earned</span>
-                  <span className="text-pip-blue font-mono">{player.xp.toLocaleString()} XP</span>
-                </div>
+
+              {!isFreePlay && player && netWorth !== null && (
+                <>
+                  <div className="border-t border-pip-border-dim pt-1.5 space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="pip-label">Caps</span>
+                      <span className="text-pip-green font-mono">{(player.caps ?? 0).toLocaleString()} ¤</span>
+                    </div>
+                    {inventoryValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="pip-label">+ Inventory</span>
+                        <span className="text-pip-green font-mono">{inventoryValue.toLocaleString()} ¤</span>
+                      </div>
+                    )}
+                    {gunsValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="pip-label">+ Weapons</span>
+                        <span className="text-pip-green font-mono">{gunsValue.toLocaleString()} ¤</span>
+                      </div>
+                    )}
+                    {armorValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="pip-label">+ Armor</span>
+                        <span className="text-pip-green font-mono">{armorValue.toLocaleString()} ¤</span>
+                      </div>
+                    )}
+                    {(player.debt ?? 0) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="pip-label">− Debt</span>
+                        <span className="text-pip-red font-mono">-{(player.debt ?? 0).toLocaleString()} ¤</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-pip-border pt-1.5 flex justify-between items-baseline">
+                    <span className="pip-label tracking-widest">FINAL SCORE</span>
+                    <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                      {row.final_score.toLocaleString()} ¤
+                    </span>
+                  </div>
+                  {player.xp != null && player.xp > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="pip-label">XP earned</span>
+                      <span className="text-pip-blue font-mono">{player.xp.toLocaleString()} XP</span>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {/* Standard: no player data available */}
-          {!isFreePlay && (!player || netWorth === null) && (
-            <div className="flex justify-between items-baseline border-t border-pip-border-dim pt-1.5">
-              <span className="pip-label">Final score</span>
-              <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
-                {row.final_score.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {/* Free play: XP as score, net worth as context */}
-          {isFreePlay && (
-            <>
-              <div className="border-t border-pip-border-dim pt-1.5 flex justify-between items-baseline">
-                <span className="pip-label tracking-widest">XP (SCORE)</span>
-                <span className="font-display text-xl text-pip-blue">{row.final_score.toLocaleString()} XP</span>
-              </div>
-              {player && netWorth !== null && (
-                <div className="flex justify-between text-sm">
-                  <span className="pip-label">Net worth</span>
-                  <span className={`font-mono ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
-                    {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
+              {!isFreePlay && (!player || netWorth === null) && (
+                <div className="flex justify-between items-baseline border-t border-pip-border-dim pt-1.5">
+                  <span className="pip-label">Final score</span>
+                  <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                    {row.final_score.toLocaleString()}
                   </span>
                 </div>
               )}
-            </>
-          )}
-        </div>
 
-        {/* Combat + trading stats */}
-        {hasStats && stats && (
-          <div className="border border-pip-border rounded p-3 space-y-1.5">
-            <div className="pip-label mb-1 tracking-widest">RUN STATS</div>
-            <div className="flex justify-between text-sm">
-              <span className="pip-label">Enemies killed</span>
-              <span className="text-pip-green">{stats.totalKills}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="pip-label">Combats won</span>
-              <span className="text-pip-green">{stats.combatsWon} / {stats.combatsFought}</span>
-            </div>
-            {stats.totalDamageDealt > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">Damage dealt / taken</span>
-                <span className="text-pip-green">{stats.totalDamageDealt} / {stats.totalDamageTaken}</span>
-              </div>
-            )}
-            {favoriteWeapon && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">Favorite weapon</span>
-                <span className="text-pip-green text-right max-w-[55%] truncate">{favoriteWeapon}</span>
-              </div>
-            )}
-            {killsByEnemySorted.length > 0 && (
-              <div className="mt-1 space-y-0.5">
-                <div className="pip-label text-xs">KILLS BY ENEMY</div>
-                {killsByEnemySorted.map(([typeId, count]) => {
-                  const enemyName = mc.enemies.find(e => e.id === typeId)?.name ?? typeId
-                  return (
-                    <div key={typeId} className="flex justify-between text-xs">
-                      <span className="text-pip-green-dim">{enemyName}</span>
-                      <span className="text-pip-green">{count}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-            {topChems.length > 0 && (
-              <div className="mt-1 space-y-0.5">
-                <div className="pip-label text-xs">TOP CHEMS BY PROFIT</div>
-                {topChems.map(([chemId, s]) => (
-                  <div key={chemId} className="flex justify-between text-xs">
-                    <span className="text-pip-green-dim">{chemId} <span className="opacity-60">({s.qty} sold)</span></span>
-                    <span className="text-pip-green">+{s.profitEarned.toLocaleString()} ¤</span>
+              {isFreePlay && (
+                <>
+                  <div className="border-t border-pip-border-dim pt-1.5 flex justify-between items-baseline">
+                    <span className="pip-label tracking-widest">XP (SCORE)</span>
+                    <span className="font-display text-xl text-pip-blue">{row.final_score.toLocaleString()} XP</span>
                   </div>
-                ))}
+                  {player && netWorth !== null && (
+                    <div className="flex justify-between text-sm">
+                      <span className="pip-label">Net worth</span>
+                      <span className={`font-mono ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
+                        {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* STATS tab */}
+          {detailTab === 'stats' && (
+            hasStats && stats ? (
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="pip-label">Enemies killed</span>
+                  <span className="text-pip-green">{stats.totalKills}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="pip-label">Combats won</span>
+                  <span className="text-pip-green">{stats.combatsWon} / {stats.combatsFought}</span>
+                </div>
+                {(stats.combatsFled ?? 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="pip-label">Times fled</span>
+                    <span className="text-pip-green">{stats.combatsFled}</span>
+                  </div>
+                )}
+                {stats.totalDamageDealt > 0 && (
+                  <div className="flex justify-between">
+                    <span className="pip-label">Damage dealt / taken</span>
+                    <span className="text-pip-green">{stats.totalDamageDealt} / {stats.totalDamageTaken}</span>
+                  </div>
+                )}
+                {Object.keys(stats.killsByEnemy ?? {}).length > 0 && (
+                  <div className="mt-2 space-y-0.5">
+                    <div className="pip-label text-xs">KILLS BY ENEMY</div>
+                    {Object.entries(stats.killsByEnemy).sort((a, b) => b[1] - a[1]).map(([typeId, count]) => (
+                      <div key={typeId} className="flex justify-between text-xs">
+                        <span className="text-pip-green-dim">{mc.enemies.find(e => e.id === typeId)?.name ?? typeId}</span>
+                        <span className="text-pip-green">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {Object.keys(stats.chemsSold ?? {}).length > 0 && (
+                  <div className="mt-2 space-y-0.5">
+                    <div className="pip-label text-xs">TOP CHEMS BY PROFIT</div>
+                    {Object.entries(stats.chemsSold)
+                      .filter(([, s]) => s.profitEarned > 0)
+                      .sort((a, b) => b[1].profitEarned - a[1].profitEarned)
+                      .slice(0, 5)
+                      .map(([chemId, s]) => (
+                        <div key={chemId} className="flex justify-between text-xs">
+                          <span className="text-pip-green-dim">{chemId} <span className="opacity-60">×{s.qty}</span></span>
+                          <span className="text-pip-amber">+{s.profitEarned.toLocaleString()} ¤</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            ) : (
+              <div className="text-pip-green-dim text-sm italic">No combat or trading stats recorded for this run.</div>
+            )
+          )}
+
+          {/* ACHIEVEMENTS tab */}
+          {detailTab === 'achievements' && (
+            <AchievementsGrid
+              earnedAchievements={earnedAchievements}
+              mode={modeId}
+            />
+          )}
+
+        </div>
       </div>
     </div>
   )

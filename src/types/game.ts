@@ -135,6 +135,7 @@ export interface CombatState {
   xpGained: number                      // XP awarded on this combat's victory (for summary screen)
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
+  waveNumber: number            // 1 = normal, 2 = second wave, 3+ = future
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
 }
@@ -269,6 +270,7 @@ export interface GameState {
   pendingDebtFreedom: number | null        // XP amount to celebrate when debt first cleared
   pendingDiscovery: { settlementId: string; xpGained: number } | null  // first-visit reward splash
   stats: import('./stats').RunStats
+  earnedAchievements: import('./achievement').EarnedAchievement[]
 }
 
 // Shape of a row in the Supabase games table (subset of columns we care about client-side)

@@ -42,6 +42,8 @@ import {
 } from '../engine/economy'
 import { gameBus } from '../engine/eventBus'
 import { initStats, updateStats } from '../engine/statsReducer'
+import { checkNewAchievements, checkProfitAchievements } from '../engine/achievementChecker'
+import { ACHIEVEMENT_MAP } from '../data/achievements'
 import { TAMING_TOOLS, SADDLE_PRICE } from '../data/mounts'
 import type { TamingToolId } from '../types/game'
 import { awardXp, XpEventType } from '../engine/xp'
@@ -176,6 +178,7 @@ function normalizeState(state: GameState): GameState {
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
     stats: state.stats ?? initStats(),
+    earnedAchievements: state.earnedAchievements ?? [],
   }
 }
 
@@ -228,7 +231,28 @@ export const useGameStore = create<GameStore>((set, get) => {
   function mutate(updater: (state: GameState) => GameState): GameState | null {
     const current = get().gameState
     if (!current) return null
-    const next = updater(current)
+    let next = updater(current)
+
+    // Check for newly earned achievements
+    const mc = GAME_MODES[next.mode]
+    const newlyEarned = checkNewAchievements(current, next, mc)
+    if (newlyEarned.length > 0) {
+      const xpBonus = newlyEarned.reduce((sum, a) => sum + a.xpReward, 0)
+      next = {
+        ...next,
+        player: { ...next.player, xp: next.player.xp + xpBonus },
+        earnedAchievements: [
+          ...next.earnedAchievements,
+          ...newlyEarned.map(a => ({ id: a.id, earnedOnTurn: next.world.turn })),
+        ],
+      }
+      setTimeout(() => {
+        for (const a of newlyEarned) {
+          gameBus.emit('ACHIEVEMENT_UNLOCKED', { achievementId: a.id, xpAwarded: a.xpReward })
+        }
+      }, 0)
+    }
+
     set({ gameState: next })
     scheduleSave(next)
     // Auto-emit turn completion whenever a mutation increments the turn counter
@@ -238,12 +262,44 @@ export const useGameStore = create<GameStore>((set, get) => {
     return next
   }
 
-  // --- Stats event subscriber --- (registered once for the store's lifetime)
+  // Helper: award a profit achievement outside of mutate() (per-trade event-driven)
+  function awardProfitAchievement(id: string) {
+    const state = get().gameState
+    if (!state) return
+    if (state.earnedAchievements.some(a => a.id === id)) return
+    const def = ACHIEVEMENT_MAP[id]
+    if (!def) return
+    const xpAwarded = def.xpReward
+    const earned = { id, earnedOnTurn: state.world.turn }
+    const updated = {
+      ...state,
+      player: { ...state.player, xp: state.player.xp + xpAwarded },
+      earnedAchievements: [...state.earnedAchievements, earned],
+    }
+    set({ gameState: updated })
+    scheduleSave(updated)
+    gameBus.emit('ACHIEVEMENT_UNLOCKED', { achievementId: id, xpAwarded })
+  }
+
+  // --- Stats event subscribers --- (registered once for the store's lifetime)
   gameBus.on('COMBAT_RESOLVED', payload => {
     mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'COMBAT_RESOLVED', ...payload }) }))
   })
   gameBus.on('CHEM_SOLD', payload => {
     mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'CHEM_SOLD', ...payload }) }))
+    // Per-trade profit achievements (need revenue/profit from the event payload)
+    const state = get().gameState
+    if (state) {
+      const alreadyEarned = new Set(state.earnedAchievements.map(a => a.id))
+      const triggered = checkProfitAchievements(payload.revenue, payload.profit, alreadyEarned)
+      for (const id of triggered) awardProfitAchievement(id)
+    }
+  })
+  gameBus.on('CHEM_BOUGHT', payload => {
+    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'CHEM_BOUGHT', ...payload }) }))
+  })
+  gameBus.on('TAME_COMPLETED', payload => {
+    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'TAME_COMPLETED', ...payload }) }))
   })
   gameBus.on('TURN_COMPLETED', payload => {
     mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'TURN_COMPLETED', ...payload }) }))
@@ -549,6 +605,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             damageDealt: combat.totalDamageDealt,
             damageTaken: combat.totalDamageTaken,
             capsLooted: combat.capsLooted,
+            waveNumber: state.combat.waveNumber,
           })
         }
         mutate(s => afterCombat(s, { player, combat }))
@@ -571,6 +628,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           damageDealt: combat.totalDamageDealt,
           damageTaken: combat.totalDamageTaken,
           capsLooted: combat.capsLooted,
+          waveNumber: combat.waveNumber,
         })
       }
       set({ combatAnimSteps: null, pendingFightResult: null })
@@ -596,6 +654,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           damageDealt: combat.totalDamageDealt,
           damageTaken: combat.totalDamageTaken,
           capsLooted: 0,
+          waveNumber: state.combat.waveNumber,
         })
         mutate(s => afterCombat(s, { player, combat }))
       }
@@ -617,6 +676,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!state?.combat) return
       set({ showTamingMinigame: false })
       const { player, combat } = resolveTameSuccess(state.player, state.combat)
+      const tamedEnemyTypeId = state.combat.enemies[0]?.typeId ?? ''
       set({ pendingFightResult: { player, combat } })
       gameBus.emit('COMBAT_RESOLVED', {
         outcome: 'won',
@@ -625,7 +685,11 @@ export const useGameStore = create<GameStore>((set, get) => {
         damageDealt: combat.totalDamageDealt,
         damageTaken: combat.totalDamageTaken,
         capsLooted: combat.capsLooted,
+        waveNumber: state.combat.waveNumber,
       })
+      if (tamedEnemyTypeId) {
+        gameBus.emit('TAME_COMPLETED', { enemyTypeId: tamedEnemyTypeId })
+      }
       mutate(s => afterCombat(s, { player, combat }))
     },
 
@@ -673,10 +737,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     buy: (chemId, quantity) => {
+      const purchase = { pricePaid: 0, ok: false }
       mutate(state => {
         const market = currentMarket(state)
         const { player, error } = buyChems(state.player, market, chemId, quantity)
         if (error) { set({ toast: error }); return state }
+        purchase.pricePaid = market.prices[chemId]
+        purchase.ok = true
         const loc = state.player.location
         const world = updateSettlementStock(state.world, loc, chemId, -quantity)
         const log = [...state.log, {
@@ -686,6 +753,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         }]
         return { ...state, player, world, log }
       })
+      if (purchase.ok) {
+        gameBus.emit('CHEM_BOUGHT', { chemId, quantity, pricePaid: purchase.pricePaid })
+      }
     },
 
     sell: (chemId, quantity) => {
@@ -716,17 +786,20 @@ export const useGameStore = create<GameStore>((set, get) => {
         return { ...state, player, world, log }
       })
       if (sale.ok) {
-        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit })
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit, channel: 'market' })
       }
     },
 
     buyFromMerchant: (chemId, quantity) => {
+      const purchase = { pricePaid: 0, ok: false }
       mutate(state => {
         if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
         const payload = state.pendingEvent.payload as { prices: Record<string,number>; stock: Record<string,number> }
         const price = payload.prices[chemId]
         const inStock = payload.stock[chemId] ?? 0
         if (!price || inStock < quantity) { set({ toast: 'Not enough stock.' }); return state }
+        purchase.pricePaid = price
+        purchase.ok = true
         const syntheticMarket = { prices: payload.prices, stock: payload.stock, lastRefreshed: 0 }
         const { player, error } = buyChems(state.player, syntheticMarket, chemId, quantity)
         if (error) { set({ toast: error }); return state }
@@ -738,13 +811,17 @@ export const useGameStore = create<GameStore>((set, get) => {
         }]
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
+      if (purchase.ok) {
+        gameBus.emit('CHEM_BOUGHT', { chemId, quantity, pricePaid: purchase.pricePaid })
+      }
     },
 
     sellToMerchant: (chemId, quantity) => {
-      const sale = { revenue: 0, profit: 0, ok: false }
+      const sale = { revenue: 0, profit: 0, ok: false, isDesperateBuyer: false }
       mutate(state => {
         if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
-        const payload = state.pendingEvent.payload as { prices: Record<string,number>; demand: Record<string,number> }
+        const payload = state.pendingEvent.payload as { prices: Record<string,number>; demand: Record<string,number>; isFence?: boolean }
+        sale.isDesperateBuyer = payload.isFence === false
         const price = payload.prices[chemId]
         const remaining = payload.demand[chemId] ?? 0
         if (!price || remaining < quantity) { set({ toast: "They don't want that many." }); return state }
@@ -775,7 +852,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
       if (sale.ok) {
-        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit })
+        const channel = sale.isDesperateBuyer ? 'desperate_buyer' : 'merchant'
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit, channel })
       }
     },
 

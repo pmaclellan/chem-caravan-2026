@@ -8,10 +8,16 @@ export function initStats(): RunStats {
     killsByGun: {},
     combatsFought: 0,
     combatsWon: 0,
+    combatsFled: 0,
+    secondWavesDefeated: 0,
     totalDamageDealt: 0,
     totalDamageTaken: 0,
     capsFromCombat: 0,
     chemsSold: {},
+    chemsBought: {},
+    tamesByEnemy: {},
+    hasSoldToMerchant: false,
+    hasSoldToDesperateBuyer: false,
     lifetimeCapsEarned: 0,
     turnsInDebt: 0,
   }
@@ -41,6 +47,8 @@ export function updateStats(stats: RunStats, event: GameEvent): RunStats {
         killsByGun: newKillsByGun,
         combatsFought: stats.combatsFought + 1,
         combatsWon: stats.combatsWon + (event.outcome === 'won' ? 1 : 0),
+        combatsFled: stats.combatsFled + (event.outcome === 'fled' ? 1 : 0),
+        secondWavesDefeated: stats.secondWavesDefeated + (event.waveNumber >= 2 && event.outcome === 'won' ? 1 : 0),
         totalDamageDealt: stats.totalDamageDealt + event.damageDealt,
         totalDamageTaken: stats.totalDamageTaken + event.damageTaken,
         capsFromCombat: stats.capsFromCombat + event.capsLooted,
@@ -59,7 +67,27 @@ export function updateStats(stats: RunStats, event: GameEvent): RunStats {
             profitEarned: existing.profitEarned + event.profit,
           },
         },
+        hasSoldToMerchant: stats.hasSoldToMerchant || event.channel === 'merchant',
+        hasSoldToDesperateBuyer: stats.hasSoldToDesperateBuyer || event.channel === 'desperate_buyer',
         lifetimeCapsEarned: stats.lifetimeCapsEarned + event.revenue,
+      }
+    }
+    case 'CHEM_BOUGHT': {
+      return {
+        ...stats,
+        chemsBought: {
+          ...stats.chemsBought,
+          [event.chemId]: (stats.chemsBought[event.chemId] ?? 0) + event.quantity,
+        },
+      }
+    }
+    case 'TAME_COMPLETED': {
+      return {
+        ...stats,
+        tamesByEnemy: {
+          ...stats.tamesByEnemy,
+          [event.enemyTypeId]: (stats.tamesByEnemy[event.enemyTypeId] ?? 0) + 1,
+        },
       }
     }
     case 'TURN_COMPLETED': {
