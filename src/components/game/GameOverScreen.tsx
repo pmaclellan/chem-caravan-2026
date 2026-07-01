@@ -3,6 +3,7 @@ import { GAME_MODES } from '../../data/modes'
 import { inventoryBaseValue, calculateNetWorth } from '../../engine/economy'
 import type { GameState } from '../../types/game'
 import type { RunStats } from '../../types/stats'
+import { ACHIEVEMENT_MAP } from '../../data/achievements'
 
 const KEYFRAMES = `
   @keyframes gosFadeUp {
@@ -60,6 +61,7 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
 
   const [phase, setPhase] = useState<Phase>('header')
   const [logOpen, setLogOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(false)
 
   useEffect(() => {
     const timers = [
@@ -247,6 +249,43 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
           <div className="flex justify-between text-sm" style={fadeStyle(showFinal)}>
             <span className="pip-label">XP earned</span>
             <span className="text-pip-blue font-mono">{(player.xp ?? 0).toLocaleString()} XP</span>
+          </div>
+        )}
+
+        {/* Achievements earned this run */}
+        {showButtons && gameState.earnedAchievements.length > 0 && (
+          <div>
+            <button
+              className="pip-btn w-full text-sm"
+              onClick={() => setAchievementsOpen(o => !o)}
+            >
+              {achievementsOpen
+                ? `HIDE ACHIEVEMENTS ▲`
+                : `${gameState.earnedAchievements.length} ACHIEVEMENT${gameState.earnedAchievements.length !== 1 ? 'S' : ''} UNLOCKED ▼`}
+            </button>
+            {achievementsOpen && (
+              <div className="border border-pip-border rounded mt-2 p-3 flex flex-wrap gap-2">
+                {gameState.earnedAchievements.map(ea => {
+                  const def = ACHIEVEMENT_MAP[ea.id]
+                  if (!def) return null
+                  return (
+                    <div
+                      key={ea.id}
+                      title={`${def.name}: ${def.description} (+${def.xpReward} XP)`}
+                      className="flex items-center gap-1.5 border border-pip-amber rounded px-2 py-1"
+                    >
+                      <img
+                        src={`/assets/icons/${def.icon}`}
+                        alt=""
+                        className="w-4 h-4 flex-shrink-0"
+                        style={{ opacity: 0.8 }}
+                      />
+                      <span className="font-display text-pip-amber text-xs leading-tight">{def.name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 

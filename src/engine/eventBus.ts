@@ -6,16 +6,30 @@ export type GameEventMap = {
     damageDealt: number
     damageTaken: number
     capsLooted: number
+    waveNumber: number   // 1 = normal, 2 = second wave, 3+ = future
   }
   CHEM_SOLD: {
     chemId: string
     quantity: number
     revenue: number
     profit: number
+    channel: 'market' | 'merchant' | 'desperate_buyer'
+  }
+  CHEM_BOUGHT: {
+    chemId: string
+    quantity: number
+    pricePaid: number
+  }
+  TAME_COMPLETED: {
+    enemyTypeId: string
   }
   TURN_COMPLETED: {
     turn: number
     inDebt: boolean
+  }
+  ACHIEVEMENT_UNLOCKED: {
+    achievementId: string
+    xpAwarded: number
   }
 }
 
