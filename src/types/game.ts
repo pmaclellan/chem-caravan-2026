@@ -268,6 +268,7 @@ export interface GameState {
   log: LogEntry[]
   pendingDebtFreedom: number | null        // XP amount to celebrate when debt first cleared
   pendingDiscovery: { settlementId: string; xpGained: number } | null  // first-visit reward splash
+  stats: import('./stats').RunStats
 }
 
 // Shape of a row in the Supabase games table (subset of columns we care about client-side)

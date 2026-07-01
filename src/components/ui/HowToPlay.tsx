@@ -30,9 +30,24 @@ export function HowToPlay({ onClose }: Props) {
           <section>
             <div className="pip-label mb-1">Objective</div>
             <p className="text-pip-green-dim leading-relaxed">
-              Buy and sell chems across the wasteland, pay off your debt, and get rich. Standard
-              mode ends after 30 turns — final score is caps minus debt. Free Play has no turn
-              limit and scores by XP.
+              Buy and sell chems across the wasteland, pay off your debt, and get rich.{' '}
+              <span className="text-pip-green">Standard</span> mode is an economic optimization
+              puzzle with a deadline — 30 turns to build the highest score you can.{' '}
+              <span className="text-pip-green">Free Play</span> has no turn limit and scores by XP.
+            </p>
+          </section>
+
+          <section>
+            <div className="pip-label mb-1">Scoring</div>
+            <p className="text-pip-green-dim leading-relaxed">
+              <span className="text-pip-green">Standard:</span> score = net worth + XP.
+              Net worth = caps + inventory value + weapons + armor − debt. Invest in power armor
+              and heavy weapons — they count toward your final score, so buying good gear is never
+              a sacrifice.
+            </p>
+            <p className="text-pip-green-dim leading-relaxed mt-1">
+              <span className="text-pip-green">Free Play:</span> score = XP only. Earned from
+              combat, travel, settlement discovery, trading at a profit, and clearing debt.
             </p>
           </section>
 

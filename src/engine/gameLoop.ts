@@ -4,6 +4,7 @@ import type { GameModeId, GameState, GameType, LogEntry, MarketEvent, PlayerStat
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore, applyGuardSalary } from './economy'
+import { initStats } from './statsReducer'
 import { initiateCombat } from './combat'
 import { awardXp, getScaleFactor, XpEventType } from './xp'
 import { rng } from './rng'
@@ -108,6 +109,7 @@ export function initializeGame(
     log,
     pendingDebtFreedom: null,
     pendingDiscovery: null,
+    stats: initStats(),
   }
 }
 
@@ -279,8 +281,8 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
 
   // Check win condition (standard mode only — free play has no turn limit)
   if (world.maxTurns !== null && turn > world.maxTurns) {
-    const score = calculateFinalScore(player)
-    log.push(makeLog(turn, `Time's up. Final score: ${score} caps.`, 'system'))
+    const score = calculateFinalScore(player, mc)
+    log.push(makeLog(turn, `Time's up. Final score: ${score}.`, 'system'))
     return {
       ...state,
       player,
@@ -332,8 +334,8 @@ function consumeTurnInPlace(state: GameState, message: string, logType: LogEntry
   const log = [...state.log, makeLog(turn, message, logType)]
 
   if (world.maxTurns !== null && turn > world.maxTurns) {
-    const score = calculateFinalScore(state.player)
-    log.push(makeLog(turn, `Time's up. Final score: ${score} caps.`, 'system'))
+    const score = calculateFinalScore(state.player, mc)
+    log.push(makeLog(turn, `Time's up. Final score: ${score}.`, 'system'))
     return {
       ...state,
       world,
@@ -556,12 +558,11 @@ export function endGame(state: GameState): GameState {
 }
 
 export function retireGame(state: GameState): GameState {
-  const score = calculateFinalScore(state.player)
   const turn = state.world.turn
   const log = [
     ...state.log,
     makeLog(turn, 'You hang up your pack and retire from the caravan trade.', 'system'),
-    makeLog(turn, `Final XP: ${(state.player.xp ?? 0).toLocaleString()} · Caps on hand: ${state.player.caps.toLocaleString()} · Score: ${score >= 0 ? '+' : ''}${score}`, 'system'),
+    makeLog(turn, `Final XP: ${(state.player.xp ?? 0).toLocaleString()} · Caps on hand: ${state.player.caps.toLocaleString()}`, 'system'),
   ]
   return {
     ...state,

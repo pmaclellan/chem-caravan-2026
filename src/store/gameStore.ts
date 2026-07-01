@@ -40,6 +40,8 @@ import {
   calculateFinalScore,
   resolveGameStatus,
 } from '../engine/economy'
+import { gameBus } from '../engine/eventBus'
+import { initStats, updateStats } from '../engine/statsReducer'
 import { TAMING_TOOLS, SADDLE_PRICE } from '../data/mounts'
 import type { TamingToolId } from '../types/game'
 import { awardXp, XpEventType } from '../engine/xp'
@@ -173,6 +175,7 @@ function normalizeState(state: GameState): GameState {
     },
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
+    stats: state.stats ?? initStats(),
   }
 }
 
@@ -201,7 +204,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             status:        resolveEndStatus(state),
             final_score:   state.gameType === 'free_play'
               ? (state.player.xp ?? 0)
-              : calculateFinalScore(state.player),
+              : calculateFinalScore(state.player, GAME_MODES[state.mode]),
             turns_reached: state.world.turn,
           }
         : {}),
@@ -222,13 +225,29 @@ export const useGameStore = create<GameStore>((set, get) => {
   }
 
   // --- Mutation helper ---
-  function mutate(updater: (state: GameState) => GameState) {
+  function mutate(updater: (state: GameState) => GameState): GameState | null {
     const current = get().gameState
-    if (!current) return
+    if (!current) return null
     const next = updater(current)
     set({ gameState: next })
     scheduleSave(next)
+    // Auto-emit turn completion whenever a mutation increments the turn counter
+    if (next.world.turn > current.world.turn) {
+      gameBus.emit('TURN_COMPLETED', { turn: next.world.turn, inDebt: next.player.debt > 0 })
+    }
+    return next
   }
+
+  // --- Stats event subscriber --- (registered once for the store's lifetime)
+  gameBus.on('COMBAT_RESOLVED', payload => {
+    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'COMBAT_RESOLVED', ...payload }) }))
+  })
+  gameBus.on('CHEM_SOLD', payload => {
+    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'CHEM_SOLD', ...payload }) }))
+  })
+  gameBus.on('TURN_COMPLETED', payload => {
+    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'TURN_COMPLETED', ...payload }) }))
+  })
 
   // --- Current market for the player's location, with active events applied ---
   function currentMarket(state: GameState): SettlementMarket {
@@ -518,9 +537,20 @@ export const useGameStore = create<GameStore>((set, get) => {
       const state = get().gameState
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
+      const weaponId = state.player.gun?.id ?? null
       const { player, combat, animSteps } = resolveFight(state.player, state.combat, mc)
       if (animSteps.length === 0) {
-        // No animation (e.g. guards all dead, no enemies) — apply immediately
+        // No animation — emit event and apply immediately
+        if (combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost') {
+          gameBus.emit('COMBAT_RESOLVED', {
+            outcome: combat.phase,
+            killedEnemies: combat.enemies.filter(e => e.dead).map(e => ({ typeId: e.typeId })),
+            weaponId,
+            damageDealt: combat.totalDamageDealt,
+            damageTaken: combat.totalDamageTaken,
+            capsLooted: combat.capsLooted,
+          })
+        }
         mutate(s => afterCombat(s, { player, combat }))
       } else {
         set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
@@ -529,8 +559,20 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     completeCombatAnim: () => {
-      const { pendingFightResult } = get()
+      const { pendingFightResult, gameState } = get()
       if (!pendingFightResult) return
+      const { combat } = pendingFightResult
+      // Emit only when combat resolved (not a failed flee that returns to player_choice)
+      if (combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost') {
+        gameBus.emit('COMBAT_RESOLVED', {
+          outcome: combat.phase,
+          killedEnemies: combat.enemies.filter(e => e.dead).map(e => ({ typeId: e.typeId })),
+          weaponId: gameState?.player.gun?.id ?? null,
+          damageDealt: combat.totalDamageDealt,
+          damageTaken: combat.totalDamageTaken,
+          capsLooted: combat.capsLooted,
+        })
+      }
       set({ combatAnimSteps: null, pendingFightResult: null })
       mutate(s => afterCombat(s, pendingFightResult))
     },
@@ -539,13 +581,22 @@ export const useGameStore = create<GameStore>((set, get) => {
       const state = get().gameState
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
+      const weaponId = state.player.gun?.id ?? null
       const { player, combat, animSteps } = resolveRun(state.player, state.combat, mc)
       if (animSteps.length > 0) {
         // Flee failed — animate enemy retaliation before applying result
         set({ pendingFightResult: { player, combat }, combatAnimSteps: animSteps })
         mutate(s => s.combat ? { ...s, combat: { ...s.combat, phase: 'resolving' } } : s)
       } else {
-        // Flee succeeded — apply immediately
+        // Flee succeeded — emit and apply immediately
+        gameBus.emit('COMBAT_RESOLVED', {
+          outcome: 'fled',
+          killedEnemies: [],
+          weaponId,
+          damageDealt: combat.totalDamageDealt,
+          damageTaken: combat.totalDamageTaken,
+          capsLooted: 0,
+        })
         mutate(s => afterCombat(s, { player, combat }))
       }
     },
@@ -567,6 +618,14 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ showTamingMinigame: false })
       const { player, combat } = resolveTameSuccess(state.player, state.combat)
       set({ pendingFightResult: { player, combat } })
+      gameBus.emit('COMBAT_RESOLVED', {
+        outcome: 'won',
+        killedEnemies: [],  // tamed, not killed
+        weaponId: state.player.gun?.id ?? null,
+        damageDealt: combat.totalDamageDealt,
+        damageTaken: combat.totalDamageTaken,
+        capsLooted: combat.capsLooted,
+      })
       mutate(s => afterCombat(s, { player, combat }))
     },
 
@@ -630,17 +689,20 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     sell: (chemId, quantity) => {
+      let saleEvent: { revenue: number; profit: number } | null = null
       mutate(state => {
         const market = currentMarket(state)
         const { player: sold, profit, error } = sellChems(state.player, market, chemId, quantity)
         if (error) { set({ toast: error }); return state }
         let player = sold
+        const revenue = market.prices[chemId] * quantity
+        saleEvent = { revenue, profit }
         const loc = state.player.location
         const world = updateSettlementStock(state.world, loc, chemId, +quantity)
         const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
         const log = [...state.log, {
           turn: state.world.turn,
-          message: `Sold ${quantity} ${chemId} for ${market.prices[chemId] * quantity} caps. ${profitMsg}`,
+          message: `Sold ${quantity} ${chemId} for ${revenue} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
         if (profit > 0) {
@@ -650,6 +712,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
         return { ...state, player, world, log }
       })
+      if (saleEvent) {
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: saleEvent.revenue, profit: saleEvent.profit })
+      }
     },
 
     buyFromMerchant: (chemId, quantity) => {
@@ -673,6 +738,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     sellToMerchant: (chemId, quantity) => {
+      let saleEvent: { revenue: number; profit: number } | null = null
       mutate(state => {
         if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
         const payload = state.pendingEvent.payload as { prices: Record<string,number>; demand: Record<string,number> }
@@ -683,6 +749,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         if (!existing || existing.quantity < quantity) { set({ toast: 'Not enough in inventory.' }); return state }
         const revenue = price * quantity
         const profit  = revenue - existing.pricePaid * quantity
+        saleEvent = { revenue, profit }
         const newQty  = existing.quantity - quantity
         const inventory = { ...state.player.inventory }
         if (newQty === 0) delete inventory[chemId]
@@ -702,6 +769,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
+      if (saleEvent) {
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: saleEvent.revenue, profit: saleEvent.profit })
+      }
     },
 
     heal: () => {

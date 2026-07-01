@@ -122,16 +122,16 @@ export function useCombatAnimation(
         const healthAfter = step.targetHealthAfter
         const hit         = step.hit
 
-        // Shooter glows + ammo ticks down
+        // Shooter glows — only player shots decrement the ammo display
         const t1 = offset
-        workingAmmo = Math.max(0, workingAmmo - 1)
+        if (step.by === 'player') workingAmmo = Math.max(0, workingAmmo - 1)
         const ammoAtShot = workingAmmo
         timersRef.current.push(setTimeout(() => {
           if (shooterIdx === -1) {
             setState(s => ({ ...s, activeShooterIdx: shooterIdx, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
           } else {
             workingFireKeys[shooterIdx] = (workingFireKeys[shooterIdx] ?? 0) + 1
-            setState(s => ({ ...s, activeShooterIdx: shooterIdx, activeTargetId: null, guardFireKeys: { ...workingFireKeys }, displayAmmo: ammoAtShot }))
+            setState(s => ({ ...s, activeShooterIdx: shooterIdx, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
           }
         }, t1))
 
