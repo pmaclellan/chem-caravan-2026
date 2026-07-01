@@ -16,52 +16,48 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
   const salaryDanger  = salary > 0 && turnsCovered < 2 && totalCover < salary * 2
   const salaryWarning = salary > 0 && turnsCovered < 4 && !salaryDanger
 
-  const hasGuards = player.guards > 0 || (player.powerArmorGuards ?? 0) > 0
-
   return (
     <div className="border border-pip-border p-3 rounded space-y-4">
 
-      {/* ── Payroll summary ──────────────────────────────────────────────── */}
-      {hasGuards && (
-        <div className={`rounded px-3 py-2 border ${
-          salaryDanger  ? 'border-pip-red bg-pip-red/5' :
-          salaryWarning ? 'border-pip-amber bg-pip-amber/5' :
-          'border-pip-border-dim bg-pip-border-dim/30'
-        }`}>
-          <div className="flex items-baseline justify-between">
-            <span className="pip-label text-[10px]">PAYROLL</span>
-            <span className={`font-display text-lg ${
-              salaryDanger ? 'text-pip-red' : salaryWarning ? 'text-pip-amber' : 'text-pip-green'
-            }`}>
-              {salary} ¤/turn
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between mt-0.5">
-            <span className="text-[10px] font-mono text-pip-green-dim">
-              {turnsCovered === Infinity ? 'No guards' : (
-                turnsCovered > 0
-                  ? `Caps cover ~${turnsCovered} turn${turnsCovered !== 1 ? 's' : ''}`
-                  : 'Caps exhausted'
-              )}
-            </span>
-            {salary > 0 && collateral > 0 && (
-              <span className="text-[10px] font-mono text-pip-green-dim">
-                Pack worth {collateral.toLocaleString()} ¤
-              </span>
+      {/* ── Payroll summary — always visible so buttons don't shift on first hire */}
+      <div className={`rounded px-3 py-2 border ${
+        salaryDanger  ? 'border-pip-red bg-pip-red/5' :
+        salaryWarning ? 'border-pip-amber bg-pip-amber/5' :
+        'border-pip-border-dim bg-pip-border-dim/30'
+      }`}>
+        <div className="flex items-baseline justify-between">
+          <span className="pip-label text-[10px]">PAYROLL</span>
+          <span className={`font-display text-lg ${
+            salaryDanger ? 'text-pip-red' : salaryWarning ? 'text-pip-amber' : 'text-pip-green'
+          }`}>
+            {salary} ¤/turn
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between mt-0.5">
+          <span className="text-[10px] font-mono text-pip-green-dim">
+            {salary === 0 ? 'No guards hired' : (
+              turnsCovered > 0
+                ? `Caps cover ~${turnsCovered} turn${turnsCovered !== 1 ? 's' : ''}`
+                : 'Caps exhausted'
             )}
-          </div>
-          {salaryDanger && (
-            <div className="mt-1.5 text-[10px] font-mono text-pip-red leading-tight">
-              ⚠ Guards will desert if you can't cover wages — sell chems or dismiss some now.
-            </div>
-          )}
-          {salaryWarning && !salaryDanger && (
-            <div className="mt-1.5 text-[10px] font-mono text-pip-amber leading-tight">
-              Low on salary funds. Your pack provides collateral while it holds value.
-            </div>
+          </span>
+          {salary > 0 && collateral > 0 && (
+            <span className="text-[10px] font-mono text-pip-green-dim">
+              Pack worth {collateral.toLocaleString()} ¤
+            </span>
           )}
         </div>
-      )}
+        {salaryDanger && (
+          <div className="mt-1.5 text-[10px] font-mono text-pip-red leading-tight">
+            ⚠ Guards will desert if you can't cover wages — sell chems or dismiss some now.
+          </div>
+        )}
+        {salaryWarning && !salaryDanger && (
+          <div className="mt-1.5 text-[10px] font-mono text-pip-amber leading-tight">
+            Low on salary funds. Your pack provides collateral while it holds value.
+          </div>
+        )}
+      </div>
 
       {/* ── Regular guards ───────────────────────────────────────────────── */}
       <div className="space-y-2">
