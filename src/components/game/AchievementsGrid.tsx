@@ -14,10 +14,10 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
     a => !a.modeFilter || a.modeFilter.includes(mode)
   )
 
-  const earned   = modeAchievements.filter(a => earnedMap.has(a.id))
-    .sort((a, b) => (earnedMap.get(b.id)!.earnedOnTurn - earnedMap.get(a.id)!.earnedOnTurn))
-  const locked   = modeAchievements.filter(a => !earnedMap.has(a.id))
-    .sort((a, b) => b.xpReward - a.xpReward)
+  // Earned: earliest turn first (shows run progression); locked: canonical array order
+  const earned = modeAchievements.filter(a => earnedMap.has(a.id))
+    .sort((a, b) => earnedMap.get(a.id)!.earnedOnTurn - earnedMap.get(b.id)!.earnedOnTurn)
+  const locked = modeAchievements.filter(a => !earnedMap.has(a.id))
 
   const ordered = [...earned, ...locked]
   const totalXp = earned.reduce((s, a) => s + a.xpReward, 0)
