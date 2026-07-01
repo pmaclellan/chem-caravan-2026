@@ -19,6 +19,8 @@ import MobileGame from '../components/game/MobileGame'
 import DebtFreedomModal from '../components/game/DebtFreedomModal'
 import SettlementDiscoverySplash from '../components/game/SettlementDiscoverySplash'
 import GameOverScreen from '../components/game/GameOverScreen'
+import AchievementToast from '../components/game/AchievementToast'
+import DossierModal from '../components/game/DossierModal'
 
 type ActiveTab = 'market' | 'travel' | 'services'
 
@@ -27,6 +29,7 @@ export default function Game() {
   const { user } = useAuthStore()
   const { gameState, loadActiveGame, toast, _setToast, retire, dismissDebtFreedom, dismissDiscovery } = useGameStore()
   const [tab, setTab] = useState<ActiveTab>('market')
+  const [showDossier, setShowDossier] = useState(false)
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -102,6 +105,7 @@ export default function Game() {
           {gameState.gameType === 'free_play' && !isActionBlocked && (
             <button className="pip-btn-amber text-xs" onClick={() => retire()}>RETIRE</button>
           )}
+          <button className="pip-btn text-xs" onClick={() => setShowDossier(true)}>DOSSIER</button>
           <button className="pip-btn text-xs" onClick={() => navigate('/')}>MENU</button>
         </div>
       </div>
@@ -194,6 +198,9 @@ export default function Game() {
         </div>
       </div>
 
+      {/* Achievement toast */}
+      <AchievementToast />
+
       {/* Celebration overlays */}
       {gameState.pendingDebtFreedom != null && (
         <DebtFreedomModal xpGained={gameState.pendingDebtFreedom} onDismiss={dismissDebtFreedom} />
@@ -204,6 +211,11 @@ export default function Game() {
           xpGained={gameState.pendingDiscovery.xpGained}
           onDismiss={dismissDiscovery}
         />
+      )}
+
+      {/* Dossier overlay */}
+      {showDossier && (
+        <DossierModal gameState={gameState} onClose={() => setShowDossier(false)} />
       )}
     </div>
   )

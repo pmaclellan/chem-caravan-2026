@@ -18,13 +18,16 @@ import TravelSplash from './TravelSplash'
 import SettlementMap from './SettlementMap'
 import DebtFreedomModal from './DebtFreedomModal'
 import SettlementDiscoverySplash from './SettlementDiscoverySplash'
+import AchievementToast from './AchievementToast'
+import AchievementsGrid from './AchievementsGrid'
+import RunStatsView from './RunStatsView'
 import { CapsIcon } from '../ui/CapsIcon'
 import { DoctorPanel } from './service-panels/DoctorPanel'
 import { LoansharkPanel } from './service-panels/LoansharkPanel'
 import { ArmoryPanel } from './service-panels/ArmoryPanel'
 import { FollowersPanel } from './service-panels/FollowersPanel'
 
-type MobileTab = 'player' | 'market' | 'travel' | 'settlement' | 'log'
+type MobileTab = 'player' | 'market' | 'travel' | 'settlement' | 'dossier'
 
 const PANEL_STYLE = { backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 93%, transparent)' }
 
@@ -532,12 +535,27 @@ export default function MobileGame() {
     )
   }
 
-  // ── Log render function ────────────────────────────────────────────────
+  // ── Dossier render function ───────────────────────────────────────────
 
-  function renderLog() {
+  function renderDossier() {
     const displayed = [...log].reverse().slice(0, 80)
     return (
-      <div className="px-3 py-3 pb-6">
+      <div className="px-3 py-3 pb-6 space-y-4">
+        {/* Achievements */}
+        <div className="rounded-lg border border-pip-border p-3" style={PANEL_STYLE}>
+          <AchievementsGrid
+            earnedAchievements={gameState!.earnedAchievements}
+            mode={gameState!.mode}
+          />
+        </div>
+
+        {/* Stats */}
+        <div className="rounded-lg border border-pip-border p-3" style={PANEL_STYLE}>
+          <div className="pip-section-title text-base mb-2">Run Stats</div>
+          <RunStatsView stats={gameState!.stats} mc={mc} />
+        </div>
+
+        {/* Journal */}
         <div className="rounded-lg border border-pip-border p-3" style={PANEL_STYLE}>
           <div className="pip-section-title text-base mb-2">Journal</div>
           <div className="space-y-1 text-xs font-mono">
@@ -560,7 +578,7 @@ export default function MobileGame() {
     { id: 'market',     label: 'MARKET'     },
     { id: 'travel',     label: 'TRAVEL'     },
     { id: 'settlement', label: 'SETTLEMENT' },
-    { id: 'log',        label: 'LOG'        },
+    { id: 'dossier',    label: 'DOSSIER'    },
   ]
 
   return (
@@ -636,7 +654,7 @@ export default function MobileGame() {
             {tab === 'market'     && renderMarket()}
             {tab === 'travel'     && renderTravel()}
             {tab === 'settlement' && renderSettlement()}
-            {tab === 'log'        && renderLog()}
+            {tab === 'dossier'    && renderDossier()}
           </div>
 
           {/* Bottom tab bar */}
@@ -669,6 +687,9 @@ export default function MobileGame() {
           </div>
         </>
       )}
+
+      {/* Achievement toast */}
+      <AchievementToast />
 
       {/* Celebration overlays */}
       {gameState.pendingDebtFreedom != null && (

@@ -110,6 +110,7 @@ export function initializeGame(
     pendingDebtFreedom: null,
     pendingDiscovery: null,
     stats: initStats(),
+    earnedAchievements: [],
   }
 }
 
@@ -431,11 +432,12 @@ export function startCombat(state: GameState): GameState {
       )
     : null
 
-  const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number } | undefined
+  const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number; isSecondEncounter?: boolean } | undefined
   const forcedTypeId = payload?.enemyTypeId
   const forcedCount  = payload?.count
+  const waveNumber   = payload?.isSecondEncounter ? 2 : 1
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType)
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber)
   return {
     ...state,
     phase: 'combat',
