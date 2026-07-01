@@ -40,14 +40,13 @@ export function HowToPlay({ onClose }: Props) {
           <section>
             <div className="pip-label mb-1">Scoring</div>
             <p className="text-pip-green-dim leading-relaxed">
-              <span className="text-pip-green">Standard:</span> score = net worth + XP.
-              Net worth = caps + inventory value + weapons + armor − debt. Invest in power armor
-              and heavy weapons — they count toward your final score, so buying good gear is never
-              a sacrifice.
+              <span className="text-pip-green">Standard:</span> score = net worth (caps +
+              inventory + weapons + armor − debt). Buy good gear and hold it — power armor
+              and heavy weapons count as assets, not liabilities.
             </p>
             <p className="text-pip-green-dim leading-relaxed mt-1">
               <span className="text-pip-green">Free Play:</span> score = XP only. Earned from
-              combat, travel, settlement discovery, trading at a profit, and clearing debt.
+              combat, travel, discovery, profitable trades, and clearing debt.
             </p>
           </section>
 

@@ -226,7 +226,7 @@ const CAPITAL_WASTELAND_MODE: GameModeConfig = {
   roads: CAP_ROADS,
   guns: CAP_GUNS,
   gunIds: CAP_GUN_IDS,
-  startingLocation: 'rivet_city',
+  startingLocation: 'paradise_falls',
   travelEvents: CAP_EVENTS,
   transitQuotes: CAP_QUOTES,
   mapTitle: 'CAPITAL WASTELAND',

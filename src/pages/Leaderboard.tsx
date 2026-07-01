@@ -116,66 +116,89 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
 
         <div className="text-pip-green-dim text-sm italic">{outcome}</div>
 
-        {/* Score + turns */}
+        {/* Score breakdown — single box showing the full formula */}
         <div className="border border-pip-border rounded p-3 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="pip-label">Turns survived</span>
             <span className="text-pip-green">{row.turns_reached ?? '—'}</span>
           </div>
-          <div className="flex justify-between items-baseline">
-            <span className="pip-label">{isFreePlay ? 'XP (score)' : 'Final score'}</span>
-            <span className={`font-display text-xl ${isFreePlay ? 'text-pip-blue' : 'text-pip-amber'}`}>
-              {row.final_score.toLocaleString()}{isFreePlay ? ' XP' : ''}
-            </span>
-          </div>
-          {!isFreePlay && player?.xp != null && (
-            <div className="flex justify-between text-sm">
-              <span className="pip-label">XP earned</span>
-              <span className="text-pip-blue">{player.xp.toLocaleString()}</span>
-            </div>
-          )}
-        </div>
 
-        {/* Net worth breakdown */}
-        {player && netWorth !== null && (
-          <div className="border border-pip-border rounded p-3 space-y-1.5">
-            <div className="pip-label mb-1 tracking-widest">NET WORTH</div>
-            <div className="flex justify-between text-sm">
-              <span className="pip-label">Caps</span>
-              <span className="text-pip-green font-mono">{(player.caps ?? 0).toLocaleString()} ¤</span>
-            </div>
-            {inventoryValue > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">+ Inventory</span>
-                <span className="text-pip-green font-mono">{inventoryValue.toLocaleString()} ¤</span>
+          {/* Standard: net worth components → net worth → + XP → = score */}
+          {!isFreePlay && player && netWorth !== null && (
+            <>
+              <div className="border-t border-pip-border-dim pt-1.5 space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="pip-label">Caps</span>
+                  <span className="text-pip-green font-mono">{(player.caps ?? 0).toLocaleString()} ¤</span>
+                </div>
+                {inventoryValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="pip-label">+ Inventory</span>
+                    <span className="text-pip-green font-mono">{inventoryValue.toLocaleString()} ¤</span>
+                  </div>
+                )}
+                {gunsValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="pip-label">+ Weapons</span>
+                    <span className="text-pip-green font-mono">{gunsValue.toLocaleString()} ¤</span>
+                  </div>
+                )}
+                {armorValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="pip-label">+ Armor</span>
+                    <span className="text-pip-green font-mono">{armorValue.toLocaleString()} ¤</span>
+                  </div>
+                )}
+                {(player.debt ?? 0) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="pip-label">− Debt</span>
+                    <span className="text-pip-red font-mono">-{(player.debt ?? 0).toLocaleString()} ¤</span>
+                  </div>
+                )}
               </div>
-            )}
-            {gunsValue > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">+ Weapons</span>
-                <span className="text-pip-green font-mono">{gunsValue.toLocaleString()} ¤</span>
+              <div className="border-t border-pip-border pt-1.5 flex justify-between items-baseline">
+                <span className="pip-label tracking-widest">FINAL SCORE</span>
+                <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                  {row.final_score.toLocaleString()} ¤
+                </span>
               </div>
-            )}
-            {armorValue > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">+ Armor</span>
-                <span className="text-pip-green font-mono">{armorValue.toLocaleString()} ¤</span>
-              </div>
-            )}
-            {(player.debt ?? 0) > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="pip-label">− Debt</span>
-                <span className="text-pip-red font-mono">-{(player.debt ?? 0).toLocaleString()} ¤</span>
-              </div>
-            )}
-            <div className="border-t border-pip-border pt-1.5 flex justify-between">
-              <span className="pip-label">Total</span>
-              <span className={`font-mono text-lg ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
-                {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
+              {player.xp != null && player.xp > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="pip-label">XP earned</span>
+                  <span className="text-pip-blue font-mono">{player.xp.toLocaleString()} XP</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Standard: no player data available */}
+          {!isFreePlay && (!player || netWorth === null) && (
+            <div className="flex justify-between items-baseline border-t border-pip-border-dim pt-1.5">
+              <span className="pip-label">Final score</span>
+              <span className={`font-display text-xl ${row.final_score >= 0 ? 'text-pip-amber' : 'text-pip-red'}`}>
+                {row.final_score.toLocaleString()}
               </span>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Free play: XP as score, net worth as context */}
+          {isFreePlay && (
+            <>
+              <div className="border-t border-pip-border-dim pt-1.5 flex justify-between items-baseline">
+                <span className="pip-label tracking-widest">XP (SCORE)</span>
+                <span className="font-display text-xl text-pip-blue">{row.final_score.toLocaleString()} XP</span>
+              </div>
+              {player && netWorth !== null && (
+                <div className="flex justify-between text-sm">
+                  <span className="pip-label">Net worth</span>
+                  <span className={`font-mono ${netWorth >= 0 ? 'text-pip-green' : 'text-pip-red'}`}>
+                    {netWorth < 0 ? '-' : ''}{Math.abs(netWorth).toLocaleString()} ¤
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Combat + trading stats */}
         {hasStats && stats && (
@@ -333,7 +356,7 @@ export default function Leaderboard() {
         )}
         {!isFreePlay && (
           <div className="text-pip-green-dim text-xs font-mono mb-3 opacity-70">
-            Score = net worth (caps + inventory + weapons + armor − debt) + XP · click any run for details
+            Score = net worth (caps + inventory + weapons + armor − debt) · click any run for details
           </div>
         )}
 

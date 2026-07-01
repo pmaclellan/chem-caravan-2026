@@ -247,7 +247,7 @@ export default function Home() {
               )}
               {!isFreePlay && (
                 <div className="text-xs text-pip-green-dim text-center opacity-65">
-                  30 turns · score = net worth + XP · economic optimization puzzle with a deadline
+                  30 turns · score = net worth · economic optimization puzzle with a deadline
                 </div>
               )}
               {!isFreePlay && !freePlayUnlockedForMode && (

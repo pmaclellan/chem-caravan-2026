@@ -188,7 +188,7 @@ describe('sellChems', () => {
 })
 
 describe('calculateFinalScore', () => {
-  it('returns net worth + xp (no gear, no xp: same as caps - debt)', () => {
+  it('returns net worth (caps - debt when no gear)', () => {
     const player = makePlayer({ caps: 1000, debt: 200 })
     expect(calculateFinalScore(player, EMPTY_MC)).toBe(800)
   })
