@@ -1,6 +1,39 @@
 import type { AchievementDef } from '../types/achievement'
 
+// Canonical order: Survival → Combat → Evasion → Taming → Trading → Exploration → Economy
+// Earned achievements display earliest-first; locked follow this order.
 export const ACHIEVEMENTS: AchievementDef[] = [
+  // ── Survival ──────────────────────────────────────────────────────────────
+  {
+    id: 'survive_30',
+    name: 'Thirty Turns',
+    description: 'Survive 30 turns.',
+    icon: 'heart-svgrepo-com.svg',
+    xpReward: 100,
+  },
+  {
+    id: 'survive_50',
+    name: 'Half a Hundred',
+    description: 'Survive 50 turns.',
+    icon: 'wave-pulse-svgrepo-com.svg',
+    xpReward: 250,
+  },
+  {
+    id: 'survive_75',
+    name: 'Road Veteran',
+    description: 'Survive 75 turns.',
+    icon: 'compass-svgrepo-com.svg',
+    xpReward: 500,
+  },
+  {
+    id: 'survive_100',
+    name: 'Century Run',
+    description: 'Survive 100 turns.',
+    icon: 'sparkles-svgrepo-com.svg',
+    xpReward: 750,
+  },
+
+  // ── Combat ────────────────────────────────────────────────────────────────
   {
     id: 'first_blood',
     name: 'First Blood',
@@ -22,6 +55,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: 'skull-crossbones-svgrepo-com.svg',
     xpReward: 250,
   },
+
+  // ── Evasion ───────────────────────────────────────────────────────────────
   {
     id: 'flee_10',
     name: 'Quick on Your Feet',
@@ -36,6 +71,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: 'signs-post-svgrepo-com.svg',
     xpReward: 250,
   },
+
+  // ── Taming ────────────────────────────────────────────────────────────────
   {
     id: 'tame_yao_guai',
     name: 'Bear Tamer',
@@ -67,20 +104,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     xpReward: 500,
     modeFilter: ['mojave_wasteland'],
   },
-  {
-    id: 'all_settlements',
-    name: 'Well Traveled',
-    description: 'Visit every settlement in the region.',
-    icon: 'map-svgrepo-com.svg',
-    xpReward: 100,
-  },
-  {
-    id: 'all_chems_traded',
-    name: 'Full Formulary',
-    description: 'Buy and sell every type of chem available in this region.',
-    icon: 'capsule-svgrepo-com.svg',
-    xpReward: 100,
-  },
+
+  // ── Trading ───────────────────────────────────────────────────────────────
   {
     id: 'profit_100',
     name: 'Double or Nothing',
@@ -115,6 +140,31 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Sell 100 units of a single chem type across a run.',
     icon: 'capsule-svgrepo-com.svg',
     xpReward: 200,
+  },
+  {
+    id: 'all_chems_traded',
+    name: 'Full Formulary',
+    description: 'Buy and sell every type of chem available in this region.',
+    icon: 'capsule-svgrepo-com.svg',
+    xpReward: 100,
+  },
+
+  // ── Exploration ───────────────────────────────────────────────────────────
+  {
+    id: 'all_settlements',
+    name: 'Well Traveled',
+    description: 'Visit every settlement in the region.',
+    icon: 'map-svgrepo-com.svg',
+    xpReward: 100,
+  },
+
+  // ── Economy & Followers ───────────────────────────────────────────────────
+  {
+    id: 'pay_off_debt',
+    name: 'In the Black',
+    description: 'Pay off your debt entirely.',
+    icon: 'scale-balanced-svgrepo-com.svg',
+    xpReward: 500,
   },
   {
     id: 'buy_power_armor',
@@ -157,41 +207,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Max out guards, Power Armor guards, and brahmin simultaneously.',
     icon: 'tent-svgrepo-com.svg',
     xpReward: 300,
-  },
-  {
-    id: 'pay_off_debt',
-    name: 'In the Black',
-    description: 'Pay off your debt entirely.',
-    icon: 'scale-balanced-svgrepo-com.svg',
-    xpReward: 500,
-  },
-  {
-    id: 'survive_30',
-    name: 'Thirty Turns',
-    description: 'Survive 30 turns.',
-    icon: 'heart-svgrepo-com.svg',
-    xpReward: 100,
-  },
-  {
-    id: 'survive_50',
-    name: 'Half a Hundred',
-    description: 'Survive 50 turns.',
-    icon: 'wave-pulse-svgrepo-com.svg',
-    xpReward: 250,
-  },
-  {
-    id: 'survive_75',
-    name: 'Road Veteran',
-    description: 'Survive 75 turns.',
-    icon: 'compass-svgrepo-com.svg',
-    xpReward: 500,
-  },
-  {
-    id: 'survive_100',
-    name: 'Century Run',
-    description: 'Survive 100 turns.',
-    icon: 'sparkles-svgrepo-com.svg',
-    xpReward: 750,
   },
 ]
 
