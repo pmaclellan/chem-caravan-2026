@@ -8,8 +8,10 @@ import {
   hireGuards,
   repayDebt,
 } from '../economy'
-import type { DebtEnforcementEntry } from '../../data/modes'
+import type { DebtEnforcementEntry, GameModeConfig } from '../../data/modes'
 import type { PlayerState, SettlementMarket } from '../../types/game'
+
+const EMPTY_MC = { guns: {}, armors: {} } as GameModeConfig
 
 const TEST_DEBT_ENFORCEMENT: DebtEnforcementEntry[] = [
   { age: 5,  damage: 30,  message: "Thugs find you." },
@@ -186,14 +188,14 @@ describe('sellChems', () => {
 })
 
 describe('calculateFinalScore', () => {
-  it('returns caps - debt', () => {
+  it('returns net worth + xp (no gear, no xp: same as caps - debt)', () => {
     const player = makePlayer({ caps: 1000, debt: 200 })
-    expect(calculateFinalScore(player)).toBe(800)
+    expect(calculateFinalScore(player, EMPTY_MC)).toBe(800)
   })
 
   it('can be negative', () => {
     const player = makePlayer({ caps: 100, debt: 5000 })
-    expect(calculateFinalScore(player)).toBe(-4900)
+    expect(calculateFinalScore(player, EMPTY_MC)).toBe(-4900)
   })
 })
 

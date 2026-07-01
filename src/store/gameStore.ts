@@ -689,14 +689,17 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     sell: (chemId, quantity) => {
-      let saleEvent: { revenue: number; profit: number } | null = null
+      // Use an object so TypeScript doesn't narrow away the assignment inside the closure
+      const sale = { revenue: 0, profit: 0, ok: false }
       mutate(state => {
         const market = currentMarket(state)
         const { player: sold, profit, error } = sellChems(state.player, market, chemId, quantity)
         if (error) { set({ toast: error }); return state }
         let player = sold
         const revenue = market.prices[chemId] * quantity
-        saleEvent = { revenue, profit }
+        sale.revenue = revenue
+        sale.profit = profit
+        sale.ok = true
         const loc = state.player.location
         const world = updateSettlementStock(state.world, loc, chemId, +quantity)
         const profitMsg = profit >= 0 ? `(+${profit} profit)` : `(${profit} loss)`
@@ -712,8 +715,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
         return { ...state, player, world, log }
       })
-      if (saleEvent) {
-        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: saleEvent.revenue, profit: saleEvent.profit })
+      if (sale.ok) {
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit })
       }
     },
 
@@ -738,7 +741,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     sellToMerchant: (chemId, quantity) => {
-      let saleEvent: { revenue: number; profit: number } | null = null
+      const sale = { revenue: 0, profit: 0, ok: false }
       mutate(state => {
         if (!state.pendingEvent || state.pendingEvent.type !== 'wandering_merchant') return state
         const payload = state.pendingEvent.payload as { prices: Record<string,number>; demand: Record<string,number> }
@@ -749,7 +752,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         if (!existing || existing.quantity < quantity) { set({ toast: 'Not enough in inventory.' }); return state }
         const revenue = price * quantity
         const profit  = revenue - existing.pricePaid * quantity
-        saleEvent = { revenue, profit }
+        sale.revenue = revenue
+        sale.profit = profit
+        sale.ok = true
         const newQty  = existing.quantity - quantity
         const inventory = { ...state.player.inventory }
         if (newQty === 0) delete inventory[chemId]
@@ -769,8 +774,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         }
         return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
-      if (saleEvent) {
-        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: saleEvent.revenue, profit: saleEvent.profit })
+      if (sale.ok) {
+        gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit })
       }
     },
 
