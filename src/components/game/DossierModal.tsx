@@ -19,7 +19,7 @@ export default function DossierModal({ gameState, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div
         className="pip-panel w-full max-w-2xl flex flex-col"
-        style={{ maxHeight: '90vh' }}
+        style={{ height: '82vh' }}
       >
         {/* Header */}
         <div className="flex justify-between items-center flex-shrink-0 mb-3">
