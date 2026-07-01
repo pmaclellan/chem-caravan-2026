@@ -199,7 +199,7 @@ export default function Game() {
       </div>
 
       {/* Achievement toast */}
-      <AchievementToast />
+      <AchievementToast onOpenDossier={() => setShowDossier(true)} />
 
       {/* Celebration overlays */}
       {gameState.pendingDebtFreedom != null && (
