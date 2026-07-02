@@ -62,6 +62,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: 'skull-crossbones-svgrepo-com.svg',
     xpReward: 250,
   },
+  {
+    id: 'butt_clencher',
+    name: 'Butt Clencher',
+    description: 'Escape combat (win or flee) with less than 10 HP and no armor left.',
+    icon: 'heart-crack-svgrepo-com.svg',
+    xpReward: 300,
+  },
 
   // ── Pacifism ─────────────────────────────────────────────────────────────
   {

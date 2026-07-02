@@ -516,6 +516,12 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     }
   }
 
+  const isCloseCall =
+    (combat.phase === 'won' || combat.phase === 'fled') &&
+    player.health < 10 &&
+    (player.armor?.armorPoints ?? 0) === 0
+  if (isCloseCall) combat = { ...combat, closeCall: true }
+
   const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
 
   if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
