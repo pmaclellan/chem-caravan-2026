@@ -75,7 +75,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'pacifist',
     name: 'Pacifist',
     description: 'Go 10 consecutive turns without entering combat.',
-    icon: 'flag-svgrepo-com.svg',
+    icon: 'handshake-svgrepo-com.svg',
     xpReward: 200,
   },
 
@@ -115,7 +115,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'tame_deathclaw',
     name: 'Death Defied',
     description: 'Tame a Deathclaw.',
-    icon: 'skull-crossbones-svgrepo-com.svg',
+    icon: 'crown-svgrepo-com.svg',
     xpReward: 250,
     modeFilter: ['mojave_wasteland'],
   },
@@ -154,14 +154,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'sell_merchant',
     name: 'Back Alley Deal',
     description: 'Sell chems to a wandering merchant.',
-    icon: 'briefcase-dollar-svgrepo-com.svg',
+    icon: 'scale-unbalanced-svgrepo-com.svg',
     xpReward: 50,
   },
   {
     id: 'drug_lord',
     name: 'Drug Lord',
     description: 'Sell 100 units of a single chem type across a run.',
-    icon: 'capsule-svgrepo-com.svg',
+    icon: 'scale-balanced-svgrepo-com.svg',
     xpReward: 200,
   },
   {
@@ -195,7 +195,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'pay_off_debt',
     name: 'In the Black',
     description: 'Pay off your debt entirely.',
-    icon: 'scale-balanced-svgrepo-com.svg',
+    icon: 'party-horn-svgrepo-com.svg',
     xpReward: 500,
   },
   {
@@ -209,7 +209,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'own_3_guns',
     name: 'Arsenal',
     description: 'Own 3 weapons simultaneously.',
-    icon: 'icons8-minigun-100.svg',
+    icon: 'award-alt-svgrepo-com.svg',
     xpReward: 100,
   },
   {
@@ -223,7 +223,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'max_pa_guards',
     name: 'Power Armored',
     description: 'Hire the maximum number of Power Armor guards.',
-    icon: 'shield-dollar-svgrepo-com.svg',
+    icon: 'icons8-minigun-100.svg',
     xpReward: 150,
   },
   {
