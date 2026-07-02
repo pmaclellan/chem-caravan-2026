@@ -77,7 +77,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'tame_yao_guai',
     name: 'Bear Tamer',
     description: 'Tame a Yao Guai.',
-    icon: 'angry_bear_head.svg',
+    icon: 'bear-svgrepo-com.svg',
     xpReward: 150,
   },
   {
