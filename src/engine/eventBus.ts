@@ -8,6 +8,7 @@ export type GameEventMap = {
     capsLooted: number
     waveNumber: number          // 1 = normal, 2 = second wave, 3+ = future
     isCheckpointFight: boolean
+    playerFiredWeapon: boolean  // false = guards-only fight (no gun or 0 ammo)
   }
   CHEM_SOLD: {
     chemId: string

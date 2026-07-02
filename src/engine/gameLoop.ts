@@ -432,13 +432,24 @@ export function startCombat(state: GameState): GameState {
       )
     : null
 
-  const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number; isSecondEncounter?: boolean } | undefined
-  const forcedTypeId = payload?.enemyTypeId
-  const forcedCount  = payload?.count
+  const payload = state.pendingEvent?.payload as {
+    enemyTypeId?: string; count?: number; isSecondEncounter?: boolean
+    priorWaveCaps?: number; priorWaveXp?: number; priorWaveLoot?: Record<string, number>
+  } | undefined
+  const forcedTypeId       = payload?.enemyTypeId
+  const forcedCount        = payload?.count
   const waveNumber         = payload?.isSecondEncounter ? 2 : 1
   const isCheckpointFight  = state.pendingEvent?.type === 'brotherhood_checkpoint'
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber, isCheckpointFight)
+  let combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber, isCheckpointFight)
+  if (payload?.isSecondEncounter) {
+    combat = {
+      ...combat,
+      priorWaveCapsLooted: payload.priorWaveCaps ?? 0,
+      priorWaveXpGained:   payload.priorWaveXp   ?? 0,
+      priorWaveEnemyLoot:  payload.priorWaveLoot  ?? {},
+    }
+  }
   return {
     ...state,
     phase: 'combat',
@@ -535,6 +546,9 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
             enemyName: previewName,
             forfeitCaps: combat.capsLooted,
             forfeitChems: combat.enemyLoot,
+            priorWaveCaps: combat.capsLooted,
+            priorWaveXp: combat.xpGained,
+            priorWaveLoot: combat.enemyLoot,
           },
         }
         return {

@@ -20,6 +20,12 @@ const CHECKS: Record<string, CheckFn> = {
       .filter(e => !e.eventOnly)
       .every(e => (next.stats.killsByEnemy[e.id] ?? 0) > 0),
 
+  pacifist: (prev, next) =>
+    next.stats.turnsWithoutFight >= 10 && prev.stats.turnsWithoutFight < 10,
+
+  friends_with_benefits: (prev, next) =>
+    next.stats.guardsOnlyWins > prev.stats.guardsOnlyWins,
+
   flee_10: (prev, next) =>
     next.stats.combatsFled >= 10 && prev.stats.combatsFled < 10,
 

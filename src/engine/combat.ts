@@ -98,6 +98,9 @@ export function initiateCombat(
     log: [description],
     waveNumber,
     isCheckpointFight,
+    priorWaveCapsLooted: 0,
+    priorWaveXpGained: 0,
+    priorWaveEnemyLoot: {},
   }
 }
 

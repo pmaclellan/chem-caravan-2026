@@ -11,6 +11,8 @@ export function initStats(): RunStats {
     combatsFled: 0,
     secondWavesDefeated: 0,
     checkpointCombatsWon: 0,
+    turnsWithoutFight: 0,
+    guardsOnlyWins: 0,
     totalDamageDealt: 0,
     totalDamageTaken: 0,
     capsFromCombat: 0,
@@ -51,6 +53,8 @@ export function updateStats(stats: RunStats, event: GameEvent): RunStats {
         combatsFled: stats.combatsFled + (event.outcome === 'fled' ? 1 : 0),
         secondWavesDefeated: stats.secondWavesDefeated + (event.waveNumber >= 2 && event.outcome === 'won' ? 1 : 0),
         checkpointCombatsWon: stats.checkpointCombatsWon + (event.isCheckpointFight && event.outcome === 'won' ? 1 : 0),
+        guardsOnlyWins: stats.guardsOnlyWins + (!event.playerFiredWeapon && event.outcome === 'won' ? 1 : 0),
+        turnsWithoutFight: 0,
         totalDamageDealt: stats.totalDamageDealt + event.damageDealt,
         totalDamageTaken: stats.totalDamageTaken + event.damageTaken,
         capsFromCombat: stats.capsFromCombat + event.capsLooted,
@@ -96,6 +100,7 @@ export function updateStats(stats: RunStats, event: GameEvent): RunStats {
       return {
         ...stats,
         turnsInDebt: stats.turnsInDebt + (event.inDebt ? 1 : 0),
+        turnsWithoutFight: stats.turnsWithoutFight + 1,
       }
     }
     default:

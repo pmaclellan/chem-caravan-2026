@@ -88,10 +88,20 @@ export default function CombatSummaryPanel({ combat }: Props) {
   const fled        = combat.phase === 'fled'
   const killedCount = combat.enemies.filter(e => e.dead).length
   const totalCount  = combat.enemies.length
-  const chemEntries = Object.entries(combat.enemyLoot).filter(([, qty]) => qty > 0)
-  const xpGained    = combat.xpGained ?? 0
 
-  const xpCounted = useCountUp(xpGained, 950, 880)
+  const isMultiWave = (combat.priorWaveCapsLooted ?? 0) > 0 || (combat.priorWaveXpGained ?? 0) > 0
+
+  const totalCaps = combat.capsLooted + (combat.priorWaveCapsLooted ?? 0)
+  const totalXp   = (combat.xpGained ?? 0) + (combat.priorWaveXpGained ?? 0)
+
+  // Merge loot from all waves
+  const mergedLoot: Record<string, number> = { ...combat.priorWaveEnemyLoot }
+  for (const [chemId, qty] of Object.entries(combat.enemyLoot)) {
+    mergedLoot[chemId] = (mergedLoot[chemId] ?? 0) + qty
+  }
+  const chemEntries = Object.entries(mergedLoot).filter(([, qty]) => qty > 0)
+
+  const xpCounted = useCountUp(totalXp, 950, 880)
 
   return (
     <>
@@ -136,8 +146,8 @@ export default function CombatSummaryPanel({ combat }: Props) {
             format={n => `${n} / ${totalCount}`}
           />
           <StatRow
-            label="CAPS LOOTED"
-            value={combat.capsLooted}
+            label={isMultiWave ? 'CAPS LOOTED (BOTH WAVES)' : 'CAPS LOOTED'}
+            value={totalCaps}
             colorClass="text-pip-amber"
             delay={600}
             format={n => `${n} ¤`}
@@ -156,7 +166,7 @@ export default function CombatSummaryPanel({ combat }: Props) {
       )}
 
       {/* ── XP box ────────────────────────────────────────────── */}
-      {won && xpGained > 0 && (
+      {won && totalXp > 0 && (
         <div
           className="border border-pip-blue rounded mt-4 px-4 py-3 flex items-baseline justify-between"
           style={{
@@ -165,7 +175,7 @@ export default function CombatSummaryPanel({ combat }: Props) {
         >
           <div>
             <div className="pip-label text-xs tracking-widest mb-0.5">XP EARNED</div>
-            <div className="text-pip-green-dim text-xs opacity-70">this combat</div>
+            <div className="text-pip-green-dim text-xs opacity-70">{isMultiWave ? 'both waves' : 'this combat'}</div>
           </div>
           <span className="font-display text-3xl text-pip-blue tabular-nums">+{xpCounted}</span>
         </div>
