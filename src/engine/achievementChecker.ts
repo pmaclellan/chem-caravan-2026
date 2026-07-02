@@ -15,6 +15,9 @@ const CHECKS: Record<string, CheckFn> = {
   second_wave: (prev, next) =>
     next.stats.secondWavesDefeated > prev.stats.secondWavesDefeated,
 
+  butt_clencher: (_prev, next) =>
+    next.combat?.closeCall === true,
+
   kill_all_enemies: (_prev, next, mc) =>
     mc.enemies
       .filter(e => !e.eventOnly)

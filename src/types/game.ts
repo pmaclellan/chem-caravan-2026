@@ -140,6 +140,7 @@ export interface CombatState {
   priorWaveCapsLooted: number   // caps from earlier wave(s) — added to summary display
   priorWaveXpGained: number     // XP from earlier wave(s) — added to summary display
   priorWaveEnemyLoot: Record<string, number>  // loot from earlier wave(s)
+  closeCall?: boolean           // true when combat ended with player < 10 HP and 0 AP
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
 }
