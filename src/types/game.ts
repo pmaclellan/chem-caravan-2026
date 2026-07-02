@@ -137,6 +137,9 @@ export interface CombatState {
   log: string[]
   waveNumber: number            // 1 = normal, 2 = second wave, 3+ = future
   isCheckpointFight: boolean    // combat initiated by fighting a brotherhood/NCR checkpoint
+  priorWaveCapsLooted: number   // caps from earlier wave(s) — added to summary display
+  priorWaveXpGained: number     // XP from earlier wave(s) — added to summary display
+  priorWaveEnemyLoot: Record<string, number>  // loot from earlier wave(s)
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
 }

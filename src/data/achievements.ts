@@ -63,6 +63,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     xpReward: 250,
   },
 
+  // ── Pacifism ─────────────────────────────────────────────────────────────
+  {
+    id: 'pacifist',
+    name: 'Pacifist',
+    description: 'Go 10 consecutive turns without entering combat.',
+    icon: 'sparkles-svgrepo-com.svg',
+    xpReward: 200,
+  },
+
   // ── Evasion ───────────────────────────────────────────────────────────────
   {
     id: 'flee_10',
@@ -163,6 +172,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Visit every settlement in the region.',
     icon: 'map-svgrepo-com.svg',
     xpReward: 100,
+  },
+
+  // ── Guards ────────────────────────────────────────────────────────────────
+  {
+    id: 'friends_with_benefits',
+    name: 'Friends with Benefits',
+    description: 'Win a fight with guards only — no gun or no ammo.',
+    icon: 'followers-svgrepo-com.svg',
+    xpReward: 150,
   },
 
   // ── Economy & Followers ───────────────────────────────────────────────────

@@ -594,6 +594,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
       const weaponId = state.player.gun?.id ?? null
+      const playerFiredWeapon = weaponId !== null && (state.player.gun?.ammo ?? 0) > 0
       const { player, combat, animSteps } = resolveFight(state.player, state.combat, mc)
       if (animSteps.length === 0) {
         // No animation — emit event and apply immediately
@@ -607,6 +608,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             capsLooted: combat.capsLooted,
             waveNumber: state.combat.waveNumber,
             isCheckpointFight: state.combat.isCheckpointFight,
+            playerFiredWeapon,
           })
         }
         mutate(s => afterCombat(s, { player, combat }))
@@ -631,6 +633,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           capsLooted: combat.capsLooted,
           waveNumber: combat.waveNumber,
           isCheckpointFight: combat.isCheckpointFight,
+          playerFiredWeapon: gameState?.player.gun !== null && (gameState?.player.gun?.ammo ?? 0) > 0,
         })
       }
       set({ combatAnimSteps: null, pendingFightResult: null })
@@ -642,6 +645,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (!state?.combat) return
       const mc = GAME_MODES[state.mode]
       const weaponId = state.player.gun?.id ?? null
+      const playerFiredWeapon = weaponId !== null && (state.player.gun?.ammo ?? 0) > 0
       const { player, combat, animSteps } = resolveRun(state.player, state.combat, mc)
       if (animSteps.length > 0) {
         // Flee failed — animate enemy retaliation before applying result
@@ -658,6 +662,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           capsLooted: 0,
           waveNumber: state.combat.waveNumber,
           isCheckpointFight: state.combat.isCheckpointFight,
+          playerFiredWeapon,
         })
         mutate(s => afterCombat(s, { player, combat }))
       }
@@ -690,6 +695,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         capsLooted: combat.capsLooted,
         waveNumber: state.combat.waveNumber,
         isCheckpointFight: state.combat.isCheckpointFight,
+        playerFiredWeapon: false,  // taming never involves firing a weapon
       })
       if (tamedEnemyTypeId) {
         gameBus.emit('TAME_COMPLETED', { enemyTypeId: tamedEnemyTypeId })
