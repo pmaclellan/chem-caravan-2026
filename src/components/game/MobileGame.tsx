@@ -377,7 +377,7 @@ export default function MobileGame() {
             <div
               key={chemId}
               className="rounded-lg border border-pip-border overflow-hidden relative"
-              style={PANEL_STYLE}
+              style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 98%, transparent)' }}
             >
               <FlashOverlay flashKey={flash?.key ?? 0} variant={flashVariant} />
               <div className="flex items-center gap-2 px-3 pt-3 pb-1">
