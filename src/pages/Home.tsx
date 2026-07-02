@@ -80,9 +80,22 @@ export default function Home() {
     navigate('/game')
   }
 
+  function lastNameKey(modeId: GameModeId) {
+    return `chem_caravan_last_name_${user?.id}_${modeId}`
+  }
+
+  function getLastName(modeId: GameModeId): string {
+    // Prefer the active run's name (already in memory), fall back to localStorage
+    const active = gameType === 'standard'
+      ? activeGameSummaries?.[modeId]
+      : freePlaySummaries?.[modeId]
+    return active?.characterName ?? localStorage.getItem(lastNameKey(modeId)) ?? ''
+  }
+
   async function handleStart() {
     if (!user || !charName.trim()) return
     setStarting(true)
+    localStorage.setItem(lastNameKey(selectedMode), charName.trim())
     clearGame()
     await startNewGame(charName.trim(), user.id, selectedMode, gameType)
     navigate('/game')
@@ -98,11 +111,12 @@ export default function Home() {
     } else {
       setShowNewGame(true)
     }
-    setCharName('')
+    setCharName(getLastName(selectedMode))
   }
 
   function handleModeSelect(modeId: GameModeId) {
     setSelectedMode(modeId)
+    if (showNewGame) setCharName(getLastName(modeId))
     if (gameType === 'free_play') {
       if (!unlockedFreePlayModes.has(modeId)) {
         setGameType('standard')
@@ -278,7 +292,7 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       className="pip-btn-danger flex-1"
-                      onClick={() => { setConfirmAbandon(false); setShowNewGame(true) }}
+                      onClick={() => { setConfirmAbandon(false); setShowNewGame(true); setCharName(getLastName(selectedMode)) }}
                     >
                       ABANDON & START NEW
                     </button>
