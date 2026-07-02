@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Taming Minigame — All Combinations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── pip theme (Commonwealth default) ── */
+:root {
+  --pip-bg:         #b89a52;
+  --pip-bg-light:   #e2cfa0;
+  --pip-green:      #2c4a10;
+  --pip-green-dim:  #6a5828;
+  --pip-amber:      #c4501a;
+  --pip-red:        #8c1c1c;
+  --pip-border:     #8a6020;
+  --pip-border-dim: #cdb070;
+  --pip-blue:       #2a5a8a;
+  --green-zone-fg:  rgba(34,197,94,0.9);
+  --green-zone-bg:  rgba(34,197,94,0.26);
+}
+
+body {
+  background: #444;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+h1 {
+  color: #ddd;
+  font-family: 'Special Elite', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ── Grid layout ── */
+.matrix {
+  display: grid;
+  grid-template-columns: 64px repeat(3, 1fr);
+  gap: 10px;
+}
+
+.hp-section-label {
+  grid-column: 1 / -1;
+  background: #8a6020;
+  color: #e2cfa0;
+  font-family: 'Special Elite', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  padding: 5px 12px;
+  border-radius: 2px;
+}
+
+.col-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid rgba(180,150,80,0.35);
+}
+.col-header-name {
+  font-family: 'Special Elite', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: #ddd;
+}
+.col-header-detail {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: #aaa;
+}
+.col-header-tool-svg {
+  color: #c4a870;
+  width: 26px;
+  height: 26px;
+}
+
+.row-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px;
+}
+.row-creature-svg {
+  width: 44px;
+  height: 44px;
+  color: #c4501a;
+  filter: drop-shadow(0 0 5px rgba(196,80,26,0.5));
+}
+.row-label-text {
+  font-family: 'Special Elite', serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: #ccc;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ── Panel card ── */
+.panel {
+  background: var(--pip-bg);
+  border: 2px solid var(--pip-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.panel-header {
+  background: var(--pip-border);
+  padding: 4px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel-title {
+  font-family: 'Special Elite', serif;
+  color: var(--pip-bg-light);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+}
+.panel-tally {
+  font-size: 0.55rem;
+  color: var(--pip-bg-light);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+}
+
+.panel-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* ── HP bar ── */
+.hp-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hp-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: var(--pip-green-dim);
+  white-space: nowrap;
+  min-width: 32px;
+}
+.hp-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(15,10,2,0.5);
+  border: 1px solid var(--pip-border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  background: var(--pip-green);
+  border-radius: 1px;
+}
+.hp-fill.low {
+  background: var(--pip-amber);
+}
+.hp-num {
+  font-size: 0.55rem;
+  color: var(--pip-green-dim);
+  min-width: 40px;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+/* ── Tool row ── */
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+.tool-icon {
+  color: var(--pip-green);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.tool-info-label {
+  font-size: 0.5rem;
+  color: var(--pip-green-dim);
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+.tool-info-name {
+  font-family: 'Special Elite', serif;
+  color: var(--pip-green);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+/* ── Meter ── */
+.meter-track {
+  position: relative;
+  height: 32px;
+  background: rgba(15,10,2,0.65);
+  border: 1px solid var(--pip-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.meter-tick {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(138,96,32,0.2);
+}
+.green-zone {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: var(--green-zone-bg);
+  border-left: 2px solid var(--green-zone-fg);
+  border-right: 2px solid var(--green-zone-fg);
+}
+.needle {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  width: 3px;
+  background: #f59e0b;
+  border-radius: 1px;
+  transform: translateX(-50%);
+  z-index: 5;
+  box-shadow: 0 0 6px #f59e0b, 0 0 14px rgba(245,158,11,0.5);
+  animation: oscillate linear infinite alternate;
+}
+
+@keyframes oscillate {
+  0%   { left: 0%; }
+  100% { left: 100%; }
+}
+
+/* ── Speed indicator ── */
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.speed-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--pip-green-dim);
+  min-width: 36px;
+}
+.speed-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(15,10,2,0.4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.speed-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.speed-badge {
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  min-width: 38px;
+  text-align: right;
+  font-weight: bold;
+}
+
+/* ── Pips ── */
+.pips {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+.pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--pip-border);
+}
+
+/* ── Slider control bar ── */
+#controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #2a2a2a;
+  border-bottom: 1px solid #555;
+  padding: 10px 20px 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: 6px 12px;
+  align-items: center;
+}
+.ctrl-label {
+  font-family: 'Special Elite', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: #bbb;
+  white-space: nowrap;
+  text-align: right;
+}
+.ctrl-orig {
+  font-size: 0.55rem;
+  color: #666;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.ctrl-slider {
+  width: 100%;
+  accent-color: #c4a870;
+  cursor: pointer;
+}
+.ctrl-value {
+  font-family: 'Special Elite', serif;
+  font-size: 1.0rem;
+  color: #e2cfa0;
+  letter-spacing: 0.04em;
+  min-width: 36px;
+  text-align: right;
+}
+.ctrl-reset {
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  color: #666;
+  background: none;
+  border: 1px solid #555;
+  border-radius: 2px;
+  padding: 1px 5px;
+  cursor: pointer;
+  font-family: 'Courier Prime', monospace;
+}
+.ctrl-reset:hover { color: #aaa; border-color: #888; }
+#difficulty-hint {
+  grid-column: 1 / -1;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: #777;
+  padding-top: 2px;
+  border-top: 1px solid #3a3a3a;
+  margin-top: 2px;
+}
+
+/* ── Animations ── */
+@keyframes throb {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(196,80,26,0.45)); }
+  50%       { filter: drop-shadow(0 0 16px rgba(196,80,26,0.85)); }
+}
+.creature-throb {
+  animation: throb 2.2s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <span class="ctrl-label">BASE RATE</span>
+  <input class="ctrl-slider" type="range" id="sl-base"      min="1.0" max="6.0"  step="0.05" value="2.15">
+  <span class="ctrl-value"  id="dv-base">2.15</span>
+  <span class="ctrl-orig">rad/s · orig 2.15</span>
+  <button class="ctrl-reset" data-target="sl-base" data-orig="2.15">reset</button>
+
+  <span class="ctrl-label">LASSO ×</span>
+  <input class="ctrl-slider" type="range" id="sl-lasso"     min="0.3" max="4.0"  step="0.05" value="1.5">
+  <span class="ctrl-value"  id="dv-lasso">1.50</span>
+  <span class="ctrl-orig">speed mult · orig 1.5</span>
+  <button class="ctrl-reset" data-target="sl-lasso" data-orig="1.5">reset</button>
+
+  <span class="ctrl-label">TRANQ GUN ×</span>
+  <input class="ctrl-slider" type="range" id="sl-tranq"     min="0.3" max="4.0"  step="0.05" value="1.0">
+  <span class="ctrl-value"  id="dv-tranq">1.00</span>
+  <span class="ctrl-orig">speed mult · orig 1.0</span>
+  <button class="ctrl-reset" data-target="sl-tranq" data-orig="1.0">reset</button>
+
+  <span class="ctrl-label">MESMETRON ×</span>
+  <input class="ctrl-slider" type="range" id="sl-mesm"      min="0.1" max="3.0"  step="0.05" value="0.6">
+  <span class="ctrl-value"  id="dv-mesm">0.60</span>
+  <span class="ctrl-orig">speed mult · orig 0.6</span>
+  <button class="ctrl-reset" data-target="sl-mesm" data-orig="0.6">reset</button>
+
+  <span id="difficulty-hint"></span>
+</div>
+
+<h1>TAMING OPERATION — TOOL × CREATURE × HP COMPARISON</h1>
+
+<!-- ══════════════ FULL HP (100%) ══════════════ -->
+<div class="matrix">
+  <div class="hp-section-label">FULL HP — 100%</div>
+
+  <!-- Column headers -->
+  <div></div><!-- spacer -->
+
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+      <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+      <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="col-header-name">LASSO</div>
+    <div class="col-header-detail">12% window · 1.5× speed</div>
+  </div>
+
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+      <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+      <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+      <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+      <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+    </svg>
+    <div class="col-header-name">TRANQ GUN</div>
+    <div class="col-header-detail">22% window · 1.0× speed</div>
+  </div>
+
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+      <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+      <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+      <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="col-header-name">MESMETRON</div>
+    <div class="col-header-detail">38% window · 0.6× speed</div>
+  </div>
+
+  <!-- ── YAO GUAI row (85 HP) ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <path d="M12 28C12 16 14 10 20 8C26 6 34 10 40 14C44 16 46 20 46 26C46 32 40 38 28 38C18 38 12 36 12 28Z" fill="currentColor"/>
+      <path d="M1 20C1 16 6 13 12 13C15 14 16 19 14 23C11 26 5 26 2 23C1 22 1 20 1 20Z" fill="currentColor"/>
+      <path d="M3 30C3 34 7 38 11 36C14 34 14 30 12 29C9 29 5 29 3 30Z" fill="currentColor"/>
+      <path d="M6 25L5 29M9 25L9 29M11 25L11 29" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <rect x="14" y="36" width="6" height="10" rx="3" fill="currentColor"/>
+      <rect x="22" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+      <rect x="32" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+      <rect x="40" y="36" width="5" height="10" rx="2" fill="currentColor"/>
+      <path d="M11 46L8 48M14 46L13 48M17 46L17 48M20 46L21 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M30 46L28 48M34 46L33 48M38 46L38 48M42 46L43 48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="row-label-text">YAO<br>GUAI</div>
+  </div>
+
+  <!-- Yao Guai + Lasso + 100% HP — speed 1.5×1.25=1.875 → half-period=0.78s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">85 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:32%;width:12%"></div>
+        <div class="needle" style="animation-duration:0.78s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:75%;background:#c4501a"></div></div>
+        <span class="speed-badge" style="color:#c4501a">FAST</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yao Guai + Tranq + 100% HP — speed 1.0×1.25=1.25 → half-period=1.17s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">85 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:38%;width:22%"></div>
+        <div class="needle" style="animation-duration:1.17s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:50%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yao Guai + Mesmetron + 100% HP — speed 0.6×1.25=0.75 → half-period=1.95s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">85 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:25%;width:38%"></div>
+        <div class="needle" style="animation-duration:1.95s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:30%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RADSCORPION row (70 HP) ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <ellipse cx="22" cy="33" rx="13" ry="9" fill="currentColor"/>
+      <ellipse cx="19" cy="21" rx="8" ry="6" fill="currentColor"/>
+      <path d="M11 19 L3 13 L4 18 L11 23 Z" fill="currentColor"/>
+      <path d="M11 23 L3 27 L4 31 L11 27 Z" fill="currentColor"/>
+      <path d="M27 19 L33 12 L35 17 L27 23 Z" fill="currentColor"/>
+      <path d="M27 23 L34 27 L33 31 L27 27 Z" fill="currentColor"/>
+      <rect x="10" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-20 12 30)"/>
+      <rect x="20" y="31" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-5 22 32)"/>
+      <rect x="28" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(20 30 30)"/>
+      <path d="M32 30 C38 26 44 18 42 9 C40 3 35 1 32 5" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <polygon points="32,5 28,1 36,1" fill="currentColor"/>
+    </svg>
+    <div class="row-label-text">RADS-<br>CORP</div>
+  </div>
+
+  <!-- Radscorpion + Lasso + 100% HP — speed 1.5×1.1=1.65 → 0.88s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">70 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:55%;width:12%"></div>
+        <div class="needle" style="animation-duration:0.88s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:66%;background:#c4501a"></div></div>
+        <span class="speed-badge" style="color:#c4501a">FAST</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radscorpion + Tranq + 100% HP — speed 1.0×1.1=1.1 → 1.33s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">70 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:20%;width:22%"></div>
+        <div class="needle" style="animation-duration:1.33s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:44%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radscorpion + Mesmetron + 100% HP — speed 0.6×1.1=0.66 → 2.21s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">70 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:10%;width:38%"></div>
+        <div class="needle" style="animation-duration:2.21s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:26%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEATHCLAW row (140 HP) ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <ellipse cx="27" cy="30" rx="14" ry="10" fill="currentColor"/>
+      <ellipse cx="40" cy="22" rx="7" ry="5" fill="currentColor"/>
+      <rect x="36" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(-20 37 18)"/>
+      <rect x="42" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(15 44 18)"/>
+      <rect x="13" y="37" width="5" height="10" rx="2" fill="currentColor" transform="rotate(-10 15 42)"/>
+      <rect x="31" y="38" width="5" height="10" rx="2" fill="currentColor"/>
+      <path d="M13 28 C8 30 5 35 8 40" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="row-label-text">DEATH-<br>CLAW</div>
+  </div>
+
+  <!-- Deathclaw + Lasso + 100% HP — speed 1.5×1.8=2.7 → 0.54s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">140 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:68%;width:12%"></div>
+        <div class="needle" style="animation-duration:0.54s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:100%;background:#8c1c1c"></div></div>
+        <span class="speed-badge" style="color:#8c1c1c">V.FAST</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deathclaw + Tranq + 100% HP — speed 1.0×1.8=1.8 → 0.81s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">140 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:45%;width:22%"></div>
+        <div class="needle" style="animation-duration:0.81s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:88%;background:#c4501a"></div></div>
+        <span class="speed-badge" style="color:#c4501a">FAST</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deathclaw + Mesmetron + 100% HP — speed 0.6×1.8=1.08 → 1.35s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" style="width:100%"></div></div>
+        <span class="hp-num">140 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:30%;width:38%"></div>
+        <div class="needle" style="animation-duration:1.35s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:55%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end full HP matrix -->
+
+<!-- ══════════════ LOW HP (20%) ══════════════ -->
+<div class="matrix">
+  <div class="hp-section-label">LOW HP — 20% (TAME WINDOW OPEN)</div>
+
+  <!-- Column headers (repeated) -->
+  <div></div>
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+      <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+      <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="col-header-name">LASSO</div>
+    <div class="col-header-detail">12% window · 1.5× speed</div>
+  </div>
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+      <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+      <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+      <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+      <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+    </svg>
+    <div class="col-header-name">TRANQ GUN</div>
+    <div class="col-header-detail">22% window · 1.0× speed</div>
+  </div>
+  <div class="col-header">
+    <svg class="col-header-tool-svg" viewBox="0 0 32 32">
+      <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+      <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+      <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+      <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="col-header-name">MESMETRON</div>
+    <div class="col-header-detail">38% window · 0.6× speed</div>
+  </div>
+
+  <!-- ── YAO GUAI low HP ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <path d="M12 28C12 16 14 10 20 8C26 6 34 10 40 14C44 16 46 20 46 26C46 32 40 38 28 38C18 38 12 36 12 28Z" fill="currentColor"/>
+      <path d="M1 20C1 16 6 13 12 13C15 14 16 19 14 23C11 26 5 26 2 23C1 22 1 20 1 20Z" fill="currentColor"/>
+      <path d="M3 30C3 34 7 38 11 36C14 34 14 30 12 29C9 29 5 29 3 30Z" fill="currentColor"/>
+      <path d="M6 25L5 29M9 25L9 29M11 25L11 29" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <rect x="14" y="36" width="6" height="10" rx="3" fill="currentColor"/>
+      <rect x="22" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+      <rect x="32" y="38" width="5" height="8" rx="2" fill="currentColor"/>
+      <rect x="40" y="36" width="5" height="10" rx="2" fill="currentColor"/>
+      <path d="M11 46L8 48M14 46L13 48M17 46L17 48M20 46L21 48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M30 46L28 48M34 46L33 48M38 46L38 48M42 46L43 48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="row-label-text">YAO<br>GUAI</div>
+  </div>
+
+  <!-- Yao Guai + Lasso + 20% HP: 17HP, scale=0.57, speed=1.5×0.57=0.855 → 1.71s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">17 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:32%;width:12%"></div>
+        <div class="needle" style="animation-duration:1.71s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:34%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yao Guai + Tranq + 20% HP: speed=1.0×0.57=0.57 → 2.56s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">17 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:38%;width:22%"></div>
+        <div class="needle" style="animation-duration:2.56s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:23%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yao Guai + Mesmetron + 20% HP: speed=0.6×0.57=0.342 → 4.27s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">17 / 85</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:25%;width:38%"></div>
+        <div class="needle" style="animation-duration:4.27s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:14%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">V.SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RADSCORPION low HP ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <ellipse cx="22" cy="33" rx="13" ry="9" fill="currentColor"/>
+      <ellipse cx="19" cy="21" rx="8" ry="6" fill="currentColor"/>
+      <path d="M11 19 L3 13 L4 18 L11 23 Z" fill="currentColor"/>
+      <path d="M11 23 L3 27 L4 31 L11 27 Z" fill="currentColor"/>
+      <path d="M27 19 L33 12 L35 17 L27 23 Z" fill="currentColor"/>
+      <path d="M27 23 L34 27 L33 31 L27 27 Z" fill="currentColor"/>
+      <rect x="10" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-20 12 30)"/>
+      <rect x="20" y="31" width="5" height="3" rx="1" fill="currentColor" transform="rotate(-5 22 32)"/>
+      <rect x="28" y="29" width="5" height="3" rx="1" fill="currentColor" transform="rotate(20 30 30)"/>
+      <path d="M32 30 C38 26 44 18 42 9 C40 3 35 1 32 5" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <polygon points="32,5 28,1 36,1" fill="currentColor"/>
+    </svg>
+    <div class="row-label-text">RADS-<br>CORP</div>
+  </div>
+
+  <!-- Radscorpion + Lasso + 20% HP: 14HP, scale=0.54, speed=1.5×0.54=0.81 → 1.80s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">14 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:55%;width:12%"></div>
+        <div class="needle" style="animation-duration:1.80s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:32%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radscorpion + Tranq + 20% HP: speed=1.0×0.54=0.54 → 2.70s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">14 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:20%;width:22%"></div>
+        <div class="needle" style="animation-duration:2.70s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:22%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radscorpion + Mesmetron + 20% HP: speed=0.6×0.54=0.324 → 4.51s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">14 / 70</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:10%;width:38%"></div>
+        <div class="needle" style="animation-duration:4.51s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:13%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">V.SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEATHCLAW low HP ── -->
+  <div class="row-label">
+    <svg class="row-creature-svg creature-throb" viewBox="0 0 48 48">
+      <ellipse cx="27" cy="30" rx="14" ry="10" fill="currentColor"/>
+      <ellipse cx="40" cy="22" rx="7" ry="5" fill="currentColor"/>
+      <rect x="36" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(-20 37 18)"/>
+      <rect x="42" y="13" width="3" height="11" rx="1" fill="currentColor" transform="rotate(15 44 18)"/>
+      <rect x="13" y="37" width="5" height="10" rx="2" fill="currentColor" transform="rotate(-10 15 42)"/>
+      <rect x="31" y="38" width="5" height="10" rx="2" fill="currentColor"/>
+      <path d="M13 28 C8 30 5 35 8 40" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="row-label-text">DEATH-<br>CLAW</div>
+  </div>
+
+  <!-- Deathclaw + Lasso + 20% HP: 28HP, scale=0.68, speed=1.5×0.68=1.02 → 1.43s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">28 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <circle cx="16" cy="19" r="9" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <circle cx="16" cy="19" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="19" r="1.5" fill="currentColor"/>
+          <path d="M16 10 L16 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M16 4 C17 2 20 2 20 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Lasso</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:68%;width:12%"></div>
+        <div class="needle" style="animation-duration:1.43s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:41%;background:#a07020"></div></div>
+        <span class="speed-badge" style="color:#a07020">MED</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deathclaw + Tranq + 20% HP: speed=1.0×0.68=0.68 → 2.15s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">28 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="2" y="11" width="18" height="9" rx="2.5" fill="currentColor"/>
+          <rect x="20" y="13.5" width="8" height="4" rx="1" fill="currentColor"/>
+          <rect x="28" y="14.5" width="4" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7" y="4" width="5" height="7" rx="2" fill="currentColor"/>
+          <rect x="5" y="20" width="7" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Tranquilizer Gun</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:45%;width:22%"></div>
+        <div class="needle" style="animation-duration:2.15s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:27%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deathclaw + Mesmetron + 20% HP: speed=0.6×0.68=0.408 → 3.58s -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAMING OPERATION</span>
+      <span class="panel-tally">HITS [0/3] · MISS [0/3]</span>
+    </div>
+    <div class="panel-body">
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill low" style="width:20%"></div></div>
+        <span class="hp-num">28 / 140</span>
+      </div>
+      <div class="tool-row">
+        <svg class="tool-icon" viewBox="0 0 32 32">
+          <rect x="3" y="11" width="16" height="10" rx="3" fill="currentColor"/>
+          <rect x="19" y="13.5" width="8" height="5" rx="1" fill="currentColor"/>
+          <rect x="8" y="4" width="7" height="7" rx="2.5" fill="currentColor"/>
+          <line x1="27" y1="11" x2="31" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="27" y1="21" x2="31" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div><div class="tool-info-label">ACTIVE TOOL</div><div class="tool-info-name">Mesmetron</div></div>
+      </div>
+      <div class="meter-track">
+        <div class="meter-tick" style="left:10%"></div><div class="meter-tick" style="left:20%"></div>
+        <div class="meter-tick" style="left:30%"></div><div class="meter-tick" style="left:40%"></div>
+        <div class="meter-tick" style="left:50%"></div><div class="meter-tick" style="left:60%"></div>
+        <div class="meter-tick" style="left:70%"></div><div class="meter-tick" style="left:80%"></div>
+        <div class="meter-tick" style="left:90%"></div>
+        <div class="green-zone" style="left:30%;width:38%"></div>
+        <div class="needle" style="animation-duration:3.58s"></div>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">SPEED</span>
+        <div class="speed-bar-track"><div class="speed-bar-fill" style="width:16%;background:#4a8070"></div></div>
+        <span class="speed-badge" style="color:#4a8070">V.SLOW</span>
+      </div>
+      <div class="pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end low HP matrix -->
+
+<script>
+// Original constants (match tuning.ts + mounts.ts)
+const ORIG_BASE      = 2.15;
+const ORIG_TOOL_MULT = { lasso: 1.5, tranq_gun: 1.0, mesmetron: 0.6 };
+// Needles appear in this column order within every row
+const TOOL_ORDER     = ['lasso', 'tranq_gun', 'mesmetron'];
+
+const slBase  = document.getElementById('sl-base');
+const slLasso = document.getElementById('sl-lasso');
+const slTranq = document.getElementById('sl-tranq');
+const slMesm  = document.getElementById('sl-mesm');
+const dvBase  = document.getElementById('dv-base');
+const dvLasso = document.getElementById('dv-lasso');
+const dvTranq = document.getElementById('dv-tranq');
+const dvMesm  = document.getElementById('dv-mesm');
+const hint    = document.getElementById('difficulty-hint');
+
+const needles    = [...document.querySelectorAll('.needle')];
+const speedFills = [...document.querySelectorAll('.speed-bar-fill')];
+const speedBadges= [...document.querySelectorAll('.speed-badge')];
+
+// On load: tag each needle with its tool and compute its hpScale
+// Needles are in lasso/tranq/mesmetron column order, repeating every 3
+needles.forEach((n, i) => {
+  const tool = TOOL_ORDER[i % 3];
+  n.dataset.tool    = tool;
+  n.dataset.origDur = parseFloat(n.style.animationDuration);
+  // hpScale = origTm / origToolMult, where origTm = π / (ORIG_BASE × origDur)
+  const origTm = Math.PI / (ORIG_BASE * n.dataset.origDur);
+  n.dataset.hpScale = origTm / ORIG_TOOL_MULT[tool];
+});
+
+function speedInfo(es) {
+  if (es > 5.0) return ['BRUTAL', '#6a0808'];
+  if (es > 3.5) return ['V.FAST', '#8c1c1c'];
+  if (es > 2.2) return ['FAST',   '#c4501a'];
+  if (es > 1.3) return ['MED',    '#a07020'];
+  if (es > 0.7) return ['SLOW',   '#4a8070'];
+  return              ['V.SLOW',  '#4a8070'];
+}
+
+function update() {
+  const b  = parseFloat(slBase.value);
+  const tm = { lasso: parseFloat(slLasso.value), tranq_gun: parseFloat(slTranq.value), mesmetron: parseFloat(slMesm.value) };
+
+  dvBase.textContent  = b.toFixed(2);
+  dvLasso.textContent = tm.lasso.toFixed(2);
+  dvTranq.textContent = tm.tranq_gun.toFixed(2);
+  dvMesm.textContent  = tm.mesmetron.toFixed(2);
+
+  needles.forEach((n, i) => {
+    const tool        = n.dataset.tool;
+    const hpScale     = parseFloat(n.dataset.hpScale);
+    const effSpeed    = b * tm[tool] * hpScale;
+    const halfPeriod  = Math.PI / effSpeed;
+
+    n.style.animationDuration = halfPeriod.toFixed(3) + 's';
+
+    const [label, color] = speedInfo(effSpeed);
+    speedFills[i].style.width      = Math.min(effSpeed / 6.0 * 100, 100) + '%';
+    speedFills[i].style.background = color;
+    speedBadges[i].textContent     = label;
+    speedBadges[i].style.color     = color;
+  });
+
+  // Hint: show the hardest cell (deathclaw + lasso + full HP, index 6)
+  const dcLassoHP = needles[6];
+  const hardES    = b * tm.lasso * parseFloat(dcLassoHP.dataset.hpScale);
+  const [hl]      = speedInfo(hardES);
+  hint.textContent =
+    `hardest — deathclaw + lasso @ full HP: ${hl}  (${(Math.PI / hardES).toFixed(2)}s half-period)` +
+    `   ·   easiest — yao guai + mesmetron @ 20% HP: ` +
+    (() => { const es2 = b * tm.mesmetron * parseFloat(needles[11].dataset.hpScale); return speedInfo(es2)[0] + `  (${(Math.PI/es2).toFixed(2)}s)`; })();
+}
+
+// Reset buttons
+document.querySelectorAll('.ctrl-reset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById(btn.dataset.target).value = btn.dataset.orig;
+    update();
+  });
+});
+
+// Wire all sliders
+[slBase, slLasso, slTranq, slMesm].forEach(s => s.addEventListener('input', update));
+update();
+</script>
+</body>
+</html>

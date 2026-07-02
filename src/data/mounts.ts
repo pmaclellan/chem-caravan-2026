@@ -32,7 +32,7 @@ export const TAMING_TOOLS: Record<TamingToolId, TamingToolDefinition> = {
     price: 150,
     description: 'For the reckless.',
     greenWindowFraction: 0.12,
-    cursorSpeedMultiplier: 1.5,
+    cursorSpeedMultiplier: 1.7,
   },
   tranq_gun: {
     id: 'tranq_gun',
@@ -40,7 +40,7 @@ export const TAMING_TOOLS: Record<TamingToolId, TamingToolDefinition> = {
     price: 1500,
     description: 'For those with patience.',
     greenWindowFraction: 0.22,
-    cursorSpeedMultiplier: 1.0,
+    cursorSpeedMultiplier: 1.3,
   },
   mesmetron: {
     id: 'mesmetron',
@@ -48,7 +48,7 @@ export const TAMING_TOOLS: Record<TamingToolId, TamingToolDefinition> = {
     price: 8000,
     description: 'For those who want control.',
     greenWindowFraction: 0.38,
-    cursorSpeedMultiplier: 0.6,
+    cursorSpeedMultiplier: 1.1,
   },
 }
 

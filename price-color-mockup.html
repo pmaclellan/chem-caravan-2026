@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Price Color Options — Amber Tier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #555;
+    font-family: monospace;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+  h1 {
+    color: #ddd;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  /* ── Color option legend ── */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 4px;
+  }
+  .legend-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: #ccc;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .swatch {
+    width: 48px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .legend-price {
+    font-family: 'Special Elite', serif;
+    font-size: 1.1rem;
+  }
+
+  /* ── Scene card ── */
+  .scene {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .scene-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.52;
+  }
+  .scene-label {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    color: #fff;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    opacity: 0.75;
+    z-index: 2;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .scene-content {
+    position: relative;
+    z-index: 1;
+    padding: 32px 14px 14px;
+  }
+
+  /* ── Market panel (mimics desktop pip-panel) ── */
+  .market-panel {
+    background: color-mix(in srgb, #e2cfa0 88%, transparent);
+    border: 1px solid #8a6020;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: grid;
+    grid-template-columns: 160px repeat(6, 1fr);
+    gap: 8px;
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid #cdb070;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: #6a5828;
+  }
+  .panel-header span:not(:first-child) { text-align: center; }
+  .col-highlight {
+    background: rgba(0,0,0,0.06);
+    border-radius: 3px;
+    margin: -2px -3px;
+    padding: 2px 3px;
+  }
+
+  .chem-row {
+    display: grid;
+    grid-template-columns: 160px repeat(6, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(205,176,112,0.4);
+    font-size: 0.8rem;
+  }
+  .chem-row:last-child { border-bottom: none; }
+  .chem-name {
+    color: #2c4a10;
+    font-family: 'Special Elite', serif;
+    font-size: 0.82rem;
+  }
+  .price-cell {
+    text-align: center;
+    font-family: 'Special Elite', serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ─────────────────────────────────────────────
+     AMBER OPTIONS — what we're comparing
+  ───────────────────────────────────────────── */
+  /* Option A — Current */
+  .a-current    { color: #c47810; }
+  /* Option B — Sienna (slightly darker, less yellow) */
+  .a-sienna     { color: #b06010; }
+  /* Option C — Burnt amber */
+  .a-burnt-amb  { color: #9c4c00; }
+  /* Option D — Warm burnt orange (more red) */
+  .a-burnt-org  { color: #c05018; }
+  /* Option E — Deep rust-orange */
+  .a-deep-rust  { color: #a03c10; }
+  /* Option F — Dark mahogany */
+  .a-mahogany   { color: #7e3800; }
+
+  /* ─────────────────────────────────────────────
+     Fixed context colors (same across all options)
+  ───────────────────────────────────────────── */
+  .c-base       { color: #8a7040; }
+  .c-cheap      { color: #4ea080; }
+  .c-very-cheap { color: #4a8fc0; text-shadow: 0 0 7px rgba(74,143,192,0.50); }
+  .c-very-exp   { color: #cc4c18; text-shadow: 0 0 8px rgba(204,76,24,0.45); }
+
+  .divider {
+    background: rgba(205,176,112,0.6);
+    height: 1px;
+    margin: 0 12px;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: #8a7040;
+    display: flex;
+    align-items: center;
+    padding: 0;
+  }
+  .tier-label {
+    padding: 4px 12px 2px;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: #9a8040;
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+
+<h1>AMBER (EXPENSIVE) TIER COLOR OPTIONS — ALL 3 BACKGROUNDS</h1>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item">
+    <div class="swatch" style="background:#c47810"></div>
+    <div class="legend-price a-current">205</div>
+    <div class="legend-label">A — CURRENT<br>#c47810</div>
+  </div>
+  <div class="legend-item">
+    <div class="swatch" style="background:#b06010"></div>
+    <div class="legend-price a-sienna">205</div>
+    <div class="legend-label">B — SIENNA<br>#b06010</div>
+  </div>
+  <div class="legend-item">
+    <div class="swatch" style="background:#9c4c00"></div>
+    <div class="legend-price a-burnt-amb">205</div>
+    <div class="legend-label">C — BURNT AMB<br>#9c4c00</div>
+  </div>
+  <div class="legend-item">
+    <div class="swatch" style="background:#c05018"></div>
+    <div class="legend-price a-burnt-org">205</div>
+    <div class="legend-label">D — BURNT ORG<br>#c05018</div>
+  </div>
+  <div class="legend-item">
+    <div class="swatch" style="background:#a03c10"></div>
+    <div class="legend-price a-deep-rust">205</div>
+    <div class="legend-label">E — DEEP RUST<br>#a03c10</div>
+  </div>
+  <div class="legend-item">
+    <div class="swatch" style="background:#7e3800"></div>
+    <div class="legend-price a-mahogany">205</div>
+    <div class="legend-label">F — MAHOGANY<br>#7e3800</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- COMMONWEALTH                                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-bg" style="background-image: url('public/assets/settlements/commonwealth/diamond_city.webp')"></div>
+  <div class="scene-label">COMMONWEALTH — Diamond City</div>
+  <div class="scene-content">
+    <div class="market-panel">
+      <div class="panel-header">
+        <span>CHEM</span>
+        <span class="col-highlight">A</span>
+        <span>B</span>
+        <span>C</span>
+        <span>D</span>
+        <span>E</span>
+        <span>F</span>
+      </div>
+      <div class="tier-label">— EXPENSIVE TIER (what we're testing) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Med-X</span>
+        <span class="price-cell a-current">210</span>
+        <span class="price-cell a-sienna">210</span>
+        <span class="price-cell a-burnt-amb">210</span>
+        <span class="price-cell a-burnt-org">210</span>
+        <span class="price-cell a-deep-rust">210</span>
+        <span class="price-cell a-mahogany">210</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Mentats</span>
+        <span class="price-cell a-current">108</span>
+        <span class="price-cell a-sienna">108</span>
+        <span class="price-cell a-burnt-amb">108</span>
+        <span class="price-cell a-burnt-org">108</span>
+        <span class="price-cell a-deep-rust">108</span>
+        <span class="price-cell a-mahogany">108</span>
+      </div>
+      <div class="divider"></div>
+      <div class="tier-label">— CONTEXT: other tiers (same for all options) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Jet  <span style="font-size:0.7em;opacity:0.6">(base)</span></span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Buffout  <span style="font-size:0.7em;opacity:0.6">(cheap)</span></span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Stimpak  <span style="font-size:0.7em;opacity:0.6">(v.exp)</span></span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- CAPITAL WASTELAND                                      -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-bg" style="background-image: url('public/assets/settlements/capital/Rivet_City_Market.webp')"></div>
+  <div class="scene-label">CAPITAL WASTELAND — Rivet City</div>
+  <div class="scene-content">
+    <div class="market-panel">
+      <div class="panel-header">
+        <span>CHEM</span>
+        <span class="col-highlight">A</span>
+        <span>B</span>
+        <span>C</span>
+        <span>D</span>
+        <span>E</span>
+        <span>F</span>
+      </div>
+      <div class="tier-label">— EXPENSIVE TIER (what we're testing) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Med-X</span>
+        <span class="price-cell a-current">210</span>
+        <span class="price-cell a-sienna">210</span>
+        <span class="price-cell a-burnt-amb">210</span>
+        <span class="price-cell a-burnt-org">210</span>
+        <span class="price-cell a-deep-rust">210</span>
+        <span class="price-cell a-mahogany">210</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Mentats</span>
+        <span class="price-cell a-current">108</span>
+        <span class="price-cell a-sienna">108</span>
+        <span class="price-cell a-burnt-amb">108</span>
+        <span class="price-cell a-burnt-org">108</span>
+        <span class="price-cell a-deep-rust">108</span>
+        <span class="price-cell a-mahogany">108</span>
+      </div>
+      <div class="divider"></div>
+      <div class="tier-label">— CONTEXT: other tiers (same for all options) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Jet  <span style="font-size:0.7em;opacity:0.6">(base)</span></span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Buffout  <span style="font-size:0.7em;opacity:0.6">(cheap)</span></span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Stimpak  <span style="font-size:0.7em;opacity:0.6">(v.exp)</span></span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- MOJAVE                                                 -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-bg" style="background-image: url('public/assets/settlements/mojave/Goodsprings.webp')"></div>
+  <div class="scene-label">MOJAVE WASTELAND — Goodsprings</div>
+  <div class="scene-content">
+    <div class="market-panel">
+      <div class="panel-header">
+        <span>CHEM</span>
+        <span class="col-highlight">A</span>
+        <span>B</span>
+        <span>C</span>
+        <span>D</span>
+        <span>E</span>
+        <span>F</span>
+      </div>
+      <div class="tier-label">— EXPENSIVE TIER (what we're testing) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Med-X</span>
+        <span class="price-cell a-current">210</span>
+        <span class="price-cell a-sienna">210</span>
+        <span class="price-cell a-burnt-amb">210</span>
+        <span class="price-cell a-burnt-org">210</span>
+        <span class="price-cell a-deep-rust">210</span>
+        <span class="price-cell a-mahogany">210</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Mentats</span>
+        <span class="price-cell a-current">108</span>
+        <span class="price-cell a-sienna">108</span>
+        <span class="price-cell a-burnt-amb">108</span>
+        <span class="price-cell a-burnt-org">108</span>
+        <span class="price-cell a-deep-rust">108</span>
+        <span class="price-cell a-mahogany">108</span>
+      </div>
+      <div class="divider"></div>
+      <div class="tier-label">— CONTEXT: other tiers (same for all options) —</div>
+      <div class="chem-row">
+        <span class="chem-name">Jet  <span style="font-size:0.7em;opacity:0.6">(base)</span></span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+        <span class="price-cell c-base">80</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Buffout  <span style="font-size:0.7em;opacity:0.6">(cheap)</span></span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+        <span class="price-cell c-cheap">62</span>
+      </div>
+      <div class="chem-row">
+        <span class="chem-name">Stimpak  <span style="font-size:0.7em;opacity:0.6">(v.exp)</span></span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+        <span class="price-cell c-very-exp">185</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
