@@ -22,14 +22,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'survive_75',
     name: 'Road Veteran',
     description: 'Survive 75 turns.',
-    icon: 'compass-svgrepo-com.svg',
+    icon: 'sparkles-svgrepo-com.svg',
     xpReward: 500,
   },
   {
     id: 'survive_100',
     name: 'Century Run',
     description: 'Survive 100 turns.',
-    icon: 'sparkles-svgrepo-com.svg',
+    icon: 'trophy-svgrepo-com.svg',
     xpReward: 750,
   },
 
@@ -68,7 +68,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     id: 'pacifist',
     name: 'Pacifist',
     description: 'Go 10 consecutive turns without entering combat.',
-    icon: 'sparkles-svgrepo-com.svg',
+    icon: 'flag-svgrepo-com.svg',
     xpReward: 200,
   },
 
