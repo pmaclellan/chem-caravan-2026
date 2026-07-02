@@ -146,6 +146,11 @@ const THUG = `
   <rect x="26" y="34" width="7" height="13" rx="1" fill="currentColor"/>
 `
 
+// File-based icon overrides for mount display (calmer/friendlier than combat SVGs).
+export const MOUNT_ICONS: Partial<Record<string, string>> = {
+  yao_guai: '/assets/icons/bear-svgrepo-com.svg',
+}
+
 export const ENEMY_SVGS: Record<string, string> = {
   raider:        RAIDER,
   feral_ghoul:   FERAL_GHOUL,

@@ -8,7 +8,7 @@ import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
 import TamingMinigame from './TamingMinigame'
-import { ENEMY_SVGS } from './enemySvgs'
+import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
 import { runEscapeChance } from '../../engine/tuning'
 
@@ -367,6 +367,7 @@ export default function CombatPanel({ player, combat }: Props) {
             {player.mount && (() => {
               const mountHpPct  = Math.max(0, Math.round((displayMountHp / player.mount.maxHealth) * 100))
               const mountHpColor = mountHpPct > 50 ? 'var(--pip-green)' : mountHpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
+              const mountIconFile = MOUNT_ICONS[player.mount.creatureTypeId]
               const mountSvg = ENEMY_SVGS[player.mount.creatureTypeId] ?? ''
               return (
                 <div
@@ -375,9 +376,13 @@ export default function CombatPanel({ player, combat }: Props) {
                 >
                   <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
                     {!mountIsDead && <MountGlow flashKey={anim.mountFireKey} />}
-                    <svg viewBox="0 0 48 48" className="w-7 h-7" style={{ color: 'var(--pip-amber)' }}
-                      dangerouslySetInnerHTML={{ __html: mountSvg }}
-                    />
+                    {mountIconFile ? (
+                      <img src={mountIconFile} alt="" className="w-7 h-7" style={{ opacity: 0.85 }} />
+                    ) : (
+                      <svg viewBox="0 0 48 48" className="w-7 h-7" style={{ color: 'var(--pip-amber)' }}
+                        dangerouslySetInnerHTML={{ __html: mountSvg }}
+                      />
+                    )}
                   </div>
                   <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
                     <div className="h-full transition-all duration-500" style={{ width: `${mountHpPct}%`, backgroundColor: mountHpColor }} />
