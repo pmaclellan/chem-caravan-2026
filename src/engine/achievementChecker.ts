@@ -103,9 +103,6 @@ const CHECKS: Record<string, CheckFn> = {
     return nextAll && !prevAll
   },
 
-  pay_off_debt: (prev, next) =>
-    (next.player.debtEverCleared ?? false) && !(prev.player.debtEverCleared ?? false),
-
   survive_30: (prev, next) =>
     next.world.turn >= 30 && prev.world.turn < 30,
 

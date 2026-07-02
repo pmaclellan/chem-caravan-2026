@@ -8,6 +8,7 @@ import { GAME_MODES } from '../data/modes'
 import type { GameModeId } from '../types/game'
 import AuthModal from '../components/auth/AuthModal'
 import { HowToPlay } from '../components/ui/HowToPlay'
+import { Changelog } from '../components/ui/Changelog'
 
 const MODE_IDS: GameModeId[] = ['commonwealth', 'capital_wasteland', 'mojave_wasteland']
 const DIFFICULTY_LABEL: Record<GameModeId, string> = {
@@ -29,6 +30,7 @@ export default function Home() {
 
   const [showAuth,       setShowAuth]       = useState(false)
   const [showTutorial,   setShowTutorial]   = useState(false)
+  const [showChangelog,  setShowChangelog]  = useState(false)
   const [selectedMode,   setSelectedMode]   = useState<GameModeId>('commonwealth')
   const [gameType,       setGameType]       = useState<'standard' | 'free_play'>('standard')
   const [charName,       setCharName]       = useState('')
@@ -145,6 +147,7 @@ export default function Home() {
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTutorial && <HowToPlay onClose={() => setShowTutorial(false)} />}
+      {showChangelog && <Changelog onClose={() => setShowChangelog(false)} />}
 
       <h1
         className="absolute left-0 right-0 text-center font-display tracking-widest pointer-events-none"
@@ -170,6 +173,7 @@ export default function Home() {
             <div className="flex gap-2">
               <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
               <button className="pip-btn flex-1" onClick={() => navigate('/how-to-play')}>HOW TO PLAY</button>
+              <button className="pip-btn flex-1" onClick={() => setShowChangelog(true)}>WHAT'S NEW</button>
             </div>
           </div>
         ) : (
@@ -342,6 +346,7 @@ export default function Home() {
             <div className="flex gap-2 flex-wrap pt-1">
               <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
               <button className="pip-btn flex-1" onClick={() => setShowTutorial(true)}>HOW TO PLAY</button>
+              <button className="pip-btn flex-1" onClick={() => setShowChangelog(true)}>WHAT'S NEW</button>
               <button className="pip-btn text-sm text-pip-green-dim px-3" onClick={() => signOut()}>SIGN OUT</button>
             </div>
           </div>
