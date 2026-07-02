@@ -6,6 +6,9 @@ import type { GameState } from '../types/game'
 type CheckFn = (prev: GameState, next: GameState, mc: GameModeConfig) => boolean
 
 const CHECKS: Record<string, CheckFn> = {
+  toll_collector: (prev, next) =>
+    next.stats.checkpointCombatsWon > prev.stats.checkpointCombatsWon,
+
   first_blood: (prev, next) =>
     next.stats.combatsWon > 0 && prev.stats.combatsWon === 0,
 

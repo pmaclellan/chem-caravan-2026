@@ -35,6 +35,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // ── Combat ────────────────────────────────────────────────────────────────
   {
+    id: 'toll_collector',
+    name: 'Toll Evader',
+    description: 'Defeat a Brotherhood or NCR checkpoint instead of paying the toll.',
+    icon: 'shield-armor-svgrepo-com.svg',
+    xpReward: 500,
+  },
+  {
     id: 'first_blood',
     name: 'First Blood',
     description: 'Win your first combat.',

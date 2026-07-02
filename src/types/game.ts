@@ -136,6 +136,7 @@ export interface CombatState {
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
   waveNumber: number            // 1 = normal, 2 = second wave, 3+ = future
+  isCheckpointFight: boolean    // combat initiated by fighting a brotherhood/NCR checkpoint
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
 }

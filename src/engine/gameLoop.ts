@@ -435,9 +435,10 @@ export function startCombat(state: GameState): GameState {
   const payload = state.pendingEvent?.payload as { enemyTypeId?: string; count?: number; isSecondEncounter?: boolean } | undefined
   const forcedTypeId = payload?.enemyTypeId
   const forcedCount  = payload?.count
-  const waveNumber   = payload?.isSecondEncounter ? 2 : 1
+  const waveNumber         = payload?.isSecondEncounter ? 2 : 1
+  const isCheckpointFight  = state.pendingEvent?.type === 'brotherhood_checkpoint'
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber)
+  const combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber, isCheckpointFight)
   return {
     ...state,
     phase: 'combat',

@@ -12,6 +12,7 @@ export interface RunStats {
   combatsWon: number
   combatsFled: number
   secondWavesDefeated: number
+  checkpointCombatsWon: number
   totalDamageDealt: number
   totalDamageTaken: number
   capsFromCombat: number
