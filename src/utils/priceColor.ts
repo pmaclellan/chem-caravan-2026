@@ -27,6 +27,6 @@ export function priceColor(price: number, basePrice: number, priceVariance: numb
   if (t < 0.15) return { color: '#4a8fc0', textShadow: '0 0 7px rgba(74,143,192,0.50)' }
   if (t < 0.38) return { color: '#4ea080' }
   if (t < 0.62) return { color: '#8a7040' }
-  if (t < 0.85) return { color: '#c47810', textShadow: '0 1px 2px rgba(20,8,0,0.55)' }
-  return       { color: '#cc4c18', textShadow: '0 1px 2px rgba(20,8,0,0.55), 0 0 8px rgba(204,76,24,0.40)' }
+  if (t < 0.85) return { color: '#c47810' }
+  return       { color: '#cc4c18', textShadow: '0 0 8px rgba(204,76,24,0.45)' }
 }
