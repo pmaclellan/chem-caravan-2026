@@ -264,23 +264,31 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
                 : `${gameState.earnedAchievements.length} ACHIEVEMENT${gameState.earnedAchievements.length !== 1 ? 'S' : ''} UNLOCKED ▼`}
             </button>
             {achievementsOpen && (
-              <div className="border border-pip-border rounded mt-2 p-3 flex flex-wrap gap-2">
-                {gameState.earnedAchievements.map(ea => {
+              <div className="border border-pip-border rounded mt-2 overflow-hidden">
+                {gameState.earnedAchievements.map((ea, i) => {
                   const def = ACHIEVEMENT_MAP[ea.id]
                   if (!def) return null
                   return (
                     <div
                       key={ea.id}
-                      title={`${def.name}: ${def.description} (+${def.xpReward} XP)`}
-                      className="flex items-center gap-1.5 border border-pip-amber rounded px-2 py-1"
+                      className={`flex items-start gap-3 px-3 py-2.5 ${i > 0 ? 'border-t border-pip-border-dim' : ''}`}
                     >
                       <img
                         src={`/assets/icons/${def.icon}`}
                         alt=""
-                        className="w-4 h-4 flex-shrink-0"
-                        style={{ opacity: 0.8 }}
+                        className="w-5 h-5 flex-shrink-0 mt-0.5"
+                        style={{ opacity: 0.85 }}
                       />
-                      <span className="font-display text-pip-amber text-xs leading-tight">{def.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="font-display text-pip-amber text-sm leading-tight">{def.name}</span>
+                          <span className="font-mono text-pip-green-dim text-xs flex-shrink-0">+{def.xpReward} XP</span>
+                        </div>
+                        <p className="font-mono text-pip-green-dim text-xs leading-snug mt-0.5">{def.description}</p>
+                        {ea.earnedOnTurn != null && (
+                          <p className="font-mono text-pip-green-dim text-xs opacity-50 mt-0.5">Turn {ea.earnedOnTurn}</p>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
