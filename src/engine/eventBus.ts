@@ -6,7 +6,8 @@ export type GameEventMap = {
     damageDealt: number
     damageTaken: number
     capsLooted: number
-    waveNumber: number   // 1 = normal, 2 = second wave, 3+ = future
+    waveNumber: number          // 1 = normal, 2 = second wave, 3+ = future
+    isCheckpointFight: boolean
   }
   CHEM_SOLD: {
     chemId: string

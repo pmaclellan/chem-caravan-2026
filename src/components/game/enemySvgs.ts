@@ -134,15 +134,15 @@ const CAZADOR = `
   <polygon points="26,47 22,47 24,51" fill="currentColor"/>
 `
 
-// Brotherhood Paladin: T-60 power armor — dome helmet, massive round pauldrons, boxy limbs
+// Brotherhood Paladin: T-60 power armor — dome helmet, boxy pauldrons, chunky limbs
 const BROTHERHOOD_PALADIN = `
   <ellipse cx="24" cy="8" rx="9" ry="8" fill="currentColor"/>
   <rect x="18" y="14" width="12" height="3" rx="1" fill="currentColor"/>
-  <ellipse cx="9" cy="17" rx="8" ry="6" fill="currentColor"/>
-  <ellipse cx="39" cy="17" rx="8" ry="6" fill="currentColor"/>
+  <rect x="1" y="11" width="14" height="11" rx="2" fill="currentColor"/>
+  <rect x="33" y="11" width="14" height="11" rx="2" fill="currentColor"/>
   <rect x="13" y="17" width="22" height="15" rx="2" fill="currentColor"/>
-  <rect x="5" y="19" width="8" height="13" rx="3" fill="currentColor"/>
-  <rect x="35" y="19" width="8" height="13" rx="3" fill="currentColor"/>
+  <rect x="5" y="19" width="8" height="13" rx="2" fill="currentColor"/>
+  <rect x="35" y="19" width="8" height="13" rx="2" fill="currentColor"/>
   <rect x="4" y="30" width="9" height="5" rx="2" fill="currentColor"/>
   <rect x="35" y="30" width="9" height="5" rx="2" fill="currentColor"/>
   <rect x="14" y="32" width="8" height="12" rx="2" fill="currentColor"/>
@@ -151,14 +151,14 @@ const BROTHERHOOD_PALADIN = `
   <rect x="25" y="42" width="11" height="6" rx="2" fill="currentColor"/>
 `
 
-// NCR Ranger: veteran ranger armor — dome helmet, wide gas mask jaw, duster coat flaring out, sniper rifle
+// NCR Ranger: veteran ranger armor — dome helmet, wide gas mask jaw, duster coat flaring out past feet, sniper rifle
 const NCR_RANGER = `
   <ellipse cx="23" cy="7" rx="6" ry="6" fill="currentColor"/>
   <path d="M16 11 L15 20 L31 20 L30 11 Z" fill="currentColor"/>
   <rect x="11" y="20" width="24" height="4" rx="2" fill="currentColor"/>
   <path d="M13 24 L9 43 L37 43 L35 24 Z" fill="currentColor"/>
-  <rect x="9" y="42" width="10" height="6" rx="2" fill="currentColor"/>
-  <rect x="29" y="42" width="10" height="6" rx="2" fill="currentColor"/>
+  <rect x="14" y="41" width="8" height="7" rx="2" fill="currentColor"/>
+  <rect x="26" y="41" width="8" height="7" rx="2" fill="currentColor"/>
   <rect x="33" y="22" width="5" height="10" rx="2" fill="currentColor"/>
   <rect x="37" y="6" width="3" height="22" rx="1" fill="currentColor" transform="rotate(18 38 17)"/>
   <rect x="7" y="24" width="5" height="9" rx="2" fill="currentColor"/>

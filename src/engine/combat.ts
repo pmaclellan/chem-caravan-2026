@@ -29,6 +29,7 @@ export function initiateCombat(
   turn = 0,
   gameType: GameType = 'standard',
   waveNumber = 1,
+  isCheckpointFight = false,
 ): CombatState {
   // Pick enemy type first so countMultiplier can scale the base count
   const weightedPool = modeConfig.enemies
@@ -96,6 +97,7 @@ export function initiateCombat(
     phase: 'player_choice',
     log: [description],
     waveNumber,
+    isCheckpointFight,
   }
 }
 

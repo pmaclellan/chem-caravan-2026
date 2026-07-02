@@ -177,7 +177,7 @@ function normalizeState(state: GameState): GameState {
     },
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
-    stats: state.stats ?? initStats(),
+    stats: state.stats ? { ...initStats(), ...state.stats } : initStats(),
     earnedAchievements: state.earnedAchievements ?? [],
   }
 }
@@ -606,6 +606,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             damageTaken: combat.totalDamageTaken,
             capsLooted: combat.capsLooted,
             waveNumber: state.combat.waveNumber,
+            isCheckpointFight: state.combat.isCheckpointFight,
           })
         }
         mutate(s => afterCombat(s, { player, combat }))
@@ -629,6 +630,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           damageTaken: combat.totalDamageTaken,
           capsLooted: combat.capsLooted,
           waveNumber: combat.waveNumber,
+          isCheckpointFight: combat.isCheckpointFight,
         })
       }
       set({ combatAnimSteps: null, pendingFightResult: null })
@@ -655,6 +657,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           damageTaken: combat.totalDamageTaken,
           capsLooted: 0,
           waveNumber: state.combat.waveNumber,
+          isCheckpointFight: state.combat.isCheckpointFight,
         })
         mutate(s => afterCombat(s, { player, combat }))
       }
@@ -686,6 +689,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         damageTaken: combat.totalDamageTaken,
         capsLooted: combat.capsLooted,
         waveNumber: state.combat.waveNumber,
+        isCheckpointFight: state.combat.isCheckpointFight,
       })
       if (tamedEnemyTypeId) {
         gameBus.emit('TAME_COMPLETED', { enemyTypeId: tamedEnemyTypeId })
