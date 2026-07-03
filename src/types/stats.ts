@@ -1,3 +1,10 @@
+export interface XpBySource {
+  combat:       number
+  achievements: number
+  trade:        number
+  travel:       number
+}
+
 export interface ChemSaleStats {
   qty: number
   capsEarned: number
@@ -25,4 +32,5 @@ export interface RunStats {
   hasSoldToDesperateBuyer: boolean
   lifetimeCapsEarned: number
   turnsInDebt: number
+  xpBySource: XpBySource
 }

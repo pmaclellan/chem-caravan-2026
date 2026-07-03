@@ -46,7 +46,7 @@ import { checkNewAchievements, checkProfitAchievements } from '../engine/achieve
 import { ACHIEVEMENT_MAP } from '../data/achievements'
 import { TAMING_TOOLS, SADDLE_PRICE } from '../data/mounts'
 import type { TamingToolId } from '../types/game'
-import { awardXp, XpEventType } from '../engine/xp'
+import { awardXp, addXpToStats, XpEventType } from '../engine/xp'
 import type { SettlementMarket, WorldState } from '../types/game'
 import { applyMarketEvents } from '../engine/market'
 
@@ -241,6 +241,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       next = {
         ...next,
         player: { ...next.player, xp: next.player.xp + xpBonus },
+        stats: addXpToStats(next.stats, xpBonus, 'achievements'),
         earnedAchievements: [
           ...next.earnedAchievements,
           ...newlyEarned.map(a => ({ id: a.id, earnedOnTurn: next.world.turn })),
@@ -274,6 +275,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     const updated = {
       ...state,
       player: { ...state.player, xp: state.player.xp + xpAwarded },
+      stats: addXpToStats(state.stats, xpAwarded, 'achievements'),
       earnedAchievements: [...state.earnedAchievements, earned],
     }
     set({ gameState: updated })
@@ -788,12 +790,14 @@ export const useGameStore = create<GameStore>((set, get) => {
           message: `Sold ${quantity} ${chemId} for ${revenue} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
+        let tradeStats = state.stats
         if (profit > 0) {
-          const { player: px, logMessage: xpMsg } = awardXp(player, { type: XpEventType.TradeProfit, profit })
+          const { player: px, stats: sx, logMessage: xpMsg } = awardXp(player, state.stats, { type: XpEventType.TradeProfit, profit })
           player = px
+          tradeStats = sx
           if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
-        return { ...state, player, world, log }
+        return { ...state, player, world, stats: tradeStats, log }
       })
       if (sale.ok) {
         gameBus.emit('CHEM_SOLD', { chemId, quantity, revenue: sale.revenue, profit: sale.profit, channel: 'market' })
@@ -854,12 +858,14 @@ export const useGameStore = create<GameStore>((set, get) => {
           message: `Sold ${quantity} ${chemId} to buyer for ${revenue} caps. ${profitMsg}`,
           type: profit >= 0 ? 'profit' as const : 'danger' as const,
         }]
+        let merchantStats = state.stats
         if (profit > 0) {
-          const { player: px, logMessage: xpMsg } = awardXp(player, { type: XpEventType.TradeProfit, profit })
+          const { player: px, stats: sx, logMessage: xpMsg } = awardXp(player, state.stats, { type: XpEventType.TradeProfit, profit })
           player = px
+          merchantStats = sx
           if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
-        return { ...state, player, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
+        return { ...state, player, stats: merchantStats, pendingEvent: { ...state.pendingEvent, payload: newPayload }, log }
       })
       if (sale.ok) {
         const channel = sale.isDesperateBuyer ? 'desperate_buyer' : 'merchant'
@@ -933,13 +939,15 @@ export const useGameStore = create<GameStore>((set, get) => {
         const debtCleared = paid.debt === 0 && !state.player.debtEverCleared
         let player = debtCleared ? { ...paid, debtEverCleared: true } : paid
         let pendingDebtFreedom: number | null = null
+        let debtStats = state.stats
         if (debtCleared) {
-          const { player: withXp, logMessage: xpMsg } = awardXp(player, { type: XpEventType.DebtPayoff })
+          const { player: withXp, stats: sx, logMessage: xpMsg } = awardXp(player, state.stats, { type: XpEventType.DebtPayoff })
           player = withXp
+          debtStats = sx
           pendingDebtFreedom = withXp.xp - paid.xp
           if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
         }
-        return { ...state, player, log, pendingDebtFreedom }
+        return { ...state, player, stats: debtStats, log, pendingDebtFreedom }
       })
     },
 

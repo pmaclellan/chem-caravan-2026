@@ -255,6 +255,36 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
                       ))}
                   </div>
                 )}
+                {stats.xpBySource && Object.values(stats.xpBySource).some(v => v > 0) && (() => {
+                  const src = stats.xpBySource
+                  const total = Object.values(src).reduce((s, v) => s + v, 0)
+                  const rows = [
+                    { label: 'Combat',           key: 'combat' as const },
+                    { label: 'Achievements',     key: 'achievements' as const },
+                    { label: 'Trade profit',     key: 'trade' as const },
+                    { label: 'Travel/discovery', key: 'travel' as const },
+                  ].filter(r => src[r.key] > 0)
+                  return (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="pip-label text-xs">XP BY SOURCE</div>
+                      {rows.map(({ label, key }) => (
+                        <div key={key}>
+                          <div className="flex justify-between text-xs mb-0.5">
+                            <span className="text-pip-green-dim">{label}</span>
+                            <span className="text-pip-blue font-mono">{src[key].toLocaleString()} XP</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-pip-border overflow-hidden">
+                            <div className="h-full rounded-full bg-pip-blue opacity-50" style={{ width: `${total > 0 ? (src[key] / total) * 100 : 0}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-xs pt-1 border-t border-pip-border-dim">
+                        <span className="text-pip-green-dim">Total XP</span>
+                        <span className="text-pip-blue font-mono">{total.toLocaleString()} XP</span>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             ) : (
               <div className="text-pip-green-dim text-sm italic">No combat or trading stats recorded for this run.</div>
