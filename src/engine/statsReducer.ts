@@ -23,6 +23,7 @@ export function initStats(): RunStats {
     hasSoldToDesperateBuyer: false,
     lifetimeCapsEarned: 0,
     turnsInDebt: 0,
+    xpBySource: { combat: 0, achievements: 0, trade: 0, travel: 0 },
   }
 }
 

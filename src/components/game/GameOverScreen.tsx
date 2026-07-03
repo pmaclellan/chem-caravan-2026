@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { GAME_MODES } from '../../data/modes'
 import { inventoryBaseValue, calculateNetWorth } from '../../engine/economy'
 import type { GameState } from '../../types/game'
-import type { RunStats } from '../../types/stats'
+import type { RunStats, XpBySource } from '../../types/stats'
 import { ACHIEVEMENT_MAP } from '../../data/achievements'
 
 const KEYFRAMES = `
@@ -39,6 +39,48 @@ function fadeStyle(visible: boolean, delay = 0): React.CSSProperties {
     transform: visible ? 'translateY(0)' : 'translateY(10px)',
     transition: `opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms`,
   }
+}
+
+const XP_ROWS: { label: string; key: keyof XpBySource }[] = [
+  { label: 'Combat',           key: 'combat' },
+  { label: 'Achievements',     key: 'achievements' },
+  { label: 'Trade profit',     key: 'trade' },
+  { label: 'Travel/discovery', key: 'travel' },
+]
+
+function XpBreakdown({ xpBySource, totalXp }: { xpBySource?: XpBySource; totalXp: number }) {
+  const hasBreakdown = xpBySource && Object.values(xpBySource).some(v => v > 0)
+  if (!hasBreakdown) {
+    return (
+      <div className="flex justify-between text-sm">
+        <span className="pip-label">XP earned</span>
+        <span className="text-pip-blue font-mono">{totalXp.toLocaleString()} XP</span>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between text-sm mb-1">
+        <span className="pip-label">XP earned</span>
+        <span className="text-pip-blue font-mono">{totalXp.toLocaleString()} XP</span>
+      </div>
+      {XP_ROWS.filter(r => (xpBySource[r.key] ?? 0) > 0).map(({ label, key }) => {
+        const val = xpBySource[key] ?? 0
+        const pct = totalXp > 0 ? (val / totalXp) * 100 : 0
+        return (
+          <div key={key}>
+            <div className="flex justify-between text-xs mb-0.5">
+              <span className="text-pip-green-dim font-mono">{label}</span>
+              <span className="text-pip-blue font-mono opacity-80">{val.toLocaleString()}</span>
+            </div>
+            <div className="h-1 rounded-full bg-pip-border overflow-hidden">
+              <div className="h-full rounded-full bg-pip-blue opacity-50" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function statHasData(stats: RunStats): boolean {
@@ -244,11 +286,10 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
           )}
         </div>
 
-        {/* XP earned — informational for standard, not part of score */}
+        {/* XP breakdown — informational for standard, not part of score */}
         {!isFreePlay && (player.xp ?? 0) > 0 && (
-          <div className="flex justify-between text-sm" style={fadeStyle(showFinal)}>
-            <span className="pip-label">XP earned</span>
-            <span className="text-pip-blue font-mono">{(player.xp ?? 0).toLocaleString()} XP</span>
+          <div style={fadeStyle(showFinal)}>
+            <XpBreakdown xpBySource={gameState.stats?.xpBySource} totalXp={player.xp ?? 0} />
           </div>
         )}
 

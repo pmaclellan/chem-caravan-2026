@@ -212,7 +212,7 @@ export function continueTravel(state: GameState): GameState {
   }
 
   const sf = getScaleFactor(state.world.turn, state.gameType)
-  const { player: p1, logMessage: xpMsg1 } = awardXp(player, { type: XpEventType.RoadTravel, dangerLevel: road.dangerLevel, scaleFactor: sf })
+  const { player: p1, stats: stats1, logMessage: xpMsg1 } = awardXp(player, state.stats, { type: XpEventType.RoadTravel, dangerLevel: road.dangerLevel, scaleFactor: sf })
   player = p1
   if (xpMsg1) log.push(makeLog(state.world.turn, xpMsg1, 'profit'))
 
@@ -222,6 +222,7 @@ export function continueTravel(state: GameState): GameState {
     return {
       ...state,
       player,
+      stats: stats1,
       phase: 'event',
       pendingEvent: event,
       pendingQuote: null,
@@ -230,7 +231,7 @@ export function continueTravel(state: GameState): GameState {
   }
 
   // No event — arrive directly
-  return completeTravel({ ...state, player, pendingQuote: null, log }, destinationId)
+  return completeTravel({ ...state, player, stats: stats1, pendingQuote: null, log }, destinationId)
 }
 
 export function completeTravel(state: GameState, destinationId: string): GameState {
@@ -265,10 +266,12 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   // Settlement discovery XP (first visit per run)
   const visited = player.visitedSettlements ?? []
   let pendingDiscovery: GameState['pendingDiscovery'] = null
+  let stats = state.stats
   if (!visited.includes(destinationId)) {
-    const { player: p2, logMessage: xpMsg2 } = awardXp(player, { type: XpEventType.SettlementDiscovery, settlementName: destName })
+    const { player: p2, stats: s2, logMessage: xpMsg2 } = awardXp(player, stats, { type: XpEventType.SettlementDiscovery, settlementName: destName })
     const xpGained = p2.xp - player.xp
     player = { ...p2, visitedSettlements: [...visited, destinationId] }
+    stats = s2
     pendingDiscovery = { settlementId: destinationId, xpGained }
     if (xpMsg2) log.push(makeLog(turn, xpMsg2, 'profit'))
   } else {
@@ -288,6 +291,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
       ...state,
       player,
       world,
+      stats,
       phase: 'game_over',
       gameOverReason: 'turns',
       endReason: 'Turn limit reached',
@@ -304,6 +308,7 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     ...state,
     player,
     world,
+    stats,
     phase: 'settlement',
     pendingEvent: null,
     pendingDestination: null,
@@ -483,13 +488,15 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     }
   }
 
+  let combatStats = state.stats
   if (combat.phase === 'won') {
     const mc = GAME_MODES[state.mode]
     const killedEnemies = combat.enemies.filter(e => e.dead)
     const xpFromKills = killedEnemies.reduce((sum, e) => sum + (mc.enemyStats[e.typeId]?.xpReward ?? 15), 0)
-    const { player: p4, logMessage: xpMsg4 } = awardXp(player, { type: XpEventType.CombatVictory, xpFromKills, killCount: killedEnemies.length })
+    const { player: p4, stats: s4, logMessage: xpMsg4 } = awardXp(player, state.stats, { type: XpEventType.CombatVictory, xpFromKills, killCount: killedEnemies.length })
     const xpGained = p4.xp - player.xp
     player = p4
+    combatStats = s4
     combat = { ...combat, xpGained }
     if (xpMsg4) newLogs.push(makeLog(turn, xpMsg4, 'profit'))
   }
@@ -522,7 +529,7 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     (player.armor?.armorPoints ?? 0) === 0
   if (isCloseCall) combat = { ...combat, closeCall: true }
 
-  const resolvedState = { ...state, player, combat, log: [...state.log, ...newLogs] }
+  const resolvedState = { ...state, player, combat, stats: combatStats, log: [...state.log, ...newLogs] }
 
   if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
     const mc = GAME_MODES[state.mode]

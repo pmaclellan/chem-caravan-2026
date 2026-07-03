@@ -1,4 +1,5 @@
 import type { GameType, PlayerState } from '../types/game'
+import type { RunStats, XpBySource } from '../types/stats'
 
 export const XpEventType = {
   RoadTravel:          'road_travel',
@@ -64,15 +65,34 @@ function logMessage(event: XpEventParams, amount: number): string {
   }
 }
 
-// Returns the updated player and a log message, or null if no XP was awarded.
+type XpCategory = keyof XpBySource
+
+function xpCategoryFor(type: XpEventType): XpCategory {
+  if (type === 'combat_victory') return 'combat'
+  if (type === 'trade_profit')   return 'trade'
+  return 'travel' // road_travel, settlement_discovery, debt_payoff
+}
+
+// Adds XP to a specific source bucket — use for achievement XP not routed through awardXp.
+export function addXpToStats(stats: RunStats, amount: number, category: XpCategory): RunStats {
+  if (amount <= 0) return stats
+  return {
+    ...stats,
+    xpBySource: { ...stats.xpBySource, [category]: (stats.xpBySource?.[category] ?? 0) + amount },
+  }
+}
+
+// Returns updated player, stats, and a log message.
 export function awardXp(
   player: PlayerState,
+  stats: RunStats,
   event: XpEventParams,
-): { player: PlayerState; logMessage: string | null } {
+): { player: PlayerState; stats: RunStats; logMessage: string | null } {
   const amount = calculateXp(event)
-  if (amount <= 0) return { player, logMessage: null }
+  if (amount <= 0) return { player, stats, logMessage: null }
   return {
     player: { ...player, xp: player.xp + amount },
+    stats: addXpToStats(stats, amount, xpCategoryFor(event.type)),
     logMessage: logMessage(event, amount),
   }
 }

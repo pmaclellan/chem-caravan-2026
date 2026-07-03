@@ -152,6 +152,48 @@ export default function RunStatsView({ stats, mc }: Props) {
           Turns in debt: <span className="text-pip-red font-display">{stats.turnsInDebt}</span>
         </div>
       )}
+
+      {/* XP Breakdown */}
+      {stats.xpBySource && Object.values(stats.xpBySource).some(v => v > 0) && (
+        <XpBreakdown xpBySource={stats.xpBySource} />
+      )}
+    </div>
+  )
+}
+
+function XpBreakdown({ xpBySource }: { xpBySource: import('../../types/stats').XpBySource }) {
+  const rows: { label: string; key: keyof typeof xpBySource }[] = [
+    { label: 'Combat',           key: 'combat' },
+    { label: 'Achievements',     key: 'achievements' },
+    { label: 'Trade profit',     key: 'trade' },
+    { label: 'Travel/discovery', key: 'travel' },
+  ]
+  const total = Object.values(xpBySource).reduce((s, v) => s + v, 0)
+  return (
+    <div>
+      <div className="pip-label mb-2">XP Breakdown</div>
+      <div className="space-y-1.5">
+        {rows.filter(r => xpBySource[r.key] > 0).map(({ label, key }) => {
+          const pct = total > 0 ? (xpBySource[key] / total) * 100 : 0
+          return (
+            <div key={key}>
+              <div className="flex justify-between text-xs mb-0.5">
+                <span className="text-pip-green-dim">{label}</span>
+                <span className="text-pip-blue font-mono">{xpBySource[key].toLocaleString()} XP</span>
+              </div>
+              <div className="h-1 rounded-full bg-pip-border overflow-hidden">
+                <div className="h-full rounded-full bg-pip-blue opacity-60" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })}
+        {total > 0 && (
+          <div className="flex justify-between text-xs pt-1 border-t border-pip-border-dim">
+            <span className="text-pip-green-dim">Total</span>
+            <span className="text-pip-blue font-mono font-bold">{total.toLocaleString()} XP</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
