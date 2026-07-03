@@ -41,11 +41,11 @@ function fadeStyle(visible: boolean, delay = 0): React.CSSProperties {
   }
 }
 
-const XP_ROWS: { label: string; key: keyof XpBySource }[] = [
-  { label: 'Combat',           key: 'combat' },
-  { label: 'Achievements',     key: 'achievements' },
-  { label: 'Trade profit',     key: 'trade' },
-  { label: 'Travel/discovery', key: 'travel' },
+const XP_ROWS: { label: string; key: keyof XpBySource; color: string }[] = [
+  { label: 'Combat',           key: 'combat',       color: '#8c1c1c' },
+  { label: 'Achievements',     key: 'achievements', color: '#2a5a8a' },
+  { label: 'Trade profit',     key: 'trade',        color: '#c4501a' },
+  { label: 'Travel/discovery', key: 'travel',       color: '#2c4a10' },
 ]
 
 function XpBreakdown({ xpBySource, totalXp }: { xpBySource?: XpBySource; totalXp: number }) {
@@ -58,27 +58,64 @@ function XpBreakdown({ xpBySource, totalXp }: { xpBySource?: XpBySource; totalXp
       </div>
     )
   }
+
+  const segments = XP_ROWS
+    .map(r => ({ ...r, val: xpBySource![r.key] ?? 0 }))
+    .filter(s => s.val > 0)
+
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="pip-label">XP earned</span>
-        <span className="text-pip-blue font-mono">{totalXp.toLocaleString()} XP</span>
+    <div className="space-y-2">
+      {/* Header */}
+      <div className="flex justify-between items-baseline">
+        <span className="pip-label">XP EARNED</span>
+        <span className="text-pip-blue font-mono font-bold text-sm">{totalXp.toLocaleString()} XP</span>
       </div>
-      {XP_ROWS.filter(r => (xpBySource[r.key] ?? 0) > 0).map(({ label, key }) => {
-        const val = xpBySource[key] ?? 0
-        const pct = totalXp > 0 ? (val / totalXp) * 100 : 0
-        return (
-          <div key={key}>
-            <div className="flex justify-between text-xs mb-0.5">
-              <span className="text-pip-green-dim font-mono">{label}</span>
-              <span className="text-pip-blue font-mono opacity-80">{val.toLocaleString()}</span>
-            </div>
-            <div className="h-1 rounded-full bg-pip-border overflow-hidden">
-              <div className="h-full rounded-full bg-pip-blue opacity-50" style={{ width: `${pct}%` }} />
-            </div>
+
+      {/* Stacked segmented bar */}
+      <div
+        className="flex w-full overflow-hidden rounded"
+        style={{
+          height: '10px',
+          background: '#6a4a18',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.45)',
+        }}
+      >
+        {segments.map((s, i) => (
+          <div
+            key={s.key}
+            style={{
+              width: `${(s.val / totalXp) * 100}%`,
+              background: s.color,
+              borderRight: i < segments.length - 1 ? '1.5px solid rgba(0,0,0,0.3)' : 'none',
+              transition: 'width 0.6s ease',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Legend — 2-column grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        {segments.map(s => (
+          <div key={s.key} className="flex items-center gap-1.5 min-w-0">
+            <div
+              className="flex-shrink-0 rounded-sm"
+              style={{ width: 8, height: 8, background: s.color, opacity: 0.9 }}
+            />
+            <span
+              className="text-pip-green-dim font-mono truncate"
+              style={{ fontSize: '0.6rem', letterSpacing: '0.02em' }}
+            >
+              {s.label}
+            </span>
+            <span
+              className="font-mono ml-auto flex-shrink-0"
+              style={{ fontSize: '0.6rem', color: s.color, opacity: 0.95, letterSpacing: '0.01em' }}
+            >
+              {s.val.toLocaleString()}
+            </span>
           </div>
-        )
-      })}
+        ))}
+      </div>
     </div>
   )
 }
