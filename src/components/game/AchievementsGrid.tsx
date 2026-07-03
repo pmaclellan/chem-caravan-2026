@@ -41,12 +41,44 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
           return (
             <div
               key={def.id}
-              className={`border rounded p-2.5 flex flex-col gap-1.5 transition-opacity ${
+              className={`relative overflow-hidden border rounded p-2.5 flex flex-col gap-1.5 transition-opacity ${
                 isEarned
                   ? 'border-pip-amber bg-pip-bg'
                   : 'border-pip-border-dim opacity-40'
               }`}
             >
+              {/* Corner fold tab — earned turn */}
+              {isEarned && earnedEntry.earnedOnTurn != null && (
+                <div className="absolute top-0 right-0 w-9 h-9 pointer-events-none">
+                  {/* Triangle */}
+                  <div style={{
+                    position: 'absolute', top: 0, right: 0,
+                    width: 0, height: 0,
+                    borderStyle: 'solid',
+                    borderWidth: '0 36px 36px 0',
+                    borderColor: 'transparent var(--pip-amber) transparent transparent',
+                    opacity: 0.85,
+                  }} />
+                  {/* Turn label rotated into the triangle */}
+                  <span style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '3px',
+                    fontSize: '0.42rem',
+                    fontFamily: '"Courier Prime", Courier, monospace',
+                    fontWeight: 700,
+                    color: 'var(--pip-bg-light)',
+                    transform: 'rotate(45deg)',
+                    transformOrigin: 'center',
+                    letterSpacing: '0.03em',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    T{earnedEntry.earnedOnTurn}
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-start justify-between gap-1">
                 <img
                   src={`/assets/icons/${def.icon}`}
@@ -62,12 +94,8 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
                 <div className={`font-display text-xs leading-tight ${isEarned ? 'text-pip-amber' : 'text-pip-green-dim'}`}>
                   {def.name}
                 </div>
-                <div className="text-pip-green-dim text-xs leading-snug mt-0.5" style={{ fontSize: '0.65rem' }}>
-                  {isEarned ? (
-                    <span className="text-pip-green-dim">Earned T{earnedEntry.earnedOnTurn}</span>
-                  ) : (
-                    def.description
-                  )}
+                <div className="text-pip-green-dim leading-snug mt-0.5" style={{ fontSize: '0.65rem' }}>
+                  {def.description}
                 </div>
               </div>
             </div>
