@@ -14,9 +14,9 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
     a => !a.modeFilter || a.modeFilter.includes(mode)
   )
 
-  // Earned: earliest turn first (shows run progression); locked: canonical array order
+  // Earned: most recent first so newly unlocked appear at the top
   const earned = modeAchievements.filter(a => earnedMap.has(a.id))
-    .sort((a, b) => earnedMap.get(a.id)!.earnedOnTurn - earnedMap.get(b.id)!.earnedOnTurn)
+    .sort((a, b) => earnedMap.get(b.id)!.earnedOnTurn - earnedMap.get(a.id)!.earnedOnTurn)
   const locked = modeAchievements.filter(a => !earnedMap.has(a.id))
 
   const ordered = [...earned, ...locked]
@@ -62,9 +62,9 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
                   {/* Turn label rotated into the triangle */}
                   <span style={{
                     position: 'absolute',
-                    top: '7px',
-                    right: '4px',
-                    fontSize: '0.6rem',
+                    top: '8px',
+                    right: '5px',
+                    fontSize: '0.75rem',
                     fontFamily: '"Courier Prime", Courier, monospace',
                     fontWeight: 700,
                     color: 'var(--pip-bg-light)',
