@@ -254,6 +254,8 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     },
   }
 
+  let stats = state.stats
+
   // Guard salary — deduct each turn, desert if can't cover
   const capsBeforeSalary = player.caps
   const { player: playerAfterSalary, logs: salaryLogs } = applyGuardSalary(player, mc)
@@ -268,7 +270,6 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   // Settlement discovery XP (first visit per run)
   const visited = player.visitedSettlements ?? []
   let pendingDiscovery: GameState['pendingDiscovery'] = null
-  let stats = state.stats
   if (!visited.includes(destinationId)) {
     const { player: p2, stats: s2, logMessage: xpMsg2 } = awardXp(player, stats, { type: XpEventType.SettlementDiscovery, settlementName: destName })
     const xpGained = p2.xp - player.xp
