@@ -120,7 +120,7 @@ export default function DebtFreedomModal({ xpGained, onDismiss }: Props) {
 
         {/* DEBT CLEARED stamp */}
         <div
-          className="font-display text-pip-amber leading-none mb-1"
+          className="font-display text-pip-blue leading-none mb-1"
           style={{
             fontSize: 'clamp(2rem, 9vw, 3rem)',
             animation: 'dfStamp 0.6s cubic-bezier(0.22,1,0.36,1) 0.28s both',
@@ -162,7 +162,7 @@ export default function DebtFreedomModal({ xpGained, onDismiss }: Props) {
         >
           <div className="text-left">
             <div className="pip-label text-xs tracking-widest">XP EARNED</div>
-            <div className="text-pip-green-dim text-xs opacity-60 mt-0.5">debt cleared bonus</div>
+            <div className="text-pip-green-dim text-xs opacity-60 mt-0.5">Free and Clear achievement</div>
           </div>
           <span
             className="font-display tabular-nums text-pip-blue"
@@ -174,17 +174,26 @@ export default function DebtFreedomModal({ xpGained, onDismiss }: Props) {
 
         {/* Flavour */}
         <div
-          className="text-pip-green-dim text-xs font-mono leading-relaxed mb-5 px-1 italic"
+          className="text-pip-green text-xs font-mono leading-relaxed mb-5 px-1 italic"
           style={{ animation: 'dfRise 0.4s ease 1.05s both', opacity: 0 }}
         >
-          The weight of debt lifted from your pack.<br />
-          The wasteland owes you nothing.
+          The weight of debt lifts from your pack.
         </div>
 
         {/* Button */}
         <button
-          className="pip-btn-amber w-full"
-          style={{ animation: 'dfRise 0.4s ease 1.2s both, dfBtnPulse 2.2s ease-in-out 1.7s infinite', opacity: 0 }}
+          className="w-full font-display tracking-widest text-sm"
+          style={{
+            background: 'var(--pip-amber)',
+            color: 'var(--pip-bg-light)',
+            border: 'none',
+            borderRadius: '2px',
+            padding: '11px 0',
+            cursor: 'pointer',
+            boxShadow: '0 0 10px color-mix(in srgb, var(--pip-amber) 35%, transparent)',
+            animation: 'dfRise 0.4s ease 1.2s both, dfBtnPulse 2.2s ease-in-out 1.7s infinite',
+            opacity: 0,
+          }}
           onClick={onDismiss}
         >
           BACK TO THE ROAD

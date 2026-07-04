@@ -5,19 +5,17 @@ export const XpEventType = {
   RoadTravel:          'road_travel',
   CombatVictory:       'combat_victory',
   SettlementDiscovery: 'settlement_discovery',
-  DebtPayoff:          'debt_payoff',
   TradeProfit:         'trade_profit',
 } as const
 
 export type XpEventType = typeof XpEventType[keyof typeof XpEventType]
 
 const XP_CONFIG = {
-  ROAD_TRAVEL_FACTOR:    30,   // floor(dangerLevel × scaleFactor × 30)
-  COMBAT_BASE:           50,   // flat victory bonus per fight
-  COMBAT_COUNT_BONUS:    0.10, // each enemy beyond the first multiplies kill XP by an extra 10%
-  SETTLEMENT_DISCOVERY:  50,   // flat first-visit bonus
-  DEBT_PAYOFF:           500,  // one-time bonus for clearing debt to zero
-  TRADE_PROFIT_DIVISOR:   3,   // floor(profit / 3)
+  ROAD_TRAVEL_FACTOR:    30,
+  COMBAT_BASE:           50,
+  COMBAT_COUNT_BONUS:    0.10,
+  SETTLEMENT_DISCOVERY:  50,
+  TRADE_PROFIT_DIVISOR:   3,
 } as const
 
 // scaleFactor = 1 in standard games; ramps up in Free Play as turns increase.
@@ -30,7 +28,6 @@ export type XpEventParams =
   | { type: 'road_travel';          dangerLevel: number; scaleFactor: number }
   | { type: 'combat_victory';       xpFromKills: number; killCount: number }
   | { type: 'settlement_discovery'; settlementName: string }
-  | { type: 'debt_payoff' }
   | { type: 'trade_profit';         profit: number }
 
 export function calculateXp(event: XpEventParams): number {
@@ -43,8 +40,6 @@ export function calculateXp(event: XpEventParams): number {
     }
     case XpEventType.SettlementDiscovery:
       return XP_CONFIG.SETTLEMENT_DISCOVERY
-    case XpEventType.DebtPayoff:
-      return XP_CONFIG.DEBT_PAYOFF
     case XpEventType.TradeProfit:
       return Math.floor(event.profit / XP_CONFIG.TRADE_PROFIT_DIVISOR)
   }
@@ -58,8 +53,6 @@ function logMessage(event: XpEventParams, amount: number): string {
       return `+${amount} XP — combat victory!`
     case XpEventType.SettlementDiscovery:
       return `+${amount} XP — first visit to ${event.settlementName}!`
-    case XpEventType.DebtPayoff:
-      return `+${amount} XP — debt cleared!`
     case XpEventType.TradeProfit:
       return `+${amount} XP — trade profit.`
   }
@@ -70,7 +63,7 @@ type XpCategory = keyof XpBySource
 function xpCategoryFor(type: XpEventType): XpCategory {
   if (type === 'combat_victory') return 'combat'
   if (type === 'trade_profit')   return 'trade'
-  return 'travel' // road_travel, settlement_discovery, debt_payoff
+  return 'travel' // road_travel, settlement_discovery
 }
 
 // Adds XP to a specific source bucket — use for achievement XP not routed through awardXp.
