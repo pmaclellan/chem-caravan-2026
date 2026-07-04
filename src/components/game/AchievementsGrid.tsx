@@ -49,28 +49,28 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
             >
               {/* Corner fold tab — earned turn */}
               {isEarned && earnedEntry.earnedOnTurn != null && (
-                <div className="absolute top-0 right-0 w-9 h-9 pointer-events-none">
+                <div className="absolute top-0 right-0 pointer-events-none" style={{ width: 52, height: 52 }}>
                   {/* Triangle */}
                   <div style={{
                     position: 'absolute', top: 0, right: 0,
                     width: 0, height: 0,
                     borderStyle: 'solid',
-                    borderWidth: '0 36px 36px 0',
+                    borderWidth: '0 52px 52px 0',
                     borderColor: 'transparent var(--pip-amber) transparent transparent',
                     opacity: 0.85,
                   }} />
                   {/* Turn label rotated into the triangle */}
                   <span style={{
                     position: 'absolute',
-                    top: '4px',
-                    right: '3px',
-                    fontSize: '0.42rem',
+                    top: '7px',
+                    right: '4px',
+                    fontSize: '0.6rem',
                     fontFamily: '"Courier Prime", Courier, monospace',
                     fontWeight: 700,
                     color: 'var(--pip-bg-light)',
                     transform: 'rotate(45deg)',
                     transformOrigin: 'center',
-                    letterSpacing: '0.03em',
+                    letterSpacing: '0.02em',
                     lineHeight: 1,
                     whiteSpace: 'nowrap',
                   }}>
