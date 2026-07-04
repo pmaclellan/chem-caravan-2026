@@ -939,15 +939,11 @@ export const useGameStore = create<GameStore>((set, get) => {
         const debtCleared = paid.debt === 0 && !state.player.debtEverCleared
         let player = debtCleared ? { ...paid, debtEverCleared: true } : paid
         let pendingDebtFreedom: number | null = null
-        let debtStats = state.stats
         if (debtCleared) {
-          const { player: withXp, stats: sx, logMessage: xpMsg } = awardXp(player, state.stats, { type: XpEventType.DebtPayoff })
-          player = withXp
-          debtStats = sx
-          pendingDebtFreedom = withXp.xp - paid.xp
-          if (xpMsg) log.push({ turn: state.world.turn, message: xpMsg, type: 'profit' as const })
+          // XP is awarded via the pay_off_debt achievement (fires in checkNewAchievements)
+          pendingDebtFreedom = ACHIEVEMENT_MAP['pay_off_debt']?.xpReward ?? 500
         }
-        return { ...state, player, stats: debtStats, log, pendingDebtFreedom }
+        return { ...state, player, log, pendingDebtFreedom }
       })
     },
 

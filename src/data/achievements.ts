@@ -192,6 +192,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // ── Economy & Followers ───────────────────────────────────────────────────
   {
+    id: 'pay_off_debt',
+    name: 'Free and Clear',
+    description: 'Pay off your debt entirely.',
+    icon: 'scale-balanced-svgrepo-com.svg',
+    xpReward: 500,
+  },
+  {
     id: 'buy_power_armor',
     name: 'Walking Tank',
     description: 'Purchase Power Armor.',
