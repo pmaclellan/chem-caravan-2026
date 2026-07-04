@@ -79,22 +79,20 @@ export default function AchievementsGrid({ earnedAchievements, mode }: Props) {
                 </div>
               )}
 
-              <div className="flex items-start justify-between gap-1">
-                <img
-                  src={`/assets/icons/${def.icon}`}
-                  alt=""
-                  className="w-7 h-7 flex-shrink-0"
-                  style={{ opacity: isEarned ? 0.85 : 0.4 }}
-                />
-                <span className={`text-xs font-mono font-bold ${isEarned ? 'text-pip-blue' : 'text-pip-green-dim'}`}>
-                  +{def.xpReward}
-                </span>
-              </div>
+              <img
+                src={`/assets/icons/${def.icon}`}
+                alt=""
+                className="w-7 h-7 flex-shrink-0"
+                style={{ opacity: isEarned ? 0.85 : 0.4 }}
+              />
               <div>
                 <div className={`font-display text-xs leading-tight ${isEarned ? 'text-pip-amber' : 'text-pip-green-dim'}`}>
                   {def.name}
                 </div>
-                <div className="text-pip-green-dim leading-snug mt-0.5" style={{ fontSize: '0.65rem' }}>
+                <div className={`font-mono leading-none mt-0.5 ${isEarned ? 'text-pip-blue' : 'text-pip-green-dim'}`} style={{ fontSize: '0.6rem' }}>
+                  +{def.xpReward} XP
+                </div>
+                <div className="text-pip-green-dim leading-snug mt-1" style={{ fontSize: '0.65rem' }}>
                   {def.description}
                 </div>
               </div>
