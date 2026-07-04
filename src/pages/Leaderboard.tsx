@@ -258,29 +258,33 @@ function RunDetailModal({ row, isFreePlay, onClose }: { row: LeaderboardRow; isF
                 {stats.xpBySource && Object.values(stats.xpBySource).some(v => v > 0) && (() => {
                   const src = stats.xpBySource
                   const total = Object.values(src).reduce((s, v) => s + v, 0)
-                  const rows = [
-                    { label: 'Combat',           key: 'combat' as const },
-                    { label: 'Achievements',     key: 'achievements' as const },
-                    { label: 'Trade profit',     key: 'trade' as const },
-                    { label: 'Travel/discovery', key: 'travel' as const },
-                  ].filter(r => src[r.key] > 0)
+                  const segments = [
+                    { label: 'Combat',           key: 'combat' as const,       color: '#8c1c1c' },
+                    { label: 'Achievements',     key: 'achievements' as const, color: '#2a5a8a' },
+                    { label: 'Trade profit',     key: 'trade' as const,        color: '#c4501a' },
+                    { label: 'Travel/discovery', key: 'travel' as const,       color: '#2c4a10' },
+                  ].filter(r => (src[r.key] ?? 0) > 0)
                   return (
-                    <div className="mt-2 space-y-1.5">
-                      <div className="pip-label text-xs">XP BY SOURCE</div>
-                      {rows.map(({ label, key }) => (
-                        <div key={key}>
-                          <div className="flex justify-between text-xs mb-0.5">
-                            <span className="text-pip-green-dim">{label}</span>
-                            <span className="text-pip-blue font-mono">{src[key].toLocaleString()} XP</span>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-baseline justify-between">
+                        <div className="pip-label text-xs">XP BY SOURCE</div>
+                        <span className="text-pip-blue font-mono text-xs">{total.toLocaleString()} XP</span>
+                      </div>
+                      {/* Stacked segmented bar */}
+                      <div className="flex w-full overflow-hidden rounded" style={{ height: 10, background: '#6a4a18', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.45)' }}>
+                        {segments.map((s, i) => (
+                          <div key={s.key} style={{ width: `${(src[s.key] / total) * 100}%`, background: s.color, borderRight: i < segments.length - 1 ? '1.5px solid rgba(0,0,0,0.3)' : 'none' }} />
+                        ))}
+                      </div>
+                      {/* Legend */}
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                        {segments.map(s => (
+                          <div key={s.key} className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex-shrink-0 rounded-sm" style={{ width: 8, height: 8, background: s.color, opacity: 0.9 }} />
+                            <span className="text-pip-green-dim font-mono truncate" style={{ fontSize: '0.6rem' }}>{s.label}</span>
+                            <span className="font-mono ml-auto flex-shrink-0" style={{ fontSize: '0.6rem', color: s.color }}>{src[s.key].toLocaleString()}</span>
                           </div>
-                          <div className="h-1 rounded-full bg-pip-border overflow-hidden">
-                            <div className="h-full rounded-full bg-pip-blue opacity-50" style={{ width: `${total > 0 ? (src[key] / total) * 100 : 0}%` }} />
-                          </div>
-                        </div>
-                      ))}
-                      <div className="flex justify-between text-xs pt-1 border-t border-pip-border-dim">
-                        <span className="text-pip-green-dim">Total XP</span>
-                        <span className="text-pip-blue font-mono">{total.toLocaleString()} XP</span>
+                        ))}
                       </div>
                     </div>
                   )
