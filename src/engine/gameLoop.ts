@@ -255,8 +255,10 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   }
 
   // Guard salary — deduct each turn, desert if can't cover
+  const capsBeforeSalary = player.caps
   const { player: playerAfterSalary, logs: salaryLogs } = applyGuardSalary(player, mc)
   player = playerAfterSalary
+  stats = { ...stats, totalPayrollPaid: (stats.totalPayrollPaid ?? 0) + Math.max(0, capsBeforeSalary - player.caps) }
   const log = [...state.log]
   for (const { message, type } of salaryLogs) log.push(makeLog(turn, message, type))
 

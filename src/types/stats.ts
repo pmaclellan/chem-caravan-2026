@@ -32,5 +32,6 @@ export interface RunStats {
   hasSoldToDesperateBuyer: boolean
   lifetimeCapsEarned: number
   turnsInDebt: number
+  totalPayrollPaid: number
   xpBySource: XpBySource
 }

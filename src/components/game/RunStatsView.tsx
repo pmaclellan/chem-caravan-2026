@@ -52,6 +52,19 @@ export default function RunStatsView({ stats, mc }: Props) {
         <SectionHeader>Combat</SectionHeader>
         <div className="space-y-1">
           <StatRow label="Enemies killed">{stats.totalKills.toLocaleString()}</StatRow>
+
+          {/* Kill breakdown by enemy type — directly under total */}
+          {stats.totalKills > 0 && Object.keys(stats.killsByEnemy).length > 0 && (
+            <div className="mb-0.5 space-y-0.5 pl-4 border-l border-pip-border-dim">
+              {Object.entries(stats.killsByEnemy)
+                .sort(([, a], [, b]) => b - a)
+                .map(([typeId, count]) => {
+                  const name = mc.enemies.find(e => e.id === typeId)?.name ?? typeId
+                  return <StatRow key={typeId} label={name}>{count}</StatRow>
+                })}
+            </div>
+          )}
+
           <StatRow label="Combats won">
             {stats.combatsWon} / {stats.combatsFought}
             {winRate !== null && <span className="text-pip-green-dim ml-1.5">({winRate}%)</span>}
@@ -70,22 +83,8 @@ export default function RunStatsView({ stats, mc }: Props) {
           {topGun && (
             <StatRow label="Favorite weapon">
               {topGun[0] === 'unarmed' ? 'Bare hands' : (mc.guns[topGun[0]]?.name ?? topGun[0])}
-              <span className="text-pip-green-dim ml-1.5">({topGun[1]}k)</span>
+              <span className="text-pip-green-dim ml-1.5">({topGun[1]} kills)</span>
             </StatRow>
-          )}
-
-          {/* Kill breakdown by enemy type */}
-          {stats.totalKills > 0 && Object.keys(stats.killsByEnemy).length > 0 && (
-            <div className="mt-1.5 space-y-0.5 pl-4 border-l border-pip-border-dim">
-              {Object.entries(stats.killsByEnemy)
-                .sort(([, a], [, b]) => b - a)
-                .map(([typeId, count]) => {
-                  const name = mc.enemies.find(e => e.id === typeId)?.name ?? typeId
-                  return (
-                    <StatRow key={typeId} label={name}>{count}</StatRow>
-                  )
-                })}
-            </div>
           )}
         </div>
       </div>
@@ -97,10 +96,10 @@ export default function RunStatsView({ stats, mc }: Props) {
           <div className="space-y-1">
             <StatRow label="Caps earned">{stats.lifetimeCapsEarned.toLocaleString()} ¤</StatRow>
             {topChem && (
-              <StatRow label="Top chem (profit)">
-                {topChem[0]}
-                <span className="text-pip-amber ml-1.5">+{topChem[1].profitEarned.toLocaleString()} ¤</span>
-              </StatRow>
+              <StatRow label="Top chem (profit)">{topChem[0]}</StatRow>
+            )}
+            {(stats.totalPayrollPaid ?? 0) > 0 && (
+              <StatRow label="Payroll paid">{(stats.totalPayrollPaid).toLocaleString()} ¤</StatRow>
             )}
             {stats.hasSoldToMerchant && (
               <StatRow label="Road deals">Yes</StatRow>
