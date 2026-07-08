@@ -30,6 +30,9 @@ import {
   repayDebt,
   hireGuards,
   buyPowerArmorGuard,
+  dismissGuard as dismissGuardFn,
+  dismissPAGuard as dismissPAGuardFn,
+  dismissMount as dismissMountFn,
   buyBrahmin,
   buyGun,
   equipGun as equipGunFn,
@@ -223,6 +226,9 @@ interface GameStore {
   payDebt: (amount: number) => void
   hireguards: (classId: GuardClassId, count: number) => void
   purchasePowerArmorGuard: (count: number) => void
+  dismissGuard: (guardId: string) => void
+  dismissPAGuard: (guardId: string) => void
+  dismissMount: () => void
   purchaseBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
   equipGun: (gunId: string) => void
@@ -1123,6 +1129,34 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.powerArmorGuardHealth, mc.maxPowerArmorGuards)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Fitted ${count} guard${count > 1 ? 's' : ''} with power armor.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    dismissGuard: (guardId) => {
+      mutate(state => {
+        const { player, error } = dismissGuardFn(state.player, guardId)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: 'Guard dismissed.', type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    dismissPAGuard: (guardId) => {
+      mutate(state => {
+        const { player, error } = dismissPAGuardFn(state.player, guardId)
+        if (error) { set({ toast: error }); return state }
+        const log = [...state.log, { turn: state.world.turn, message: 'Power armor guard dismissed.', type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    dismissMount: () => {
+      mutate(state => {
+        const { player, error } = dismissMountFn(state.player)
+        if (error) { set({ toast: error }); return state }
+        const mountName = state.player.mount?.name ?? 'Mount'
+        const log = [...state.log, { turn: state.world.turn, message: `${mountName} released into the wasteland.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },

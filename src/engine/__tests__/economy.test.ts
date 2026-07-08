@@ -6,10 +6,13 @@ import {
   sellChems,
   calculateFinalScore,
   hireGuards,
+  dismissGuard,
+  dismissPAGuard,
+  dismissMount,
   repayDebt,
 } from '../economy'
 import type { DebtEnforcementEntry, GameModeConfig } from '../../data/modes'
-import type { GuardUnit, PlayerState, SettlementMarket } from '../../types/game'
+import type { GuardUnit, PAGuardUnit, PlayerState, SettlementMarket } from '../../types/game'
 import { GUARD_CLASSES } from '../../data/guardClasses'
 
 const EMPTY_MC = { guns: {}, armors: {} } as GameModeConfig
@@ -237,6 +240,55 @@ describe('hireGuards', () => {
     const hired = result.guards.find(g => !g.dead)!
     expect(hired.classId).toBe('sniper')
     expect(hired.maxHealth).toBe(GUARD_CLASSES.sniper.health)
+  })
+})
+
+describe('dismissGuard', () => {
+  it('removes the specified guard and leaves the rest', () => {
+    const guards = makeGuards(3)
+    const player = makePlayer({ guards })
+    const { player: result, error } = dismissGuard(player, guards[1].id)
+    expect(error).toBeUndefined()
+    expect(result.guards).toHaveLength(2)
+    expect(result.guards.some(g => g.id === guards[1].id)).toBe(false)
+  })
+
+  it('errors when the guard is not in the roster', () => {
+    const { error } = dismissGuard(makePlayer({ guards: makeGuards(1) }), 'nonexistent')
+    expect(error).toBeTruthy()
+  })
+})
+
+describe('dismissPAGuard', () => {
+  it('removes the specified PA guard and leaves the rest', () => {
+    const paGuards: PAGuardUnit[] = [
+      { id: 'pa_0', health: 150, maxHealth: 150, dead: false },
+      { id: 'pa_1', health: 150, maxHealth: 150, dead: false },
+    ]
+    const player = makePlayer({ paGuards })
+    const { player: result, error } = dismissPAGuard(player, 'pa_0')
+    expect(error).toBeUndefined()
+    expect(result.paGuards).toHaveLength(1)
+    expect(result.paGuards[0].id).toBe('pa_1')
+  })
+
+  it('errors when the PA guard is not in the roster', () => {
+    const { error } = dismissPAGuard(makePlayer(), 'nonexistent')
+    expect(error).toBeTruthy()
+  })
+})
+
+describe('dismissMount', () => {
+  it('clears the mount', () => {
+    const player = makePlayer({ mount: { creatureTypeId: 'yao_guai', name: 'Yao Guai', health: 60, maxHealth: 60, damage: [15, 30], accuracy: 0.7 } })
+    const { player: result, error } = dismissMount(player)
+    expect(error).toBeUndefined()
+    expect(result.mount).toBeNull()
+  })
+
+  it('errors when there is no mount', () => {
+    const { error } = dismissMount(makePlayer({ mount: null }))
+    expect(error).toBeTruthy()
   })
 })
 

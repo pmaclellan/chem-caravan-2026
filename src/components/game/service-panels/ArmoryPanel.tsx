@@ -240,8 +240,13 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
           })}
 
           {player.mount && (
-            <div className="border border-pip-amber rounded p-2 space-y-0.5">
-              <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
+            <div className="border border-pip-amber rounded p-2 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
+                <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissMount()}>
+                  RELEASE
+                </button>
+              </div>
               <div className="text-xs text-pip-green-dim">
                 {player.mount.health}/{player.mount.maxHealth} HP · DMG {player.mount.damage[0]}–{player.mount.damage[1]} · {Math.round(player.mount.accuracy * 100)}% acc
               </div>
