@@ -69,22 +69,27 @@ export function minEnemyCount(
 /**
  * Whether an additional combat wave chains on after the current one resolves.
  *
- * Wave 2 keeps the original formula exactly (dangerLevel >= 0.55, roll against
- * dangerLevel - 0.40) — no regression there. Waves 3 and 4 are late-game Free
- * Play content, turn-gated (wave 3 unlocks at turn 50, wave 4 at turn 75).
- * Standard mode is hard-capped at 30 turns so waves 3/4 are already
- * unreachable there — the explicit free_play check is defensive, so a future
- * maxTurns tuning change can't silently leak this into standard mode.
+ * Waves 3 and 4 are late-game Free Play content, turn-gated (wave 3 unlocks
+ * at turn 50, wave 4 at turn 75). Standard mode is hard-capped at 30 turns so
+ * waves 3/4 are already unreachable there — the explicit free_play check is
+ * defensive, so a future maxTurns tuning change can't silently leak this into
+ * standard mode.
  *
- * The danger floor stays flat at 0.55 across every wave rather than climbing
+ * The danger floor stays flat at 0.45 across every wave rather than climbing
  * per wave — actual road data tops out at 0.58 (Commonwealth), 0.65 (Capital
  * Wasteland), 0.85 (Mojave), so a climbing floor would make wave 3/4
- * unreachable outside Mojave. Instead, rarity comes entirely from the rising
- * trigger threshold: on the same road, each further wave is a strictly harder
- * roll than the last, and the harder modes' higher-danger roads naturally see
- * later waves more often without any wave being flatly impossible elsewhere.
+ * unreachable outside Mojave. 0.45 (rather than the original 0.55) was chosen
+ * after a player reached turn 55 in Commonwealth free play without ever
+ * seeing a second wave — at 0.55, only 2 of Commonwealth's 13 roads could
+ * mathematically ever qualify at all, so most travel had exactly zero chance
+ * of escalating regardless of trip count. Dropping to 0.45 brings that up to
+ * 6 of 13 roads, without touching the roll odds on roads that already
+ * qualified. Rarity still comes from the rising trigger threshold: on the
+ * same road, each further wave is a strictly harder roll than the last, and
+ * the harder modes' higher-danger roads naturally see later waves more often
+ * without any wave being flatly impossible elsewhere.
  */
-const WAVE_MIN_DANGER: Record<number, number> = { 2: 0.55, 3: 0.55, 4: 0.55 }
+const WAVE_MIN_DANGER: Record<number, number> = { 2: 0.45, 3: 0.45, 4: 0.45 }
 const WAVE_TRIGGER_THRESHOLD: Record<number, number> = { 2: 0.40, 3: 0.48, 4: 0.55 }
 const WAVE_TURN_GATE: Record<number, number> = { 3: 50, 4: 75 } // no gate for wave 2
 
