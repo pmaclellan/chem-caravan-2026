@@ -3,6 +3,9 @@ import type { GameModeConfig } from '../data/modes'
 import type { MarketEvent, SettlementMarket, WorldState } from '../types/game'
 import { rng, rngBetween, rngInt, rngPick } from './rng'
 
+// Turns of full-price absence needed to fully recover a chem bought down to 0 (see refreshMarket).
+export const RECOVERY_TURNS_TO_FULL = 5
+
 export function initializeMarket(
   turn: number,
   availableChemIds: string[],
@@ -22,18 +25,38 @@ export function initializeMarket(
     }
   }
 
-  return { prices, stock, lastRefreshed: turn }
+  return { prices, stock, lastRefreshed: turn, depletion: {} }
 }
 
+// Rolls a fresh market same as initializeMarket, then suppresses stock by any still-remaining
+// purchase debt (see updateSettlementDepletion in gameStore.ts) — debt decays continuously with
+// turns elapsed since the settlement was last visited, never resetting to full on a mere visit.
 export function refreshMarket(
-  _existing: SettlementMarket,
+  existing: SettlementMarket,
   turn: number,
   availableChemIds: string[],
   priceModifier = 1.0,
   stockMultiplier = 1.0,
   availabilityBonus = 0,
 ): SettlementMarket {
-  return initializeMarket(turn, availableChemIds, priceModifier, stockMultiplier, availabilityBonus)
+  const fresh = initializeMarket(turn, availableChemIds, priceModifier, stockMultiplier, availabilityBonus)
+  const turnsElapsed = Math.max(0, turn - existing.lastRefreshed)
+  const stock = { ...fresh.stock }
+  const depletion: Record<string, number> = {}
+
+  for (const [chemId, debt] of Object.entries(existing.depletion ?? {})) {
+    const chem = CHEMS[chemId]
+    if (!chem || debt <= 0) continue
+    const recoveryRate = chem.maxStock / RECOVERY_TURNS_TO_FULL
+    const remainingDebt = Math.max(0, debt - recoveryRate * turnsElapsed)
+    if (remainingDebt <= 0) continue
+    depletion[chemId] = remainingDebt
+    if (stock[chemId] !== undefined) {
+      stock[chemId] = Math.max(0, Math.floor(stock[chemId] - remainingDebt))
+    }
+  }
+
+  return { ...fresh, stock, depletion }
 }
 
 export function applyMarketEvents(

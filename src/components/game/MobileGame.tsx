@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../store/gameStore'
 import { GAME_MODES } from '../../data/modes'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
-import { applyMarketEvents } from '../../engine/market'
+import { applyMarketEvents, RECOVERY_TURNS_TO_FULL } from '../../engine/market'
 import { getAdjacentRoads, getRoadDestination, calculateCapacity, totalInventoryItems } from '../../engine/travel'
 import { inventoryBaseValue, totalGuardSalary } from '../../engine/economy'
 import { priceColor } from '../../utils/priceColor'
@@ -85,7 +85,7 @@ export default function MobileGame() {
   const rawMarket = world.settlements[player.location]
   const market = rawMarket
     ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location)
-    : { prices: {}, stock: {}, lastRefreshed: 0 }
+    : { prices: {}, stock: {}, lastRefreshed: 0, depletion: {} }
 
   const isActionBlocked = phase === 'event' || phase === 'combat' || phase === 'combat_summary' || phase === 'traveling'
 
@@ -362,6 +362,8 @@ export default function MobileGame() {
           const chem = CHEMS[chemId]
           const price = market.prices[chemId]
           const stock = market.stock[chemId] ?? 0
+          const depletion = market.depletion?.[chemId] ?? 0
+          const recoverTurns = depletion > 0 ? Math.ceil(depletion / (chem.maxStock / RECOVERY_TURNS_TO_FULL)) : 0
           const owned = player.inventory[chemId]?.quantity ?? 0
           const paidPrice = player.inventory[chemId]?.pricePaid ?? 0
           const pnlPerUnit = owned > 0 ? price - paidPrice : null
@@ -391,7 +393,7 @@ export default function MobileGame() {
               </div>
 
               <div className="px-3 pb-1 text-xs text-pip-green-dim flex gap-2">
-                <span>Stk {stock}</span>
+                <span>Stk {stock}{recoverTurns > 0 && <span className="text-pip-amber opacity-70"> (recovering ~{recoverTurns}t)</span>}</span>
                 {owned > 0 && (
                   <span>
                     Own {owned}

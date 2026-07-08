@@ -61,7 +61,7 @@ export default function Game() {
   const mc = GAME_MODES[gameState.mode]
   const settlement = mc.settlements[player.location]
   const rawMarket = world.settlements[player.location]
-  const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0 }
+  const market = rawMarket ? applyMarketEvents(rawMarket, world.activeMarketEvents, player.location) : { prices: {}, stock: {}, lastRefreshed: 0, depletion: {} }
 
   if (phase === 'game_over') {
     return <GameOverScreen gameState={gameState} onHome={() => navigate('/')} />
