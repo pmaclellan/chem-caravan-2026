@@ -251,6 +251,7 @@ export type AnimStep =
     }
   | {
       kind: 'blast'
+      shooterId: string | null   // null = player, otherwise the firing guard's id
       // Primary target (direct hit)
       primaryTargetId: string
       primaryDamage: number

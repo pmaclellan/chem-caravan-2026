@@ -346,9 +346,13 @@ describe('resolveFight — guard classes', () => {
     const shotgunner: GuardUnit = { id: 'guard_0', classId: 'shotgunner', health: 50, maxHealth: 50, dead: false }
     const player = makePlayer({ gun: null, guards: [shotgunner] })
     const combat = initiateCombat(0.9, multiEnemyMode, { raider: 1, super_mutant: 1 }, undefined, 2)
-    const { combat: result } = resolveFight(player, combat, multiEnemyMode)
+    const { combat: result, animSteps } = resolveFight(player, combat, multiEnemyMode)
     // Both enemies should have taken damage: the primary target and the splash target
     expect(result.enemies.every(e => e.health < e.maxHealth)).toBe(true)
+    // Splash must land as a single simultaneous 'blast' step, not as separate sequential 'shot' steps
+    const guardSteps = animSteps.filter(s => (s.kind === 'blast' && s.shooterId === 'guard_0') || (s.kind === 'shot' && s.by === 'guard'))
+    expect(guardSteps).toHaveLength(1)
+    expect(guardSteps[0].kind).toBe('blast')
   })
 
   it('medic auto-heals the most wounded ally once per round using a stimpak', () => {

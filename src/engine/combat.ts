@@ -296,7 +296,7 @@ export function resolveFight(
         if (isBurst) {
           burstShots.push({ targetId: target.id, hit: true, damage: dealt, targetDied: target.dead, targetHealthAfter: target.health, logLine })
         } else if (splashHits.length > 0) {
-          animSteps.push({ kind: 'blast', primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
+          animSteps.push({ kind: 'blast', shooterId: null, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
         } else {
           animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
         }
@@ -362,9 +362,10 @@ export function resolveFight(
         ? `${label} fires. Hit! (${dmg} damage) — ${target.name} is dead!`
         : `${label} fires. Hit! (${dmg} damage)`
       log.push(logLine)
-      animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
 
-      // Shotgunner: sprays into additional alive enemies at decreasing ratios
+      // Shotgunner: sprays into additional alive enemies at decreasing ratios, landing in the
+      // same instant as the primary hit (one 'blast' step) rather than as separate sequential shots
+      const splashHits: Array<{ targetId: string; damage: number; died: boolean; healthAfter: number; logLine: string }> = []
       if (classDef.splashRatios && classDef.splashRatios.length > 0) {
         const splashTargets = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
         for (let si = 0; si < Math.min(classDef.splashRatios.length, splashTargets.length); si++) {
@@ -378,8 +379,14 @@ export function resolveFight(
             ? `${label}'s spray catches ${st.name} for ${splashDmg} damage — ${st.name} is dead!`
             : `${label}'s spray catches ${st.name} for ${splashDmg} damage.`
           log.push(splashLine)
-          animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: splashDealt, targetId: st.id, targetDied: st.dead, targetHealthAfter: st.health, logLine: splashLine })
+          splashHits.push({ targetId: st.id, damage: splashDealt, died: st.dead, healthAfter: st.health, logLine: splashLine })
         }
+      }
+
+      if (splashHits.length > 0) {
+        animSteps.push({ kind: 'blast', shooterId: guardUnit.id, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
+      } else {
+        animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
       }
     } else {
       const logLine = `${label} fires. Missed.`
