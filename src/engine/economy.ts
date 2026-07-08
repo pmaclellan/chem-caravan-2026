@@ -1,8 +1,9 @@
 import type { GunDefinition } from '../data/guns'
 import type { DebtEnforcementEntry, GameModeConfig } from '../data/modes'
-import type { ArmorDefinition, GunState, InventoryEntry, PlayerState, SettlementMarket } from '../types/game'
+import type { ArmorDefinition, GunState, GuardUnit, InventoryEntry, PAGuardUnit, PlayerState, SettlementMarket } from '../types/game'
 import type { TamingToolDefinition } from '../data/mounts'
 import { CHEMS } from '../data/chems'
+import { GUARD_CLASSES } from '../data/guardClasses'
 import { calculateCapacity, totalInventoryItems } from './travel'
 
 export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
@@ -130,29 +131,44 @@ export function repayDebt(player: PlayerState, amount: number): { player: Player
 export function hireGuards(
   player: PlayerState,
   count: number,
-  guardCost: number,
   maxGuards: number,
 ): { player: PlayerState; error?: string } {
-  const available = Math.max(0, maxGuards - player.guards)
+  const aliveCount = player.guards.filter(g => !g.dead).length
+  const available = Math.max(0, maxGuards - aliveCount)
   const actual = Math.min(count, available)
   if (actual === 0) return { player, error: `Guard limit is ${maxGuards}.` }
-  const cost = actual * guardCost
+  const classDef = GUARD_CLASSES.standard
+  const cost = actual * classDef.hireCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
-  return { player: { ...player, caps: player.caps - cost, guards: player.guards + actual } }
+  let nextId = player.nextGuardId
+  const newGuards: GuardUnit[] = []
+  for (let i = 0; i < actual; i++) {
+    newGuards.push({ id: `guard_${nextId}`, classId: 'standard', health: classDef.health, maxHealth: classDef.health, dead: false })
+    nextId++
+  }
+  return { player: { ...player, caps: player.caps - cost, guards: [...player.guards, ...newGuards], nextGuardId: nextId } }
 }
 
 export function buyPowerArmorGuard(
   player: PlayerState,
   count: number,
   paGuardCost: number,
+  paGuardHealth: number,
   maxPAGuards: number,
 ): { player: PlayerState; error?: string } {
-  const available = Math.max(0, maxPAGuards - (player.powerArmorGuards ?? 0))
+  const aliveCount = player.paGuards.filter(g => !g.dead).length
+  const available = Math.max(0, maxPAGuards - aliveCount)
   const actual = Math.min(count, available)
   if (actual === 0) return { player, error: `Power armor guard limit is ${maxPAGuards}.` }
   const cost = actual * paGuardCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
-  return { player: { ...player, caps: player.caps - cost, powerArmorGuards: (player.powerArmorGuards ?? 0) + actual } }
+  let nextId = player.nextGuardId
+  const newPAGuards: PAGuardUnit[] = []
+  for (let i = 0; i < actual; i++) {
+    newPAGuards.push({ id: `pa_guard_${nextId}`, health: paGuardHealth, maxHealth: paGuardHealth, dead: false })
+    nextId++
+  }
+  return { player: { ...player, caps: player.caps - cost, paGuards: [...player.paGuards, ...newPAGuards], nextGuardId: nextId } }
 }
 
 export function buyBrahmin(
@@ -336,7 +352,13 @@ export function inventoryBaseValue(inventory: PlayerState['inventory']): number 
 }
 
 export function totalGuardSalary(player: PlayerState, mc: GameModeConfig): number {
-  return player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
+  const guardSalary = player.guards.filter(g => !g.dead).reduce((sum, g) => sum + GUARD_CLASSES[g.classId].salaryPerTurn, 0)
+  const paSalary = player.paGuards.filter(g => !g.dead).length * mc.powerArmorGuardSalaryPerTurn
+  return guardSalary + paSalary
+}
+
+function guardSalaryTotal(guards: GuardUnit[], paGuards: PAGuardUnit[], mc: GameModeConfig): number {
+  return guards.reduce((sum, g) => sum + GUARD_CLASSES[g.classId].salaryPerTurn, 0) + paGuards.length * mc.powerArmorGuardSalaryPerTurn
 }
 
 export function applyGuardSalary(
@@ -347,12 +369,14 @@ export function applyGuardSalary(
   if (salary === 0) return { player, logs: [] }
 
   const logs: Array<{ message: string; type: 'info' | 'danger' }> = []
+  const aliveGuardCount = player.guards.filter(g => !g.dead).length
+  const alivePACount = player.paGuards.filter(g => !g.dead).length
 
   // Can pay outright
   if (player.caps >= salary) {
     return {
       player: { ...player, caps: player.caps - salary },
-      logs: [{ message: `Guard salary paid: -${salary} ¤ (${player.guards}g${(player.powerArmorGuards ?? 0) > 0 ? ` +${player.powerArmorGuards}PA` : ''})`, type: 'info' }],
+      logs: [{ message: `Guard salary paid: -${salary} ¤ (${aliveGuardCount}g${alivePACount > 0 ? ` +${alivePACount}PA` : ''})`, type: 'info' }],
     }
   }
 
@@ -365,27 +389,32 @@ export function applyGuardSalary(
     }
   }
 
-  // Can't cover — desert cheapest guards first until the remainder is affordable
-  let guards    = player.guards
-  let paGuards  = player.powerArmorGuards ?? 0
+  // Can't cover — desert regular guards first (highest-salary class first), then PA guards, until affordable
+  let guards   = player.guards.filter(g => !g.dead)
+  let paGuards = player.paGuards.filter(g => !g.dead)
   let deserted  = 0
   let paDeserted = 0
 
-  while (guards + paGuards > 0) {
-    const remaining = guards * mc.guardSalaryPerTurn + paGuards * mc.powerArmorGuardSalaryPerTurn
-    if (player.caps + inventoryBaseValue(player.inventory) >= remaining) break
-    if (guards > 0) { guards--; deserted++ }
-    else             { paGuards--; paDeserted++ }
+  while (guards.length + paGuards.length > 0) {
+    if (player.caps + inventoryBaseValue(player.inventory) >= guardSalaryTotal(guards, paGuards, mc)) break
+    if (guards.length > 0) {
+      const worst = [...guards].sort((a, b) => GUARD_CLASSES[b.classId].salaryPerTurn - GUARD_CLASSES[a.classId].salaryPerTurn)[0]
+      guards = guards.filter(g => g.id !== worst.id)
+      deserted++
+    } else {
+      paGuards = paGuards.slice(0, -1)
+      paDeserted++
+    }
   }
 
   if (deserted > 0)   logs.push({ message: `${deserted} guard${deserted > 1 ? 's' : ''} deserted — couldn't cover their salary.`, type: 'danger' })
   if (paDeserted > 0) logs.push({ message: `${paDeserted} Power Armor guard${paDeserted > 1 ? 's' : ''} deserted — couldn't cover their salary.`, type: 'danger' })
 
-  const remainingSalary = guards * mc.guardSalaryPerTurn + paGuards * mc.powerArmorGuardSalaryPerTurn
+  const remainingSalary = guardSalaryTotal(guards, paGuards, mc)
   const updatedPlayer: PlayerState = {
     ...player,
     guards,
-    powerArmorGuards: paGuards,
+    paGuards,
     caps: Math.max(0, player.caps - remainingSalary),
   }
 

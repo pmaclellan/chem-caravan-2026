@@ -1,11 +1,15 @@
 import type { PlayerState } from '../../../types/game'
 import { GAME_MODES } from '../../../data/modes'
+import { GUARD_CLASSES } from '../../../data/guardClasses'
 import { useGameStore } from '../../../store/gameStore'
 import { totalGuardSalary, inventoryBaseValue } from '../../../engine/economy'
 
 export function FollowersPanel({ player }: { player: PlayerState }) {
   const mc   = useGameStore(s => s.gameState ? GAME_MODES[s.gameState.mode] : GAME_MODES['commonwealth'])
   const store = useGameStore()
+  const standardClass = GUARD_CLASSES.standard
+  const aliveGuardCount = player.guards.filter(g => !g.dead).length
+  const alivePAGuardCount = player.paGuards.filter(g => !g.dead).length
 
   const salary      = totalGuardSalary(player, mc)
   const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : Infinity
@@ -64,25 +68,25 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
         <div className="flex items-baseline justify-between">
           <div className="pip-label">GUARDS</div>
           <div className="text-[10px] font-mono text-pip-green-dim">
-            {mc.guardCost} ¤ hire · {mc.guardSalaryPerTurn} ¤/turn
+            {standardClass.hireCost} ¤ hire · {standardClass.salaryPerTurn} ¤/turn
           </div>
         </div>
         <div className="text-xs text-pip-green-dim">
-          {player.guards} / {mc.maxGuards} · Absorbs {mc.guardHealth} HP · improves escape odds
+          {aliveGuardCount} / {mc.maxGuards} · {standardClass.health} HP each · improves escape odds
         </div>
         <div className="flex gap-2 flex-wrap">
           {[1, 2, 3].map(n => (
             <button
               key={n}
               className="pip-btn text-xs"
-              disabled={player.guards >= mc.maxGuards || player.caps < n * mc.guardCost}
+              disabled={aliveGuardCount >= mc.maxGuards || player.caps < n * standardClass.hireCost}
               onClick={() => store.hireguards(n)}
             >
-              HIRE {n} ({(n * mc.guardCost).toLocaleString()} ¤)
+              HIRE {n} ({(n * standardClass.hireCost).toLocaleString()} ¤)
             </button>
           ))}
         </div>
-        {player.guards >= mc.maxGuards && (
+        {aliveGuardCount >= mc.maxGuards && (
           <div className="text-xs text-pip-green-dim">Guard roster is full.</div>
         )}
       </div>
@@ -96,21 +100,21 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
           </div>
         </div>
         <div className="text-xs text-pip-green-dim">
-          {player.powerArmorGuards ?? 0} / {mc.maxPowerArmorGuards} · Absorbs {mc.powerArmorGuardHealth} HP — elite protection
+          {alivePAGuardCount} / {mc.maxPowerArmorGuards} · {mc.powerArmorGuardHealth} HP each — elite protection
         </div>
         <div className="flex gap-2 flex-wrap">
           {[1, 2].map(n => (
             <button
               key={n}
               className="pip-btn-amber text-xs"
-              disabled={(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards || player.caps < n * mc.powerArmorGuardCost}
+              disabled={alivePAGuardCount >= mc.maxPowerArmorGuards || player.caps < n * mc.powerArmorGuardCost}
               onClick={() => store.purchasePowerArmorGuard(n)}
             >
               HIRE {n} ({(n * mc.powerArmorGuardCost).toLocaleString()} ¤)
             </button>
           ))}
         </div>
-        {(player.powerArmorGuards ?? 0) >= mc.maxPowerArmorGuards && (
+        {alivePAGuardCount >= mc.maxPowerArmorGuards && (
           <div className="text-xs text-pip-green-dim">Power armor roster is full.</div>
         )}
       </div>

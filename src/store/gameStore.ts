@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import pkg from '../../package.json'
 import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
+import { GUARD_CLASSES } from '../data/guardClasses'
 import type { AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
 import {
   initializeGame,
@@ -148,16 +149,42 @@ const VALID_MODES = new Set<GameModeId>(['commonwealth', 'capital_wasteland', 'm
 // Coerce missing or invalid fields for backward compatibility with old saves.
 function normalizeState(state: GameState): GameState {
   const mode = VALID_MODES.has(state.mode) ? state.mode : 'commonwealth'
+  const mc = GAME_MODES[mode]
+
+  // Pre-overhaul saves stored guards/powerArmorGuards as plain counts. Migrate them to
+  // full-HP unit arrays — legacy guards all become 'standard' class, the only one that existed.
+  const legacyPlayer = state.player as unknown as { guards?: unknown; powerArmorGuards?: unknown; paGuards?: unknown; nextGuardId?: number }
+  const guards: PlayerState['guards'] = Array.isArray(legacyPlayer.guards)
+    ? (legacyPlayer.guards as PlayerState['guards'])
+    : Array.from({ length: typeof legacyPlayer.guards === 'number' ? legacyPlayer.guards : 0 }, (_, i) => ({
+        id: `guard_legacy_${i}`,
+        classId: 'standard' as const,
+        health: GUARD_CLASSES.standard.health,
+        maxHealth: GUARD_CLASSES.standard.health,
+        dead: false,
+      }))
+  const paGuards: PlayerState['paGuards'] = Array.isArray(legacyPlayer.paGuards)
+    ? (legacyPlayer.paGuards as PlayerState['paGuards'])
+    : Array.from({ length: typeof legacyPlayer.powerArmorGuards === 'number' ? legacyPlayer.powerArmorGuards : 0 }, (_, i) => ({
+        id: `pa_guard_legacy_${i}`,
+        health: mc.powerArmorGuardHealth,
+        maxHealth: mc.powerArmorGuardHealth,
+        dead: false,
+      }))
+  const nextGuardId = legacyPlayer.nextGuardId ?? (guards.length + paGuards.length)
+
   return {
     ...state,
     mode,
     gameType: state.gameType ?? 'standard',
     player: {
       ...state.player,
+      guards,
+      paGuards,
+      nextGuardId,
       armor: state.player.armor ?? null,
       xp: state.player.xp ?? 0,
       visitedSettlements: state.player.visitedSettlements ?? [],
-      powerArmorGuards: state.player.powerArmorGuards ?? 0,
       tamingTool: state.player.tamingTool ?? null,
       hasSaddle: state.player.hasSaddle ?? false,
       mount: state.player.mount ?? null,
@@ -175,6 +202,11 @@ function normalizeState(state: GameState): GameState {
         )
       })(),
     },
+    combat: state.combat ? {
+      ...state.combat,
+      activeBuffs: state.combat.activeBuffs ?? [],
+      chemUsedThisRound: state.combat.chemUsedThisRound ?? false,
+    } : state.combat,
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
     stats: state.stats ? { ...initStats(), ...state.stats } : initStats(),
@@ -483,8 +515,9 @@ export const useGameStore = create<GameStore>((set, get) => {
               forfeitCaps?: number
               forfeitChems?: Record<string, number>
             }
+            const aliveGuardCount = state.player.guards.filter(g => !g.dead).length
             const runChance = Math.min(0.9, Math.max(0.1,
-              0.40 + state.player.guards * 0.10 - state.player.brahmin * 0.05
+              0.40 + aliveGuardCount * 0.10 - state.player.brahmin * 0.05
             ))
             const dest = state.pendingDestination ?? state.player.location
             if (rng() < runChance) {
@@ -950,7 +983,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     hireguards: (count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = hireGuards(state.player, count, mc.guardCost, mc.maxGuards)
+        const { player, error } = hireGuards(state.player, count, mc.maxGuards)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Hired ${count} guard${count > 1 ? 's' : ''}.`, type: 'info' as const }]
         return { ...state, player, log }
@@ -960,7 +993,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     purchasePowerArmorGuard: (count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.maxPowerArmorGuards)
+        const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.powerArmorGuardHealth, mc.maxPowerArmorGuards)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Fitted ${count} guard${count > 1 ? 's' : ''} with power armor.`, type: 'info' as const }]
         return { ...state, player, log }

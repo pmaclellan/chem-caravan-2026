@@ -24,8 +24,9 @@ export default function EventPanel({ event, player }: Props) {
     mode === 'mojave_wasteland'  ? 'Legion Assassins' :
     'Triggermen'
 
+  const aliveGuardCount = player.guards.filter(g => !g.dead).length
   const runChance = Math.round(
-    Math.min(0.9, Math.max(0.1, 0.40 + player.guards * 0.10 - player.brahmin * 0.05)) * 100
+    Math.min(0.9, Math.max(0.1, 0.40 + aliveGuardCount * 0.10 - player.brahmin * 0.05)) * 100
   )
 
   return (
@@ -155,7 +156,7 @@ export default function EventPanel({ event, player }: Props) {
 
       {event.type === 'brotherhood_checkpoint' && (() => {
         const { toll } = event.payload as { toll: number; enemyTypeId?: string }
-        const hasFightingChance = !!player.gun && player.guards >= 2
+        const hasFightingChance = !!player.gun && aliveGuardCount >= 2
         return (
           <div className="flex flex-col gap-3">
             <div className="text-pip-green-dim text-sm">
@@ -178,7 +179,7 @@ export default function EventPanel({ event, player }: Props) {
                 TURN BACK
               </button>
               <button className="pip-btn-danger flex-1" onClick={() => resolveEvent('fight')}>
-                FIGHT ({player.guards} guards{player.gun ? `, ${player.gun.name}` : ', no gun'})
+                FIGHT ({aliveGuardCount} guards{player.gun ? `, ${player.gun.name}` : ', no gun'})
               </button>
             </div>
           </div>

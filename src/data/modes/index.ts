@@ -51,12 +51,7 @@ export interface GameModeConfig {
   baseCapacity: number
   capacityPerBrahmin: number
   debtEnforcement: DebtEnforcementEntry[]
-  guardCost: number
-  guardSalaryPerTurn: number
-  guardHealth: number       // HP absorbed per guard per attack as mitigation
-  guardAccuracy: number     // hit chance for each guard's attack roll
-  guardDamage: [number, number]
-  maxGuards: number
+  maxGuards: number         // regular-guard roster cap; per-class cost/salary/health/accuracy live in GUARD_CLASSES
   powerArmorGuardCost: number
   powerArmorGuardSalaryPerTurn: number
   powerArmorGuardHealth: number
@@ -84,7 +79,7 @@ export interface GameModeConfig {
   surplusMultiplierMax: number
   // enemies — identity/loot only; health/damage per enemy in enemyStats
   enemies: EnemyType[]
-  enemyStats: Record<string, { health: number; damage: [number, number]; xpReward: number }>
+  enemyStats: Record<string, { health: number; damage: [number, number]; xpReward: number; accuracy?: number }>
   // chems available in this mode's markets (subset of global CHEMS registry)
   availableChemIds: string[]
   // world data — mode-specific settlements, roads, guns, armor
@@ -119,11 +114,6 @@ const COMMONWEALTH_MODE: GameModeConfig = {
     { age: 10, damage: 50,  message: "They're back, and less patient this time. They break two ribs." },
     { age: 12, damage: 999, message: "The last thing you see is the caps logo on a Triggerman's ring." },
   ],
-  guardCost: 150,
-  guardSalaryPerTurn: 35,
-  guardHealth: 50,
-  guardAccuracy: 0.55,
-  guardDamage: [20, 35],
   maxGuards: 5,
   powerArmorGuardCost: 800,
   powerArmorGuardSalaryPerTurn: 100,
