@@ -1,15 +1,15 @@
 import type { PlayerState } from '../../../types/game'
 import { GAME_MODES } from '../../../data/modes'
-import { GUARD_CLASSES } from '../../../data/guardClasses'
+import { GUARD_CLASSES, GUARD_CLASS_IDS } from '../../../data/guardClasses'
 import { useGameStore } from '../../../store/gameStore'
 import { totalGuardSalary, inventoryBaseValue } from '../../../engine/economy'
 
 export function FollowersPanel({ player }: { player: PlayerState }) {
   const mc   = useGameStore(s => s.gameState ? GAME_MODES[s.gameState.mode] : GAME_MODES['commonwealth'])
   const store = useGameStore()
-  const standardClass = GUARD_CLASSES.standard
   const aliveGuardCount = player.guards.filter(g => !g.dead).length
   const alivePAGuardCount = player.paGuards.filter(g => !g.dead).length
+  const rosterFull = aliveGuardCount >= mc.maxGuards
 
   const salary      = totalGuardSalary(player, mc)
   const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : Infinity
@@ -63,30 +63,45 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
         )}
       </div>
 
-      {/* ── Regular guards ───────────────────────────────────────────────── */}
+      {/* ── Regular guards — pick a class per hire ────────────────────────── */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
           <div className="pip-label">GUARDS</div>
-          <div className="text-[10px] font-mono text-pip-green-dim">
-            {standardClass.hireCost} ¤ hire · {standardClass.salaryPerTurn} ¤/turn
-          </div>
+          <div className="text-[10px] font-mono text-pip-green-dim">{aliveGuardCount} / {mc.maxGuards} · improves escape odds</div>
         </div>
-        <div className="text-xs text-pip-green-dim">
-          {aliveGuardCount} / {mc.maxGuards} · {standardClass.health} HP each · improves escape odds
+        <div className="space-y-2">
+          {GUARD_CLASS_IDS.map(classId => {
+            const def = GUARD_CLASSES[classId]
+            const countOfClass = player.guards.filter(g => !g.dead && g.classId === classId).length
+            return (
+              <div key={classId} className="border border-pip-border-dim rounded p-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-pip-green font-display text-sm">
+                    {def.name}{countOfClass > 0 ? ` (${countOfClass})` : ''}
+                  </span>
+                  <span className="text-[10px] font-mono text-pip-green-dim">{def.hireCost} ¤ hire · {def.salaryPerTurn} ¤/turn</span>
+                </div>
+                <div className="text-[10px] text-pip-green-dim mb-1">{def.description}</div>
+                <div className="text-[10px] text-pip-green-dim mb-1.5">
+                  Acc {Math.round(def.accuracy * 100)}% · Dmg {def.damage[0]}-{def.damage[1]} · {def.health} HP
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {[1, 2].map(n => (
+                    <button
+                      key={n}
+                      className="pip-btn text-xs"
+                      disabled={rosterFull || player.caps < n * def.hireCost}
+                      onClick={() => store.hireguards(classId, n)}
+                    >
+                      HIRE {n} ({(n * def.hireCost).toLocaleString()} ¤)
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {[1, 2, 3].map(n => (
-            <button
-              key={n}
-              className="pip-btn text-xs"
-              disabled={aliveGuardCount >= mc.maxGuards || player.caps < n * standardClass.hireCost}
-              onClick={() => store.hireguards(n)}
-            >
-              HIRE {n} ({(n * standardClass.hireCost).toLocaleString()} ¤)
-            </button>
-          ))}
-        </div>
-        {aliveGuardCount >= mc.maxGuards && (
+        {rosterFull && (
           <div className="text-xs text-pip-green-dim">Guard roster is full.</div>
         )}
       </div>

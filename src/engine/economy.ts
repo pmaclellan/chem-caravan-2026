@@ -1,6 +1,6 @@
 import type { GunDefinition } from '../data/guns'
 import type { DebtEnforcementEntry, GameModeConfig } from '../data/modes'
-import type { ArmorDefinition, GunState, GuardUnit, InventoryEntry, PAGuardUnit, PlayerState, SettlementMarket } from '../types/game'
+import type { ArmorDefinition, GuardClassId, GunState, GuardUnit, InventoryEntry, PAGuardUnit, PlayerState, SettlementMarket } from '../types/game'
 import type { TamingToolDefinition } from '../data/mounts'
 import { CHEMS } from '../data/chems'
 import { GUARD_CLASSES } from '../data/guardClasses'
@@ -130,6 +130,7 @@ export function repayDebt(player: PlayerState, amount: number): { player: Player
 
 export function hireGuards(
   player: PlayerState,
+  classId: GuardClassId,
   count: number,
   maxGuards: number,
 ): { player: PlayerState; error?: string } {
@@ -137,13 +138,13 @@ export function hireGuards(
   const available = Math.max(0, maxGuards - aliveCount)
   const actual = Math.min(count, available)
   if (actual === 0) return { player, error: `Guard limit is ${maxGuards}.` }
-  const classDef = GUARD_CLASSES.standard
+  const classDef = GUARD_CLASSES[classId]
   const cost = actual * classDef.hireCost
   if (player.caps < cost) return { player, error: "Not enough caps." }
   let nextId = player.nextGuardId
   const newGuards: GuardUnit[] = []
   for (let i = 0; i < actual; i++) {
-    newGuards.push({ id: `guard_${nextId}`, classId: 'standard', health: classDef.health, maxHealth: classDef.health, dead: false })
+    newGuards.push({ id: `guard_${nextId}`, classId, health: classDef.health, maxHealth: classDef.health, dead: false })
     nextId++
   }
   return { player: { ...player, caps: player.caps - cost, guards: [...player.guards, ...newGuards], nextGuardId: nextId } }
