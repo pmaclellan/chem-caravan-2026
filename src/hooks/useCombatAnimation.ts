@@ -367,13 +367,21 @@ export function useCombatAnimation(
         offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
 
       } else if (step.kind === 'blast') {
-        // ── Blast (e.g. missile launcher) — primary + splash land simultaneously ──
-        workingAmmo = Math.max(0, workingAmmo - 1)
+        // ── Blast (missile launcher, shotgunner spray) — primary + splash land simultaneously ──
+        const shooterId = step.shooterId
+        if (shooterId === null) {
+          workingAmmo = Math.max(0, workingAmmo - 1)
+        }
         const ammoAtShot = workingAmmo
 
-        // Player fires
+        // Shooter fires — player (ammo + player glow) or a guard (fire-glow, no ammo)
         timersRef.current.push(setTimeout(() => {
-          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+          if (shooterId === null) {
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+          } else {
+            workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
+            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+          }
         }, offset))
 
         // All targets react at the same moment
