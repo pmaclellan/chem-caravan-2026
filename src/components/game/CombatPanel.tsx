@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ActiveBuff, CombatState, PlayerState } from '../../types/game'
+import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { useCombatAnimation } from '../../hooks/useCombatAnimation'
@@ -7,20 +7,13 @@ import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
 import GuardUnitCard from './GuardUnitCard'
+import BuffBadge from './BuffBadge'
+import { findBuff } from './buffInfo'
 import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
 import { CHEMS } from '../../data/chems'
 import { runEscapeChance } from '../../engine/tuning'
-
-function findBuff(activeBuffs: ActiveBuff[], targetKind: 'player' | 'guard' | 'pa_guard', targetId: string): { text: string; color: string } | null {
-  const buff = activeBuffs.find(b => b.targetKind === targetKind && b.targetId === targetId)
-  if (!buff) return null
-  return {
-    text: `${buff.chemId.toUpperCase()} · ${buff.roundsRemaining}`,
-    color: buff.chemId === 'ultrajet' ? 'var(--pip-blue)' : 'var(--pip-amber)',
-  }
-}
 
 const KEYFRAMES = `
   @keyframes mountFire {
@@ -115,66 +108,119 @@ function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
 }
 
 const COMBAT_CHEM_IDS = ['stimpak', 'jet', 'ultrajet'] as const
+type CombatChemId = typeof COMBAT_CHEM_IDS[number]
+
+const CHEM_COLOR: Record<CombatChemId, string> = {
+  stimpak: 'var(--pip-green)',
+  jet: 'var(--pip-amber)',
+  ultrajet: 'var(--pip-blue)',
+}
+
+// Cross for the heal, the same bolt used on BuffBadge for the two accuracy chems —
+// one glyph per effect, so the badge that later appears on a buffed unit visually
+// traces back to the chem that caused it.
+function ChemIcon({ chemId, size = 13 }: { chemId: CombatChemId; size?: number }) {
+  const color = CHEM_COLOR[chemId]
+  if (chemId === 'stimpak') {
+    return (
+      <svg viewBox="0 0 24 24" width={size} height={size} fill={color}>
+        <path d="M11 3h2v7h7v2h-7v9h-2v-9H4v-2h7z" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill={color}>
+      <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+    </svg>
+  )
+}
 
 interface ChemTarget { kind: 'player' | 'guard' | 'pa_guard'; id: string }
 
 function FieldMedicinePanel({ player, combat }: { player: PlayerState; combat: CombatState }) {
   const { useStimpakInCombat, useJetInCombat, useUltrajetInCombat } = useGameStore()
-  const [target, setTarget] = useState<ChemTarget>({ kind: 'player', id: 'player' })
+  const [armedChem, setArmedChem] = useState<CombatChemId | null>(null)
+
+  // A chem used up mid-round (by us or an auto-Medic) can't stay armed for a target we'll never reach.
+  useEffect(() => {
+    if (combat.chemUsedThisRound) setArmedChem(null)
+  }, [combat.chemUsedThisRound])
 
   const owned = COMBAT_CHEM_IDS.filter(id => (player.inventory[id]?.quantity ?? 0) > 0)
   if (owned.length === 0) return null
 
-  const targets: Array<ChemTarget & { label: string }> = [
-    { kind: 'player', id: 'player', label: 'YOU' },
-    ...player.guards.filter(g => !g.dead).map((g, i) => ({ kind: 'guard' as const, id: g.id, label: `G${i + 1}` })),
-    ...player.paGuards.filter(g => !g.dead).map((g, i) => ({ kind: 'pa_guard' as const, id: g.id, label: `PA${i + 1}` })),
+  const targets: Array<ChemTarget & { label: string; atFullHealth: boolean }> = [
+    { kind: 'player', id: 'player', label: 'YOU', atFullHealth: player.health >= player.maxHealth },
+    ...player.guards.filter(g => !g.dead).map((g, i) => ({ kind: 'guard' as const, id: g.id, label: `G${i + 1}`, atFullHealth: g.health >= g.maxHealth })),
+    ...player.paGuards.filter(g => !g.dead).map((g, i) => ({ kind: 'pa_guard' as const, id: g.id, label: `PA${i + 1}`, atFullHealth: g.health >= g.maxHealth })),
   ]
 
-  const actionFor: Record<typeof COMBAT_CHEM_IDS[number], (kind: ChemTarget['kind'], id: string) => void> = {
+  const actionFor: Record<CombatChemId, (kind: ChemTarget['kind'], id: string) => void> = {
     stimpak: useStimpakInCombat,
     jet: useJetInCombat,
     ultrajet: useUltrajetInCombat,
   }
 
+  const applyTo = (t: ChemTarget) => {
+    if (!armedChem) return
+    actionFor[armedChem](t.kind, t.id)
+    setArmedChem(null)
+  }
+
   return (
     <div className="border border-pip-border rounded p-3">
       <div className="pip-label mb-2">Field Medicine</div>
-      <div className="flex gap-1 flex-wrap mb-2">
-        {targets.map(t => {
-          const selected = target.kind === t.kind && target.id === t.id
+
+      <div className="flex gap-2 flex-wrap">
+        {owned.map(chemId => {
+          const chem = CHEMS[chemId]
+          const qty = player.inventory[chemId]?.quantity ?? 0
+          const isArmed = armedChem === chemId
           return (
             <button
-              key={`${t.kind}-${t.id}`}
-              className="pip-btn text-xs px-2 py-0.5"
-              style={selected ? { borderColor: 'var(--pip-amber)', color: 'var(--pip-amber)' } : undefined}
-              onClick={() => setTarget({ kind: t.kind, id: t.id })}
+              key={chemId}
+              className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border font-mono transition-colors ${!isArmed ? 'hover:bg-pip-border-dim' : ''}`}
+              disabled={combat.chemUsedThisRound}
+              style={{
+                borderColor: isArmed ? CHEM_COLOR[chemId] : 'var(--pip-border)',
+                backgroundColor: isArmed ? 'var(--pip-border-dim)' : undefined,
+                opacity: combat.chemUsedThisRound ? 0.5 : 1,
+              }}
+              onClick={() => setArmedChem(isArmed ? null : chemId)}
             >
-              {t.label}
+              <ChemIcon chemId={chemId} />
+              <span className="text-pip-green-dim">{chem.name} × {qty}</span>
             </button>
           )
         })}
       </div>
-      <div className="space-y-1.5">
-        {owned.map(chemId => {
-          const chem = CHEMS[chemId]
-          const qty = player.inventory[chemId]?.quantity ?? 0
-          return (
-            <div key={chemId} className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-pip-green-dim">{chem.name} × {qty}</span>
-              <button
-                className="pip-btn-amber text-xs px-2 py-0.5"
-                disabled={combat.chemUsedThisRound}
-                onClick={() => actionFor[chemId](target.kind, target.id)}
-              >
-                USE
-              </button>
-            </div>
-          )
-        })}
-      </div>
+
+      {armedChem && !combat.chemUsedThisRound && (
+        <div className="border-t border-pip-border-dim mt-2 pt-2">
+          <div className="text-[10px] font-mono text-pip-green-dim mb-1.5 flex items-center gap-1">
+            <ChemIcon chemId={armedChem} size={10} /> APPLY {CHEMS[armedChem].name.toUpperCase()} TO
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {targets.map(t => {
+              const wasted = armedChem === 'stimpak' && t.atFullHealth
+              return (
+                <button
+                  key={`${t.kind}-${t.id}`}
+                  className="pip-btn-amber text-xs px-2.5 py-1"
+                  disabled={wasted}
+                  title={wasted ? 'Already at full health' : undefined}
+                  onClick={() => applyTo(t)}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {combat.chemUsedThisRound && (
-        <div className="mt-1.5 text-[10px] text-pip-amber">Already treated this round.</div>
+        <div className="mt-2 text-[10px] text-pip-amber">Already treated this round.</div>
       )}
     </div>
   )
@@ -375,16 +421,14 @@ export default function CombatPanel({ player, combat }: Props) {
                     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
                       <path d="M6.02958 19.4012C5.97501 19.9508 6.3763 20.4405 6.92589 20.4951C7.47547 20.5497 7.96523 20.1484 8.01979 19.5988L6.02958 19.4012ZM15.9802 19.5988C16.0348 20.1484 16.5245 20.5497 17.0741 20.4951C17.6237 20.4405 18.025 19.9508 17.9704 19.4012L15.9802 19.5988ZM20 12C20 16.4183 16.4183 20 12 20V22C17.5228 22 22 17.5228 22 12H20ZM12 20C7.58172 20 4 16.4183 4 12H2C2 17.5228 6.47715 22 12 22V20ZM4 12C4 7.58172 7.58172 4 12 4V2C6.47715 2 2 6.47715 2 12H4ZM12 4C16.4183 4 20 7.58172 20 12H22C22 6.47715 17.5228 2 12 2V4ZM13 10C13 10.5523 12.5523 11 12 11V13C13.6569 13 15 11.6569 15 10H13ZM12 11C11.4477 11 11 10.5523 11 10H9C9 11.6569 10.3431 13 12 13V11ZM11 10C11 9.44772 11.4477 9 12 9V7C10.3431 7 9 8.34315 9 10H11ZM12 9C12.5523 9 13 9.44772 13 10H15C15 8.34315 13.6569 7 12 7V9ZM8.01979 19.5988C8.22038 17.5785 9.92646 16 12 16V14C8.88819 14 6.33072 16.3681 6.02958 19.4012L8.01979 19.5988ZM12 16C14.0735 16 15.7796 17.5785 15.9802 19.5988L17.9704 19.4012C17.6693 16.3681 15.1118 14 12 14V16Z" />
                     </svg>
+                    {(() => {
+                      const buff = findBuff(combat.activeBuffs, 'player', 'player')
+                      return buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />
+                    })()}
                   </div>
                   <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
                     <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
                   </div>
-                  {(() => {
-                    const buff = findBuff(combat.activeBuffs, 'player', 'player')
-                    return buff && (
-                      <div className="text-center font-mono leading-none" style={{ fontSize: '0.55rem', color: buff.color }}>{buff.text}</div>
-                    )
-                  })()}
                   <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>YOU</div>
                 </div>
               )

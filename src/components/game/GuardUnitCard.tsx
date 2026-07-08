@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import type { GuardUnit, PAGuardUnit } from '../../types/game'
 import { FlashOverlay } from '../ui/FlashOverlay'
+import BuffBadge from './BuffBadge'
+import type { BuffInfo } from './buffInfo'
 
 const GUARD_CARD_CSS = `
   @keyframes guardCardFire {
@@ -26,7 +28,7 @@ interface Props {
   fireFlashKey: number        // this unit fired at an enemy
   damageFlashKey: number      // this unit took a hit
   dodgeFlashKey: number       // this unit dodged an attack
-  buff?: { text: string; color: string } | null  // active Jet/Ultrajet accuracy buff, if any
+  buff?: BuffInfo | null      // active Jet/Ultrajet accuracy buff, if any
 }
 
 export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff }: Props) {
@@ -64,15 +66,11 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
         {dead && (
           <span className="absolute inset-0 flex items-center justify-center text-xl" style={{ color: 'var(--pip-red)' }} title="Down">☠</span>
         )}
+        {!dead && buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />}
       </div>
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         {!dead && <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />}
       </div>
-      {!dead && buff && (
-        <div className="text-center font-mono leading-none" style={{ fontSize: '0.55rem', color: buff.color }}>
-          {buff.text}
-        </div>
-      )}
       <div className="text-center" style={{ fontSize: '0.6rem', color, opacity: 0.7 }}>{label}</div>
     </div>
   )
