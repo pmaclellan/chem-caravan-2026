@@ -7,6 +7,7 @@ import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
 import GuardUnitCard from './GuardUnitCard'
+import GuardClassIcon from './guardClassIcons'
 import BuffBadge from './BuffBadge'
 import { findBuff } from './buffInfo'
 import TamingMinigame from './TamingMinigame'
@@ -226,12 +227,6 @@ function FieldMedicinePanel({ player, combat }: { player: PlayerState; combat: C
   )
 }
 
-const GUARD_ICON = (
-  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
-    <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
-  </svg>
-)
-
 const PA_GUARD_ICON = (
   <svg viewBox="0 0 100 100" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
     <g transform="translate(0,100) scale(0.1,-0.1)">
@@ -443,7 +438,7 @@ export default function CombatPanel({ player, combat }: Props) {
                   unit={displayUnit}
                   label="GUARD"
                   color="var(--pip-green)"
-                  icon={GUARD_ICON}
+                  icon={<GuardClassIcon classId={g.classId} color="var(--pip-green)" />}
                   fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
