@@ -172,6 +172,21 @@ export function buyPowerArmorGuard(
   return { player: { ...player, caps: player.caps - cost, paGuards: [...player.paGuards, ...newPAGuards], nextGuardId: nextId } }
 }
 
+export function dismissGuard(player: PlayerState, guardId: string): { player: PlayerState; error?: string } {
+  if (!player.guards.some(g => g.id === guardId)) return { player, error: "That guard isn't in your roster." }
+  return { player: { ...player, guards: player.guards.filter(g => g.id !== guardId) } }
+}
+
+export function dismissPAGuard(player: PlayerState, guardId: string): { player: PlayerState; error?: string } {
+  if (!player.paGuards.some(g => g.id === guardId)) return { player, error: "That guard isn't in your roster." }
+  return { player: { ...player, paGuards: player.paGuards.filter(g => g.id !== guardId) } }
+}
+
+export function dismissMount(player: PlayerState): { player: PlayerState; error?: string } {
+  if (!player.mount) return { player, error: "You don't have a mount." }
+  return { player: { ...player, mount: null } }
+}
+
 export function buyBrahmin(
   player: PlayerState,
   count: number,

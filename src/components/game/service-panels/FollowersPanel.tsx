@@ -104,6 +104,24 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
         {rosterFull && (
           <div className="text-xs text-pip-green-dim">Guard roster is full.</div>
         )}
+        {aliveGuardCount > 0 && (
+          <div className="space-y-1 pt-1">
+            <div className="text-[10px] font-mono text-pip-green-dim">CURRENT ROSTER</div>
+            {player.guards.filter(g => !g.dead).map((g, i) => {
+              const def = GUARD_CLASSES[g.classId]
+              return (
+                <div key={g.id} className="flex items-center justify-between gap-2 text-xs border border-pip-border-dim rounded px-2 py-1">
+                  <span className="text-pip-green-dim">
+                    {def.name} #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP)</span>
+                  </span>
+                  <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissGuard(g.id)}>
+                    DISMISS
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Power Armor guards ───────────────────────────────────────────── */}
@@ -131,6 +149,21 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
         </div>
         {alivePAGuardCount >= mc.maxPowerArmorGuards && (
           <div className="text-xs text-pip-green-dim">Power armor roster is full.</div>
+        )}
+        {alivePAGuardCount > 0 && (
+          <div className="space-y-1 pt-1">
+            <div className="text-[10px] font-mono text-pip-green-dim">CURRENT ROSTER</div>
+            {player.paGuards.filter(g => !g.dead).map((g, i) => (
+              <div key={g.id} className="flex items-center justify-between gap-2 text-xs border border-pip-border-dim rounded px-2 py-1">
+                <span className="text-pip-green-dim">
+                  PA Guard #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP)</span>
+                </span>
+                <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissPAGuard(g.id)}>
+                  DISMISS
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
