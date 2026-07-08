@@ -14,6 +14,7 @@ import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
 import { CHEMS } from '../../data/chems'
+import { GUARD_CLASSES } from '../../data/guardClasses'
 import { runEscapeChance } from '../../engine/tuning'
 
 const KEYFRAMES = `
@@ -45,6 +46,10 @@ const KEYFRAMES = `
     65%  { transform: translateX(-2px); }
     85%  { transform: translateX(1px);  }
     100% { transform: translateX(0);    }
+  }
+  @keyframes guardCardSelectablePulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--select-color); }
+    50%      { box-shadow: 0 0 6px 2px var(--select-color); }
   }
 `
 
@@ -136,37 +141,18 @@ function ChemIcon({ chemId, size = 13 }: { chemId: CombatChemId; size?: number }
   )
 }
 
-interface ChemTarget { kind: 'player' | 'guard' | 'pa_guard'; id: string }
+interface ChemTrayProps {
+  player: PlayerState
+  combat: CombatState
+  armedChem: CombatChemId | null
+  setArmedChem: (chemId: CombatChemId | null) => void
+}
 
-function FieldMedicinePanel({ player, combat }: { player: PlayerState; combat: CombatState }) {
-  const { useStimpakInCombat, useJetInCombat, useUltrajetInCombat } = useGameStore()
-  const [armedChem, setArmedChem] = useState<CombatChemId | null>(null)
-
-  // A chem used up mid-round (by us or an auto-Medic) can't stay armed for a target we'll never reach.
-  useEffect(() => {
-    if (combat.chemUsedThisRound) setArmedChem(null)
-  }, [combat.chemUsedThisRound])
-
+// Chem tray only — arming a chem here is step one of a two-step flow: click a chem, then
+// click a protector card above to apply it. No separate target picker lives in this panel.
+function ChemTray({ player, combat, armedChem, setArmedChem }: ChemTrayProps) {
   const owned = COMBAT_CHEM_IDS.filter(id => (player.inventory[id]?.quantity ?? 0) > 0)
   if (owned.length === 0) return null
-
-  const targets: Array<ChemTarget & { label: string; atFullHealth: boolean }> = [
-    { kind: 'player', id: 'player', label: 'YOU', atFullHealth: player.health >= player.maxHealth },
-    ...player.guards.filter(g => !g.dead).map((g, i) => ({ kind: 'guard' as const, id: g.id, label: `G${i + 1}`, atFullHealth: g.health >= g.maxHealth })),
-    ...player.paGuards.filter(g => !g.dead).map((g, i) => ({ kind: 'pa_guard' as const, id: g.id, label: `PA${i + 1}`, atFullHealth: g.health >= g.maxHealth })),
-  ]
-
-  const actionFor: Record<CombatChemId, (kind: ChemTarget['kind'], id: string) => void> = {
-    stimpak: useStimpakInCombat,
-    jet: useJetInCombat,
-    ultrajet: useUltrajetInCombat,
-  }
-
-  const applyTo = (t: ChemTarget) => {
-    if (!armedChem) return
-    actionFor[armedChem](t.kind, t.id)
-    setArmedChem(null)
-  }
 
   return (
     <div className="border border-pip-border rounded p-3">
@@ -197,26 +183,8 @@ function FieldMedicinePanel({ player, combat }: { player: PlayerState; combat: C
       </div>
 
       {armedChem && !combat.chemUsedThisRound && (
-        <div className="border-t border-pip-border-dim mt-2 pt-2">
-          <div className="text-[10px] font-mono text-pip-green-dim mb-1.5 flex items-center gap-1">
-            <ChemIcon chemId={armedChem} size={10} /> APPLY {CHEMS[armedChem].name.toUpperCase()} TO
-          </div>
-          <div className="flex gap-1.5 flex-wrap">
-            {targets.map(t => {
-              const wasted = armedChem === 'stimpak' && t.atFullHealth
-              return (
-                <button
-                  key={`${t.kind}-${t.id}`}
-                  className="pip-btn-amber text-xs px-2.5 py-1"
-                  disabled={wasted}
-                  title={wasted ? 'Already at full health' : undefined}
-                  onClick={() => applyTo(t)}
-                >
-                  {t.label}
-                </button>
-              )
-            })}
-          </div>
+        <div className="mt-2 text-[10px] font-mono text-pip-amber flex items-center gap-1">
+          <ChemIcon chemId={armedChem} size={10} /> Click a glowing protector above to apply {CHEMS[armedChem].name}
         </div>
       )}
 
@@ -238,10 +206,43 @@ const PA_GUARD_ICON = (
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
-  const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame, useAntivenom } = useGameStore()
+  const {
+    fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame, useAntivenom,
+    useStimpakInCombat, useJetInCombat, useUltrajetInCombat,
+  } = useGameStore()
   const combatAnimSteps    = useGameStore(s => s.combatAnimSteps)
   const showTamingMinigame = useGameStore(s => s.showTamingMinigame)
   const gameType = useGameStore(s => s.gameState?.gameType ?? 'standard')
+
+  const [armedChem, setArmedChem] = useState<CombatChemId | null>(null)
+
+  // A chem used up mid-round (by us or an auto-Medic) can't stay armed for a target we'll never reach.
+  useEffect(() => {
+    if (combat.chemUsedThisRound) setArmedChem(null)
+  }, [combat.chemUsedThisRound])
+
+  const chemActionFor: Record<CombatChemId, (kind: 'player' | 'guard' | 'pa_guard', id: string) => void> = {
+    stimpak: useStimpakInCombat,
+    jet: useJetInCombat,
+    ultrajet: useUltrajetInCombat,
+  }
+
+  const applyArmedChemTo = (kind: 'player' | 'guard' | 'pa_guard', id: string) => {
+    if (!armedChem) return
+    chemActionFor[armedChem](kind, id)
+    setArmedChem(null)
+  }
+
+  // A unit is a valid click target while a chem is armed, alive, and — for Stimpak
+  // specifically — not already at full health (a wasted use of the 1-per-round cap).
+  const isValidChemTarget = (kind: 'player' | 'guard' | 'pa_guard', id: string): boolean => {
+    if (!armedChem) return false
+    if (kind === 'player') return armedChem !== 'stimpak' || player.health < player.maxHealth
+    const roster = kind === 'guard' ? player.guards : player.paGuards
+    const unit = roster.find(g => g.id === id)
+    if (!unit || unit.dead) return false
+    return armedChem !== 'stimpak' || unit.health < unit.maxHealth
+  }
 
   const aliveGuardCount   = player.guards.filter(g => !g.dead).length
   const alivePAGuardCount = player.paGuards.filter(g => !g.dead).length
@@ -404,12 +405,23 @@ export default function CombatPanel({ player, combat }: Props) {
             {(() => {
               const hpPct = Math.max(0, Math.round((displayHealth / player.maxHealth) * 100))
               const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
+              const selectable = isValidChemTarget('player', 'player')
+              const selectColor = armedChem ? CHEM_COLOR[armedChem] : undefined
               return (
-                <div className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
+                <div
+                  className={`flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                  style={{ width: '3rem' }}
+                  onClick={selectable ? () => applyArmedChemTo('player', 'player') : undefined}
+                  title={selectable ? 'Apply here' : undefined}
+                >
                   <div
                     key={anim.playerDodgeKey > 0 ? `dodge-${anim.playerDodgeKey}` : 'still'}
                     className="relative w-10 h-10 border rounded flex items-center justify-center"
-                    style={{ borderColor: 'var(--pip-amber)', animation: anim.playerDodgeKey > 0 ? 'allyDodge 420ms ease-out' : 'none' }}
+                    style={{
+                      borderColor: selectable ? selectColor : 'var(--pip-amber)',
+                      animation: anim.playerDodgeKey > 0 ? 'allyDodge 420ms ease-out' : selectable ? 'guardCardSelectablePulse 1.1s ease-in-out infinite' : 'none',
+                      ...( selectable ? { '--select-color': selectColor } as React.CSSProperties : {} ),
+                    }}
                   >
                     <PlayerCardFire flashKey={anim.playerFireKey} />
                     <FlashOverlay flashKey={anim.playerDamageKey} variant="damage" />
@@ -432,23 +444,28 @@ export default function CombatPanel({ player, combat }: Props) {
             {player.guards.map(g => {
               const displayGuardHp = anim.isAnimating ? (anim.displayGuardHealth[g.id] ?? g.health) : g.health
               const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
+              const selectable = isValidChemTarget('guard', g.id)
               return (
                 <GuardUnitCard
                   key={g.id}
                   unit={displayUnit}
-                  label="GUARD"
+                  label={GUARD_CLASSES[g.classId].name.toUpperCase()}
                   color="var(--pip-green)"
                   icon={<GuardClassIcon classId={g.classId} color="var(--pip-green)" />}
                   fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
                   buff={findBuff(combat.activeBuffs, 'guard', g.id)}
+                  selectable={selectable}
+                  selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
+                  onSelect={() => applyArmedChemTo('guard', g.id)}
                 />
               )
             })}
             {player.paGuards.map(g => {
               const displayGuardHp = anim.isAnimating ? (anim.displayPAGuardHealth[g.id] ?? g.health) : g.health
               const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
+              const selectable = isValidChemTarget('pa_guard', g.id)
               return (
                 <GuardUnitCard
                   key={g.id}
@@ -460,6 +477,9 @@ export default function CombatPanel({ player, combat }: Props) {
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
                   buff={findBuff(combat.activeBuffs, 'pa_guard', g.id)}
+                  selectable={selectable}
+                  selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
+                  onSelect={() => applyArmedChemTo('pa_guard', g.id)}
                 />
               )
             })}
@@ -534,7 +554,7 @@ export default function CombatPanel({ player, combat }: Props) {
         </div>
       )}
 
-      {!isResolved && <FieldMedicinePanel player={player} combat={combat} />}
+      {!isResolved && <ChemTray player={player} combat={combat} armedChem={armedChem} setArmedChem={setArmedChem} />}
 
       {combat.playerVenomed && !isResolved && (
         <div className="border border-red-500 px-2 py-1 rounded text-xs flex items-center justify-between gap-2">
