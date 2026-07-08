@@ -45,6 +45,12 @@ describe('shouldEscalateWave', () => {
     expect(shouldEscalateWave(2, 0.58, 50, 'free_play')).toBe(true)
     expect(shouldEscalateWave(3, 0.58, 75, 'free_play')).toBe(true)
   })
+
+  it('danger floor sits at 0.45, not the original 0.55', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
+    expect(shouldEscalateWave(1, 0.44, 1, 'standard')).toBe(false)
+    expect(shouldEscalateWave(1, 0.45, 1, 'standard')).toBe(true)
+  })
 })
 
 // ── afterCombat — prior-wave loot carry-forward ─────────────────────────────
