@@ -54,6 +54,23 @@ export interface EnemyUnit {
   dead: boolean
 }
 
+export type GuardClassId = 'standard' | 'shotgunner' | 'sniper' | 'medic'
+
+export interface GuardUnit {
+  id: string            // "guard_7" — assigned from PlayerState.nextGuardId at hire time
+  classId: GuardClassId
+  health: number
+  maxHealth: number
+  dead: boolean          // true once killed in combat; pruned on arrival at the next settlement
+}
+
+export interface PAGuardUnit {
+  id: string             // "pa_guard_3" — same id counter as GuardUnit, no classId (PA stays unclassed)
+  health: number
+  maxHealth: number
+  dead: boolean
+}
+
 export interface GunState {
   id: string
   name: string
@@ -81,8 +98,9 @@ export interface PlayerState {
   debt: number
   health: number
   maxHealth: number
-  guards: number
-  powerArmorGuards: number
+  guards: GuardUnit[]
+  paGuards: PAGuardUnit[]
+  nextGuardId: number            // monotonic id counter shared by guards + paGuards
   brahmin: number
   location: string   // settlement id
   ageOfDebt: number  // turns elapsed since debt was first taken
@@ -125,6 +143,22 @@ export interface MarketEvent {
 
 export type PlayerCondition = { type: 'radscorpion_venom' } | { type: 'cazador_venom' }
 
+export interface CombatEffect {
+  kind: 'heal' | 'accuracy_buff'
+  healAmount?: number             // stimpak: 25
+  accuracyBuffFraction?: number   // jet: 0.25, ultrajet: 0.50 — applied as (1 - currentAccuracy) * fraction
+  buffDurationRounds?: number     // jet/ultrajet: 2
+}
+
+export interface ActiveBuff {
+  id: string                       // `${chemId}_${targetId}_${seq}` — React key only
+  chemId: string                   // 'jet' | 'ultrajet'
+  targetKind: 'player' | 'guard' | 'pa_guard'
+  targetId: string                 // 'player' | GuardUnit.id | PAGuardUnit.id
+  accuracyBonus: number            // flat addition to hit-chance roll, computed once at apply time
+  roundsRemaining: number          // 2 -> 1 after this round resolves -> 0 -> removed
+}
+
 export interface CombatState {
   enemies: EnemyUnit[]
   capsPool: number                      // total caps all enemies carry
@@ -135,7 +169,7 @@ export interface CombatState {
   xpGained: number                      // XP awarded on this combat's victory (for summary screen)
   phase: 'player_choice' | 'resolving' | 'won' | 'fled' | 'lost'
   log: string[]
-  waveNumber: number            // 1 = normal, 2 = second wave, 3+ = future
+  waveNumber: number            // 1 = normal, 2 = second wave, 3, 4 = late-game free-play escalation
   isCheckpointFight: boolean    // combat initiated by fighting a brotherhood/NCR checkpoint
   priorWaveCapsLooted: number   // caps from earlier wave(s) — added to summary display
   priorWaveXpGained: number     // XP from earlier wave(s) — added to summary display
@@ -143,13 +177,15 @@ export interface CombatState {
   closeCall?: boolean           // true when combat ended with player < 10 HP and 0 AP
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
+  activeBuffs: ActiveBuff[]        // combat-scoped, cleared with the rest of `combat` when combat ends
+  chemUsedThisRound: boolean       // per-round cap shared by manual chem use AND Medic auto-use
 }
 
 export type AnimStep =
   | {
       kind: 'shot'
       by: 'player' | 'guard' | 'pa_guard'
-      guardIdx: number          // -1 for player, 0-based index among all guards/PA guards
+      shooterId: string | null  // null for player; GuardUnit.id / PAGuardUnit.id for guards
       hit: boolean
       damage: number
       targetId: string | null
@@ -167,16 +203,27 @@ export type AnimStep =
       logLine: string
     }
   | {
-      kind: 'retaliation'
-      paGuardsLost: number
-      guardsLost: number
-      armorAbsorb: number
-      hpDamage: number
-      mountDamageTaken: number
-      mountDied: boolean
-      logLines: string[]
+      kind: 'enemy_attack'
+      enemyId: string
+      hit: boolean
+      damage: number
+      targetKind: 'player' | 'guard' | 'pa_guard' | 'mount'
+      targetId: string
+      targetHealthAfter: number   // health for player/mount; unit.health for guard/pa_guard
+      targetDied: boolean
+      armorAbsorbed?: number      // only set when targetKind === 'player'
+      logLine: string
       venomApplied?: boolean
       venomDotDamage?: number
+    }
+  | {
+      kind: 'chem_use'   // Medic auto-trigger only — manual player chem use needs no AnimStep
+      chemId: string
+      targetKind: 'player' | 'guard' | 'pa_guard'
+      targetId: string
+      healAmount: number
+      targetHealthAfter: number
+      logLine: string
     }
   | {
       kind: 'burst'   // rapid multi-shot (minigun) — all shots animate in quick succession
@@ -191,7 +238,7 @@ export type AnimStep =
     }
   | {
       kind: 'pa_burst'  // PA guard minigun burst — same timing as burst, keyed to a guard slot
-      guardIdx: number
+      shooterId: string
       shots: Array<{
         targetId: string | null
         hit: boolean

@@ -1,5 +1,6 @@
-import type { AnimStep, CombatState, EnemyUnit, GameType, PlayerState } from '../types/game'
+import type { AnimStep, ArmorState, CombatState, EnemyUnit, GameType, GuardUnit, MountState, PAGuardUnit, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
+import { GUARD_CLASSES } from '../data/guardClasses'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
@@ -101,7 +102,98 @@ export function initiateCombat(
     priorWaveCapsLooted: 0,
     priorWaveXpGained: 0,
     priorWaveEnemyLoot: {},
+    activeBuffs: [],
+    chemUsedThisRound: false,
   }
+}
+
+// ── Per-attack targeting — shared by resolveFight() and taming.ts's failed-tame retaliation ──
+
+export interface TargetRef { kind: 'player' | 'guard' | 'pa_guard' | 'mount'; id: string; weight: number }
+
+export const TARGET_WEIGHTS = { player: 1, guard: 2, paGuard: 4, mount: 2 }  // tunable — front line draws more fire
+export const DEFAULT_ENEMY_ACCURACY = 0.80  // used when an enemy type has no explicit accuracy in enemyStats
+
+export function buildTargetRoster(guards: GuardUnit[], paGuards: PAGuardUnit[], mount: MountState | null): TargetRef[] {
+  const roster: TargetRef[] = [{ kind: 'player', id: 'player', weight: TARGET_WEIGHTS.player }]
+  for (const g of guards) {
+    if (!g.dead) roster.push({ kind: 'guard', id: g.id, weight: TARGET_WEIGHTS.guard })
+  }
+  for (const g of paGuards) {
+    if (!g.dead) roster.push({ kind: 'pa_guard', id: g.id, weight: TARGET_WEIGHTS.paGuard })
+  }
+  if (mount && mount.health > 0) {
+    roster.push({ kind: 'mount', id: 'mount', weight: TARGET_WEIGHTS.mount })
+  }
+  return roster
+}
+
+export interface SingleAttackResult {
+  health: number
+  guards: GuardUnit[]
+  paGuards: PAGuardUnit[]
+  mount: MountState | null
+  armor: ArmorState | null
+  targetHealthAfter: number
+  targetDied: boolean
+  armorAbsorbed: number
+}
+
+// Applies a landed hit (accuracy already resolved by the caller) against a chosen target.
+// Armor mitigates only when the target is the player — it's the player's own gear, guards don't wear it.
+export function resolveSingleAttack(
+  target: TargetRef,
+  damage: number,
+  health: number,
+  guards: GuardUnit[],
+  paGuards: PAGuardUnit[],
+  mount: MountState | null,
+  armor: ArmorState | null,
+): SingleAttackResult {
+  if (target.kind === 'player') {
+    let armorAbsorbed = 0
+    let newArmor = armor
+    if (armor && armor.armorPoints > 0) {
+      armorAbsorbed = Math.min(armor.armorPoints, damage)
+      newArmor = { ...armor, armorPoints: armor.armorPoints - armorAbsorbed }
+    }
+    const newHealth = Math.max(0, health - (damage - armorAbsorbed))
+    return { health: newHealth, guards, paGuards, mount, armor: newArmor, targetHealthAfter: newHealth, targetDied: newHealth <= 0, armorAbsorbed }
+  }
+
+  if (target.kind === 'guard') {
+    let targetHealthAfter = 0
+    const newGuards = guards.map(g => {
+      if (g.id !== target.id) return g
+      targetHealthAfter = Math.max(0, g.health - damage)
+      return { ...g, health: targetHealthAfter, dead: targetHealthAfter <= 0 }
+    })
+    return { health, guards: newGuards, paGuards, mount, armor, targetHealthAfter, targetDied: targetHealthAfter <= 0, armorAbsorbed: 0 }
+  }
+
+  if (target.kind === 'pa_guard') {
+    let targetHealthAfter = 0
+    const newPAGuards = paGuards.map(g => {
+      if (g.id !== target.id) return g
+      targetHealthAfter = Math.max(0, g.health - damage)
+      return { ...g, health: targetHealthAfter, dead: targetHealthAfter <= 0 }
+    })
+    return { health, guards, paGuards: newPAGuards, mount, armor, targetHealthAfter, targetDied: targetHealthAfter <= 0, armorAbsorbed: 0 }
+  }
+
+  // mount
+  const currentMountHealth = mount?.health ?? 0
+  const newMountHealth = Math.max(0, currentMountHealth - damage)
+  const mountDied = newMountHealth <= 0
+  const newMount = mountDied ? null : (mount ? { ...mount, health: newMountHealth } : null)
+  return { health, guards, paGuards, mount: newMount, armor, targetHealthAfter: newMountHealth, targetDied: mountDied, armorAbsorbed: 0 }
+}
+
+export function targetLabel(target: TargetRef, guards: GuardUnit[], paGuards: PAGuardUnit[], mount: MountState | null): string {
+  if (target.kind === 'player') return 'you'
+  if (target.kind === 'mount') return mount?.name ?? 'your mount'
+  if (target.kind === 'pa_guard') return `PA Guard ${paGuards.findIndex(g => g.id === target.id) + 1}`
+  return `Guard ${guards.findIndex(g => g.id === target.id) + 1}`
 }
 
 export function resolveFight(
@@ -116,8 +208,9 @@ export function resolveFight(
   const animSteps: AnimStep[] = []
   const updatedEnemies = combat.enemies.map(e => ({ ...e }))
   let { capsPool } = combat
-  let { health, guards } = player
-  let powerArmorGuards = player.powerArmorGuards ?? 0
+  let health = player.health
+  let guards = player.guards.map(g => ({ ...g }))
+  let paGuards = player.paGuards.map(g => ({ ...g }))
   let gun = player.gun ? { ...player.gun } : null
   let armor = player.armor ? { ...player.armor } : null
   let mount = player.mount ? { ...player.mount } : null
@@ -182,7 +275,7 @@ export function resolveFight(
         } else if (splashHits.length > 0) {
           animSteps.push({ kind: 'blast', primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
         } else {
-          animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
         }
       } else {
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
@@ -211,9 +304,9 @@ export function resolveFight(
           burstShots.push({ targetId: target.id, hit: false, damage: 0, targetDied: false, targetHealthAfter: target.health, logLine })
           if (strayShot) burstShots.push(strayShot)
         } else {
-          animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
           if (strayShot) {
-            animSteps.push({ kind: 'shot', by: 'player', guardIdx: -1, hit: true, damage: strayShot.damage, targetId: strayShot.targetId, targetDied: strayShot.targetDied, targetHealthAfter: strayShot.targetHealthAfter, logLine: strayShot.logLine })
+            animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: strayShot.damage, targetId: strayShot.targetId, targetDied: strayShot.targetDied, targetHealthAfter: strayShot.targetHealthAfter, logLine: strayShot.logLine })
           }
         }
       }
@@ -227,59 +320,80 @@ export function resolveFight(
   }
   } // end if (gun)
 
-  // ── Guards fire with their own sidearms (no shared ammo pool) ───────────
-  const allGuardCount = guards + powerArmorGuards
-  for (let g = 0; g < allGuardCount; g++) {
-    const isPAGuard = g >= guards
-    const label = isPAGuard ? `PA Guard ${g - guards + 1}` : `Guard ${g + 1}`
+  // ── Guards fire with their own sidearms (no shared ammo pool) ────────────
+  const aliveGuardUnits = guards.filter(g => !g.dead)
+  for (const guardUnit of aliveGuardUnits) {
+    const classDef = GUARD_CLASSES[guardUnit.classId]
+    const label = `Guard ${guards.findIndex(g => g.id === guardUnit.id) + 1}`
+    const target = updatedEnemies.find(e => !e.dead)
+    if (!target) break
 
-    if (isPAGuard) {
-      const shots = modeConfig.powerArmorGuardShotsPerTurn
-      const acc   = modeConfig.powerArmorGuardAccuracy
-      const dmgRange = modeConfig.powerArmorGuardDamage
-      const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
-      for (let s = 0; s < shots; s++) {
-        const t = updatedEnemies.find(e => !e.dead)
-        if (!t) break
-        if (rng() < acc) {
-          const dmg = rngInt(dmgRange[0], dmgRange[1])
-          const dealt = Math.min(dmg, t.health)
-          damageDealt += dealt
-          t.health = Math.max(0, t.health - dmg)
-          t.dead = t.health <= 0
-          const logLine = t.dead
-            ? `${label} fires. Hit! (${dmg} damage) — ${t.name} is dead!`
-            : `${label} fires. Hit! (${dmg} damage)`
-          log.push(logLine)
-          burstShots.push({ targetId: t.id, hit: true, damage: dealt, targetDied: t.dead, targetHealthAfter: t.health, logLine })
-        } else {
-          const t2 = updatedEnemies.find(e => !e.dead)
-          const logLine = `${label} fires. Missed.`
-          log.push(logLine)
-          burstShots.push({ targetId: t2?.id ?? null, hit: false, damage: 0, targetDied: false, targetHealthAfter: t2?.health ?? 0, logLine })
+    if (rng() < classDef.accuracy) {
+      const dmg = rngInt(classDef.damage[0], classDef.damage[1])
+      const dealt = Math.min(dmg, target.health)
+      damageDealt += dealt
+      target.health = Math.max(0, target.health - dmg)
+      target.dead = target.health <= 0
+      const logLine = target.dead
+        ? `${label} fires. Hit! (${dmg} damage) — ${target.name} is dead!`
+        : `${label} fires. Hit! (${dmg} damage)`
+      log.push(logLine)
+      animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+
+      // Shotgunner: sprays into additional alive enemies at decreasing ratios
+      if (classDef.splashRatios && classDef.splashRatios.length > 0) {
+        const splashTargets = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
+        for (let si = 0; si < Math.min(classDef.splashRatios.length, splashTargets.length); si++) {
+          const st = splashTargets[si]
+          const splashDmg = Math.max(1, Math.round(dmg * classDef.splashRatios[si]))
+          const splashDealt = Math.min(splashDmg, st.health)
+          damageDealt += splashDealt
+          st.health = Math.max(0, st.health - splashDmg)
+          st.dead = st.health <= 0
+          const splashLine = st.dead
+            ? `${label}'s spray catches ${st.name} for ${splashDmg} damage — ${st.name} is dead!`
+            : `${label}'s spray catches ${st.name} for ${splashDmg} damage.`
+          log.push(splashLine)
+          animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: splashDealt, targetId: st.id, targetDied: st.dead, targetHealthAfter: st.health, logLine: splashLine })
         }
       }
-      if (burstShots.length > 0) animSteps.push({ kind: 'pa_burst', guardIdx: g, shots: burstShots })
     } else {
-      const target = updatedEnemies.find(e => !e.dead)
-      if (!target) break
-      if (rng() < modeConfig.guardAccuracy) {
-        const guardDmg = rngInt(modeConfig.guardDamage[0], modeConfig.guardDamage[1])
-        const dealt = Math.min(guardDmg, target.health)
+      const logLine = `${label} fires. Missed.`
+      log.push(logLine)
+      animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+    }
+  }
+
+  // ── PA guards fire (unclassed, flat per-mode stats, minigun burst) ───────
+  const alivePAGuardUnits = paGuards.filter(g => !g.dead)
+  for (const paGuardUnit of alivePAGuardUnits) {
+    const label = `PA Guard ${paGuards.findIndex(g => g.id === paGuardUnit.id) + 1}`
+    const shots = modeConfig.powerArmorGuardShotsPerTurn
+    const acc   = modeConfig.powerArmorGuardAccuracy
+    const dmgRange = modeConfig.powerArmorGuardDamage
+    const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
+    for (let s = 0; s < shots; s++) {
+      const t = updatedEnemies.find(e => !e.dead)
+      if (!t) break
+      if (rng() < acc) {
+        const dmg = rngInt(dmgRange[0], dmgRange[1])
+        const dealt = Math.min(dmg, t.health)
         damageDealt += dealt
-        target.health = Math.max(0, target.health - guardDmg)
-        target.dead = target.health <= 0
-        const logLine = target.dead
-          ? `${label} fires. Hit! (${guardDmg} damage) — ${target.name} is dead!`
-          : `${label} fires. Hit! (${guardDmg} damage)`
+        t.health = Math.max(0, t.health - dmg)
+        t.dead = t.health <= 0
+        const logLine = t.dead
+          ? `${label} fires. Hit! (${dmg} damage) — ${t.name} is dead!`
+          : `${label} fires. Hit! (${dmg} damage)`
         log.push(logLine)
-        animSteps.push({ kind: 'shot', by: 'guard', guardIdx: g, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+        burstShots.push({ targetId: t.id, hit: true, damage: dealt, targetDied: t.dead, targetHealthAfter: t.health, logLine })
       } else {
+        const t2 = updatedEnemies.find(e => !e.dead)
         const logLine = `${label} fires. Missed.`
         log.push(logLine)
-        animSteps.push({ kind: 'shot', by: 'guard', guardIdx: g, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+        burstShots.push({ targetId: t2?.id ?? null, hit: false, damage: 0, targetDied: false, targetHealthAfter: t2?.health ?? 0, logLine })
       }
     }
+    if (burstShots.length > 0) animSteps.push({ kind: 'pa_burst', shooterId: paGuardUnit.id, shots: burstShots })
   }
 
   // ── Mount attacks (after guards, no ammo cost) ───────────────────────────
@@ -305,85 +419,113 @@ export function resolveFight(
     }
   }
 
-  // ── Surviving enemies attack ──────────────────────────────────────────────
+  // ── Surviving enemies attack — each resolves independently against a weighted target ──
   const aliveEnemies = updatedEnemies.filter(e => !e.dead)
   let damageTaken = 0
   let playerVenomed = combat.playerVenomed ?? false
 
   if (aliveEnemies.length > 0) {
-    let totalIncoming = 0
-    for (const enemy of aliveEnemies) {
-      const stats = modeConfig.enemyStats[enemy.typeId]
-      totalIncoming += stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
-    }
-
-    // PA guards absorb first
-    const paAbsorb = Math.min(powerArmorGuards, Math.floor(totalIncoming / modeConfig.powerArmorGuardHealth))
-    const paAbsorbed = paAbsorb * modeConfig.powerArmorGuardHealth
-    powerArmorGuards = Math.max(0, powerArmorGuards - paAbsorb)
-    const postPADamage = Math.max(0, totalIncoming - paAbsorbed)
-
-    // Regular guards absorb remaining
-    const guardAbsorb = Math.min(guards, Math.floor(postPADamage / modeConfig.guardHealth))
-    const absorbed = guardAbsorb * modeConfig.guardHealth
-    guards = Math.max(0, guards - guardAbsorb)
-    const postGuardDamage = Math.max(0, postPADamage - absorbed)
-
-    // Armor absorbs remaining
-    let armorAbsorb = 0
-    if (armor && postGuardDamage > 0) {
-      armorAbsorb = Math.min(armor.armorPoints, postGuardDamage)
-      armor = { ...armor, armorPoints: armor.armorPoints - armorAbsorb }
-    }
-    const postArmorDamage = Math.max(0, postGuardDamage - armorAbsorb)
-
-    // Mount absorbs last — only takes hits if guards and armor are exhausted
-    let mountDamageTaken = 0
-    let mountDied = false
-    if (mount && mount.health > 0 && postArmorDamage > 0) {
-      const mountAbsorb = Math.min(mount.health, postArmorDamage)
-      mountDamageTaken = mountAbsorb
-      mount = { ...mount, health: mount.health - mountAbsorb }
-      mountDied = mount.health <= 0
-      if (mountDied) mount = null
-    }
-    const finalDamage = Math.max(0, postArmorDamage - mountDamageTaken)
-    health = Math.max(0, health - finalDamage)
-    damageTaken = finalDamage + armorAbsorb + mountDamageTaken
-
-    // Cazador sting: apply venom if not already venomed and player took HP damage
-    const enemyTypeId = aliveEnemies[0]?.typeId
+    let roster = buildTargetRoster(guards, paGuards, mount)
     let venomApplied = false
-    if (!playerVenomed && enemyTypeId === 'cazador' && finalDamage > 0) {
-      playerVenomed = true
-      venomApplied = true
+
+    for (const enemy of aliveEnemies) {
+      if (roster.length === 0 || health <= 0) break
+      const stats = modeConfig.enemyStats[enemy.typeId]
+      const dmg = stats ? rngInt(stats.damage[0], stats.damage[1]) : rngInt(10, 30)
+      const accuracy = stats?.accuracy ?? DEFAULT_ENEMY_ACCURACY
+      const target = rngWeightedPick(roster)
+      if (!target) break
+
+      const label = targetLabel(target, guards, paGuards, mount)
+
+      if (rng() < accuracy) {
+        const result = resolveSingleAttack(target, dmg, health, guards, paGuards, mount, armor)
+        health = result.health
+        guards = result.guards
+        paGuards = result.paGuards
+        mount = result.mount
+        armor = result.armor
+        damageTaken += dmg
+
+        const logLine = target.kind === 'player'
+          ? (result.armorAbsorbed > 0
+              ? `${enemy.name} fires at you. Hit! Armor absorbs ${result.armorAbsorbed}, you take ${dmg - result.armorAbsorbed} damage.`
+              : `${enemy.name} fires at you. Hit! (${dmg} damage)`)
+          : result.targetDied
+            ? `${enemy.name} fires at ${label}. Hit! (${dmg} damage) — ${label} is down!`
+            : `${enemy.name} fires at ${label}. Hit! (${dmg} damage)`
+        log.push(logLine)
+
+        animSteps.push({
+          kind: 'enemy_attack',
+          enemyId: enemy.id,
+          hit: true,
+          damage: dmg,
+          targetKind: target.kind,
+          targetId: target.id,
+          targetHealthAfter: result.targetHealthAfter,
+          targetDied: result.targetDied,
+          armorAbsorbed: target.kind === 'player' ? result.armorAbsorbed : undefined,
+          logLine,
+        })
+
+        if (target.kind === 'player' && enemy.typeId === 'cazador' && !playerVenomed && (dmg - result.armorAbsorbed) > 0) {
+          playerVenomed = true
+          venomApplied = true
+        }
+
+        if (result.targetDied) {
+          roster = roster.filter(r => r.id !== target.id)
+        }
+      } else {
+        const logLine = `${enemy.name} fires at ${label}. Missed.`
+        log.push(logLine)
+        const currentTargetHealth =
+          target.kind === 'player'   ? health :
+          target.kind === 'mount'    ? (mount?.health ?? 0) :
+          target.kind === 'pa_guard' ? (paGuards.find(g => g.id === target.id)?.health ?? 0) :
+                                        (guards.find(g => g.id === target.id)?.health ?? 0)
+        animSteps.push({
+          kind: 'enemy_attack',
+          enemyId: enemy.id,
+          hit: false,
+          damage: 0,
+          targetKind: target.kind,
+          targetId: target.id,
+          targetHealthAfter: currentTargetHealth,
+          targetDied: false,
+          logLine,
+        })
+      }
     }
 
-    // Venom DoT: ticks every round from the round AFTER the initial sting
+    // Venom DoT — ticks every round starting the round AFTER the initial sting
+    // (gated on the *incoming* playerVenomed state, so the sting round itself doesn't also tick)
     let venomDotDamage = 0
     if (combat.playerVenomed ?? false) {
       venomDotDamage = 5
       health = Math.max(0, health - venomDotDamage)
       damageTaken += venomDotDamage
+      log.push(`Venom burns through you. -${venomDotDamage} HP.`)
+    }
+    if (venomApplied) {
+      log.push('Cazador venom enters your bloodstream. Accuracy -30%, +5 HP/round.')
     }
 
-    const retaliationLogLines: string[] = []
-    if (paAbsorb > 0) retaliationLogLines.push(`${paAbsorb} power armor guard${paAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
-    if (guardAbsorb > 0) retaliationLogLines.push(`${guardAbsorb} guard${guardAbsorb > 1 ? 's' : ''} take the brunt of the attack.`)
-    if (armorAbsorb > 0) retaliationLogLines.push(`Your armor absorbs ${armorAbsorb} damage. (${armor!.armorPoints} AP remaining)`)
-    if (mountDamageTaken > 0 && !mountDied) retaliationLogLines.push(`${player.mount!.name} shields you for ${mountDamageTaken} damage. (${mount!.health} HP remaining)`)
-    if (mountDied) retaliationLogLines.push(`${player.mount!.name} shields you and falls!`)
-    if (finalDamage > 0) retaliationLogLines.push(`Enemies hit you for ${finalDamage} damage.`)
-    if (venomApplied) retaliationLogLines.push('Cazador venom enters your bloodstream. Accuracy -30%, +5 HP/round.')
-    if (venomDotDamage > 0) retaliationLogLines.push(`Venom burns through you. -${venomDotDamage} HP.`)
-    log.push(...retaliationLogLines)
-    animSteps.push({ kind: 'retaliation', paGuardsLost: paAbsorb, guardsLost: guardAbsorb, armorAbsorb, hpDamage: finalDamage + venomDotDamage, mountDamageTaken, mountDied, logLines: retaliationLogLines, venomApplied, venomDotDamage })
+    // Thread the venom flags onto the last enemy_attack step so the animation shows them in sync
+    if (venomApplied || venomDotDamage > 0) {
+      const lastStep = animSteps[animSteps.length - 1]
+      if (lastStep && lastStep.kind === 'enemy_attack') {
+        if (venomApplied) lastStep.venomApplied = true
+        if (venomDotDamage > 0) lastStep.venomDotDamage = venomDotDamage
+      }
+    }
   }
 
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, powerArmorGuards, gun: gun ?? null, armor: armor ?? null, mount: mount ?? null }
+  let updatedPlayer: PlayerState = { ...player, health, guards, paGuards, gun: gun ?? null, armor: armor ?? null, mount: mount ?? null }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
@@ -414,6 +556,8 @@ export function resolveFight(
       log: [...combat.log, ...log],
       enragedEnemyIds: [],
       playerVenomed,
+      activeBuffs: combat.activeBuffs,
+      chemUsedThisRound: combat.chemUsedThisRound,
     },
     animSteps,
   }
@@ -424,7 +568,7 @@ export function resolveRun(
   combat: CombatState,
   modeConfig: GameModeConfig,
 ): { player: PlayerState; combat: CombatState; animSteps: AnimStep[] } {
-  const runChance = runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin)
+  const runChance = runEscapeChance(player.guards.filter(g => !g.dead).length, player.paGuards.filter(g => !g.dead).length, player.brahmin)
   const success = rng() < runChance
   const log: string[] = []
   let updatedPlayer = player
@@ -468,14 +612,16 @@ export function resolveRun(
       log.push("You've been killed trying to flee.")
     }
     animSteps.push({
-      kind: 'retaliation',
-      guardsLost: 0,
-      paGuardsLost: 0,
-      armorAbsorb,
-      hpDamage: finalDamage,
-      mountDamageTaken: 0,
-      mountDied: false,
-      logLines: [...log],
+      kind: 'enemy_attack',
+      enemyId: aliveEnemies[0]?.id ?? 'unknown',
+      hit: true,
+      damage: totalDamage,
+      targetKind: 'player',
+      targetId: 'player',
+      targetHealthAfter: updatedPlayer.health,
+      targetDied: updatedPlayer.health <= 0,
+      armorAbsorbed: armorAbsorb,
+      logLine: log[log.length - 1],
     })
   }
 

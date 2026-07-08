@@ -9,9 +9,14 @@ import {
   repayDebt,
 } from '../economy'
 import type { DebtEnforcementEntry, GameModeConfig } from '../../data/modes'
-import type { PlayerState, SettlementMarket } from '../../types/game'
+import type { GuardUnit, PlayerState, SettlementMarket } from '../../types/game'
+import { GUARD_CLASSES } from '../../data/guardClasses'
 
 const EMPTY_MC = { guns: {}, armors: {} } as GameModeConfig
+
+function makeGuards(n: number): GuardUnit[] {
+  return Array.from({ length: n }, (_, i) => ({ id: `guard_${i}`, classId: 'standard' as const, health: 50, maxHealth: 50, dead: false }))
+}
 
 const TEST_DEBT_ENFORCEMENT: DebtEnforcementEntry[] = [
   { age: 5,  damage: 30,  message: "Thugs find you." },
@@ -26,8 +31,9 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     debt: 500,
     health: 100,
     maxHealth: 100,
-    guards: 0,
-    powerArmorGuards: 0,
+    guards: [],
+    paGuards: [],
+    nextGuardId: 0,
     brahmin: 1,
     location: 'diamond_city',
     ageOfDebt: 0,
@@ -201,23 +207,25 @@ describe('calculateFinalScore', () => {
 
 describe('hireGuards', () => {
   it('deducts caps and adds guards', () => {
-    const player = makePlayer({ caps: 500, guards: 1 })
-    const { player: result, error } = hireGuards(player, 2, 150, 10)
+    const player = makePlayer({ caps: 500, guards: makeGuards(1) })
+    const { player: result, error } = hireGuards(player, 2, 10)
     expect(error).toBeUndefined()
-    expect(result.caps).toBe(500 - 300) // 2 * 150
-    expect(result.guards).toBe(3)
+    expect(result.caps).toBe(500 - 2 * GUARD_CLASSES.standard.hireCost)
+    expect(result.guards.filter(g => !g.dead).length).toBe(3)
   })
 
   it('rejects when not enough caps', () => {
-    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 150, 10)
+    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 10)
     expect(error).toBeTruthy()
   })
 
-  it('uses mode-specific guard cost', () => {
-    const player = makePlayer({ caps: 500 })
-    // Mode with guard cost 200 — hiring 2 costs 400
-    const { player: result } = hireGuards(player, 2, 200, 10)
-    expect(result.caps).toBe(100)
+  it('respects the roster cap', () => {
+    const player = makePlayer({ caps: 100000, guards: makeGuards(9) })
+    const { player: result, error } = hireGuards(player, 5, 10)
+    expect(error).toBeUndefined()
+    // Only 1 slot remained (cap 10) — only 1 should actually be hired
+    expect(result.guards.filter(g => !g.dead).length).toBe(10)
+    expect(result.caps).toBe(100000 - GUARD_CLASSES.standard.hireCost)
   })
 })
 

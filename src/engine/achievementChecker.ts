@@ -81,24 +81,33 @@ const CHECKS: Record<string, CheckFn> = {
     return nextCount >= 3 && prevCount < 3
   },
 
-  max_guards: (prev, next, mc) =>
-    next.player.guards >= mc.maxGuards && prev.player.guards < mc.maxGuards,
+  max_guards: (prev, next, mc) => {
+    const prevAlive = prev.player.guards.filter(g => !g.dead).length
+    const nextAlive = next.player.guards.filter(g => !g.dead).length
+    return nextAlive >= mc.maxGuards && prevAlive < mc.maxGuards
+  },
 
-  max_pa_guards: (prev, next, mc) =>
-    next.player.powerArmorGuards >= mc.maxPowerArmorGuards &&
-    prev.player.powerArmorGuards < mc.maxPowerArmorGuards,
+  max_pa_guards: (prev, next, mc) => {
+    const prevAlive = prev.player.paGuards.filter(g => !g.dead).length
+    const nextAlive = next.player.paGuards.filter(g => !g.dead).length
+    return nextAlive >= mc.maxPowerArmorGuards && prevAlive < mc.maxPowerArmorGuards
+  },
 
   max_brahmin: (prev, next, mc) =>
     next.player.brahmin >= mc.maxBrahmin && prev.player.brahmin < mc.maxBrahmin,
 
   max_all_followers: (prev, next, mc) => {
+    const prevAliveGuards = prev.player.guards.filter(g => !g.dead).length
+    const nextAliveGuards = next.player.guards.filter(g => !g.dead).length
+    const prevAlivePA = prev.player.paGuards.filter(g => !g.dead).length
+    const nextAlivePA = next.player.paGuards.filter(g => !g.dead).length
     const prevAll =
-      prev.player.guards >= mc.maxGuards &&
-      prev.player.powerArmorGuards >= mc.maxPowerArmorGuards &&
+      prevAliveGuards >= mc.maxGuards &&
+      prevAlivePA >= mc.maxPowerArmorGuards &&
       prev.player.brahmin >= mc.maxBrahmin
     const nextAll =
-      next.player.guards >= mc.maxGuards &&
-      next.player.powerArmorGuards >= mc.maxPowerArmorGuards &&
+      nextAliveGuards >= mc.maxGuards &&
+      nextAlivePA >= mc.maxPowerArmorGuards &&
       next.player.brahmin >= mc.maxBrahmin
     return nextAll && !prevAll
   },

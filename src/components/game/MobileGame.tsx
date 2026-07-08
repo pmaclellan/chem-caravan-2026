@@ -5,7 +5,7 @@ import { GAME_MODES } from '../../data/modes'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
 import { applyMarketEvents } from '../../engine/market'
 import { getAdjacentRoads, getRoadDestination, calculateCapacity, totalInventoryItems } from '../../engine/travel'
-import { inventoryBaseValue } from '../../engine/economy'
+import { inventoryBaseValue, totalGuardSalary } from '../../engine/economy'
 import { priceColor } from '../../utils/priceColor'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { useMapFlash } from '../../hooks/useMapFlash'
@@ -225,11 +225,11 @@ export default function MobileGame() {
             <div className="col-span-2">
               <div className="pip-label">Followers</div>
               <div className="text-pip-green text-sm font-display">
-                {player.guards} guards{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''} · {player.brahmin} brahmin
+                {player.guards.filter(g => !g.dead).length} guards{player.paGuards.filter(g => !g.dead).length > 0 ? ` · ${player.paGuards.filter(g => !g.dead).length} PA` : ''} · {player.brahmin} brahmin
               </div>
               {(() => {
                 const mc = GAME_MODES[gameState!.mode]
-                const salary = player.guards * mc.guardSalaryPerTurn + (player.powerArmorGuards ?? 0) * mc.powerArmorGuardSalaryPerTurn
+                const salary = totalGuardSalary(player, mc)
                 const turnsCovered = salary > 0 ? Math.floor(player.caps / salary) : 0
                 if (salary === 0) return null
                 const salaryColor = turnsCovered < 2 ? 'text-pip-red' : turnsCovered < 4 ? 'text-pip-amber' : 'text-pip-green-dim'

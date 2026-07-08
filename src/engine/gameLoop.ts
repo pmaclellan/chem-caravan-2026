@@ -51,8 +51,9 @@ export function initializeGame(
     debt: mc.startingDebt,
     health: mc.startingHealth,
     maxHealth: mc.startingHealth,
-    guards: 0,
-    powerArmorGuards: 0,
+    guards: [],
+    paGuards: [],
+    nextGuardId: 0,
     brahmin: mc.startingBrahmin,
     location: mc.startingLocation,
     ageOfDebt: 0,
@@ -256,6 +257,13 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
 
   let stats = state.stats
 
+  // Prune guards who fell in combat — they don't linger past the encounter that killed them
+  player = {
+    ...player,
+    guards: player.guards.filter(g => !g.dead),
+    paGuards: player.paGuards.filter(g => !g.dead),
+  }
+
   // Guard salary — deduct each turn, desert if can't cover
   const capsBeforeSalary = player.caps
   const { player: playerAfterSalary, logs: salaryLogs } = applyGuardSalary(player, mc)
@@ -264,7 +272,20 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
   const log = [...state.log]
   for (const { message, type } of salaryLogs) log.push(makeLog(turn, message, type))
 
-  const destName = mc.settlements[destinationId]?.name ?? destinationId
+  const settlement = mc.settlements[destinationId]
+
+  // Doctor auto-heals wounded guards for free — mercenaries handle their own patch-ups
+  if (settlement?.hasDoctor) {
+    const anyWoundedGuard = player.guards.some(g => g.health < g.maxHealth) || player.paGuards.some(g => g.health < g.maxHealth)
+    player = {
+      ...player,
+      guards: player.guards.map(g => ({ ...g, health: g.maxHealth })),
+      paGuards: player.paGuards.map(g => ({ ...g, health: g.maxHealth })),
+    }
+    if (anyWoundedGuard) log.push(makeLog(turn, `${settlement.name}'s doctor patches up your guards, free of charge.`, 'info'))
+  }
+
+  const destName = settlement?.name ?? destinationId
   log.push(makeLog(turn, `Arrived at ${destName}.`, 'info'))
 
   // Settlement discovery XP (first visit per run)

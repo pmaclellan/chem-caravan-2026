@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
-import { GAME_MODES } from '../../data/modes'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { useCombatAnimation } from '../../hooks/useCombatAnimation'
 import { FlashText } from '../ui/FlashText'
 import { FlashOverlay } from '../ui/FlashOverlay'
 import EnemyUnitCard from './EnemyUnitCard'
+import GuardUnitCard from './GuardUnitCard'
 import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
@@ -17,18 +17,6 @@ const KEYFRAMES = `
     0%   { opacity: 0; box-shadow: none; }
     20%  { opacity: 1; box-shadow: 0 0 18px var(--pip-amber), inset 0 0 10px rgba(196,80,26,0.45); transform: scale(1.14); }
     65%  { opacity: 0.7; box-shadow: 0 0 10px var(--pip-amber); transform: scale(1.05); }
-    100% { opacity: 0; box-shadow: none; transform: scale(1); }
-  }
-  @keyframes guardFire {
-    0%   { opacity: 0; box-shadow: none; }
-    20%  { opacity: 1; box-shadow: 0 0 16px var(--pip-green), inset 0 0 8px rgba(74,112,24,0.35); transform: scale(1.12); }
-    65%  { opacity: 0.7; box-shadow: 0 0 8px var(--pip-green); transform: scale(1.04); }
-    100% { opacity: 0; box-shadow: none; transform: scale(1); }
-  }
-  @keyframes paGuardFire {
-    0%   { opacity: 0; box-shadow: none; }
-    20%  { opacity: 1; box-shadow: 0 0 18px var(--pip-blue), inset 0 0 10px rgba(42,90,138,0.45); transform: scale(1.12); }
-    65%  { opacity: 0.7; box-shadow: 0 0 10px var(--pip-blue); transform: scale(1.04); }
     100% { opacity: 0; box-shadow: none; transform: scale(1); }
   }
   @keyframes playerCardFire {
@@ -47,22 +35,14 @@ const KEYFRAMES = `
     20%  { background: rgba(180,40,40,0.22); box-shadow: inset 0 0 14px rgba(180,40,40,0.25); }
     100% { background: transparent; box-shadow: none; }
   }
+  @keyframes allyDodge {
+    0%   { transform: translateX(0);    }
+    30%  { transform: translateX(10px); }
+    65%  { transform: translateX(-2px); }
+    85%  { transform: translateX(1px);  }
+    100% { transform: translateX(0);    }
+  }
 `
-
-// Overlay that pulses when a guard fires — remounts on each new flashKey to restart the CSS animation
-function GuardGlow({ flashKey, isPAGuard }: { flashKey: number; isPAGuard: boolean }) {
-  if (flashKey === 0) return null
-  return (
-    <div
-      key={flashKey}
-      style={{
-        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
-        animation: `${isPAGuard ? 'paGuardFire' : 'guardFire'} 400ms ease-out forwards`,
-        zIndex: 2,
-      }}
-    />
-  )
-}
 
 // Amber glow on the player icon card when the player fires
 function PlayerCardFire({ flashKey }: { flashKey: number }) {
@@ -124,32 +104,40 @@ function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
   )
 }
 
+const GUARD_ICON = (
+  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
+    <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
+  </svg>
+)
+
+const PA_GUARD_ICON = (
+  <svg viewBox="0 0 100 100" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
+    <g transform="translate(0,100) scale(0.1,-0.1)">
+      <path d="M781 976 c-20 -21 -26 -23 -42 -13 -16 10 -24 7 -51 -20 -26 -27 -29 -34 -19 -47 18 -22 4 -38 -28 -31 -21 4 -33 -1 -55 -24 -25 -26 -27 -33 -16 -46 12 -14 2 -27 -70 -100 -83 -84 -85 -85 -125 -78 -32 4 -54 19 -111 74 -40 38 -77 69 -84 69 -19 0 -54 -21 -72 -44 -32 -38 -22 -64 52 -140 38 -40 70 -80 70 -89 0 -15 -44 -57 -60 -57 -4 0 -16 17 -25 37 -23 50 -44 73 -66 73 -29 0 -79 -49 -79 -77 0 -27 36 -93 50 -93 5 0 14 -9 20 -20 9 -16 7 -26 -9 -47 -39 -48 -30 -68 82 -180 133 -133 129 -133 256 -8 63 61 105 95 119 95 28 0 108 77 117 112 4 17 1 39 -9 60 l-17 32 82 82 c70 70 86 82 108 78 37 -8 81 38 64 66 -17 26 9 49 33 30 13 -11 20 -9 47 18 26 27 30 35 20 50 -9 14 -6 22 15 45 l26 27 -94 95 c-52 52 -97 95 -101 95 -3 0 -16 -11 -28 -24z m48 -40 c9 -10 8 -16 -4 -26 -21 -17 -51 6 -34 26 6 8 15 14 19 14 4 0 13 -6 19 -14z m85 -215 c-6 -7 -194 181 -194 194 0 5 45 -35 100 -90 54 -54 97 -101 94 -104z m-29 159 c4 -6 1 -17 -5 -26 -10 -11 -16 -12 -26 -3 -11 9 -11 15 -3 25 14 17 25 18 34 4z m-156 -44 c9 -10 8 -16 -4 -26 -19 -16 -41 1 -32 24 8 20 21 20 36 2z m217 -35 c-9 -14 -33 -14 -41 -1 -4 6 -1 18 6 26 11 13 14 13 27 0 8 -8 11 -19 8 -25z m-216 -76 c52 -52 91 -98 87 -102 -8 -7 -197 175 -197 189 0 19 21 2 110 -87z m55 55 c4 -6 1 -17 -5 -26 -10 -11 -16 -12 -26 -3 -11 9 -11 15 -3 25 14 17 25 18 34 4z m-157 -43 c9 -10 -9 -33 -77 -101 -78 -78 -89 -85 -101 -71 -12 14 -3 27 71 101 46 46 86 84 90 84 4 0 11 -6 17 -13z m218 -36 c-9 -14 -33 -14 -41 -1 -4 6 -1 18 6 26 11 13 14 13 27 0 8 -8 11 -19 8 -25z m-608 -44 l63 -63 -26 -24 -25 -24 -60 59 c-33 33 -60 64 -60 69 0 11 30 46 39 46 4 0 35 -28 69 -63z m449 17 c2 -5 -35 -47 -82 -94 -67 -67 -87 -82 -97 -72 -10 10 5 30 72 97 79 80 99 93 107 69z m-19 -151 c-76 -76 -89 -85 -103 -73 -14 12 -7 23 72 102 78 78 89 86 103 73 13 -14 5 -25 -72 -102z m-176 -51 c59 -60 108 -116 108 -125 0 -10 -16 -35 -36 -57 -57 -63 -72 -58 -190 63 -56 56 -104 110 -107 120 -8 23 67 107 96 107 12 0 62 -42 129 -108z m-392 -7 c0 -8 11 -27 25 -43 24 -28 24 -30 6 -46 -17 -16 -20 -14 -55 24 -41 45 -43 56 -19 82 12 14 19 15 30 7 7 -6 13 -17 13 -24z m268 -322 c-46 -46 -89 -83 -97 -83 -18 0 -179 157 -187 183 -5 15 13 38 77 103 l84 84 102 -102 103 -103 -82 -82z"/>
+    </g>
+  </svg>
+)
+
 interface Props { player: PlayerState; combat: CombatState }
 
 export default function CombatPanel({ player, combat }: Props) {
   const { fight, run, completeCombatAnim, openTamingMinigame, completeTame, abandonTame, useAntivenom } = useGameStore()
   const combatAnimSteps    = useGameStore(s => s.combatAnimSteps)
   const showTamingMinigame = useGameStore(s => s.showTamingMinigame)
-  const mode     = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const gameType = useGameStore(s => s.gameState?.gameType ?? 'standard')
-  const mc   = GAME_MODES[mode]
 
-  const paGuards    = player.powerArmorGuards ?? 0
-
-  // Captured once at encounter start (CombatPanel mounts fresh per encounter).
-  // Used as the floor for totalGuards so dead guards stay visible across all fight rounds.
-  const [encounterInitialGuards]   = useState(player.guards)
-  const [encounterInitialPAGuards] = useState(paGuards)
+  const aliveGuardCount   = player.guards.filter(g => !g.dead).length
+  const alivePAGuardCount = player.paGuards.filter(g => !g.dead).length
 
   const isResolved  = combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost'
   const isResolving = combat.phase === 'resolving'
   const gunCooldown = player.gun?.cooldownRemaining ?? 0
-  const hasGuards   = player.guards > 0 || (player.powerArmorGuards ?? 0) > 0
+  const hasGuards   = aliveGuardCount > 0 || alivePAGuardCount > 0
   const hasMount    = !!player.mount
   const gunCanFire  = !!player.gun && (player.gun.ammo > 0 || gunCooldown > 0)
   const canFight    = (gunCanFire || hasGuards || hasMount) && !isResolving
 
-  const runChancePct = Math.round(runEscapeChance(player.guards, player.powerArmorGuards ?? 0, player.brahmin) * 100)
+  const runChancePct = Math.round(runEscapeChance(aliveGuardCount, alivePAGuardCount, player.brahmin) * 100)
 
   const aliveEnemies = combat.enemies.filter(e => !e.dead)
   const soloAlive    = aliveEnemies.length === 1 ? aliveEnemies[0] : null
@@ -176,7 +164,7 @@ export default function CombatPanel({ player, combat }: Props) {
     combatAnimSteps,
     combat.enemies,
     player.guards,
-    paGuards,
+    player.paGuards,
     player.health,
     player.armor?.armorPoints ?? 0,
     initialMountHealth,
@@ -199,12 +187,6 @@ export default function CombatPanel({ player, combat }: Props) {
       })
     : combat.enemies
 
-  // Alive counts — used to determine which cards are greyed out
-  const aliveGuards   = anim.isAnimating ? anim.displayGuards   : player.guards
-  const alivePAGuards = anim.isAnimating ? anim.displayPAGuards : paGuards
-  // Total cards to render — encounter-start count so dead guards stay visible all round
-  const totalGuards   = encounterInitialGuards
-  const totalPAGuards = encounterInitialPAGuards
   // Mount health for display during animation
   const displayMountHp = anim.isAnimating ? anim.displayMountHealth : (player.mount?.health ?? 0)
   const mountIsDead    = anim.isAnimating ? anim.mountDied : (player.mount ? player.mount.health <= 0 : false)
@@ -216,8 +198,8 @@ export default function CombatPanel({ player, combat }: Props) {
 
   // Real-state flashes (fire when game state updates after animation completes)
   const { flashKey: hpFlash }      = useValueFlash(player.health)
-  const { flashKey: guardsFlash }  = useValueFlash(player.guards)
-  const { flashKey: paGuardsFlash } = useValueFlash(paGuards)
+  const { flashKey: guardsFlash }  = useValueFlash(aliveGuardCount)
+  const { flashKey: paGuardsFlash } = useValueFlash(alivePAGuardCount)
   const { flashKey: ammoFlash, direction: ammoDir } = useValueFlash(player.gun?.ammo ?? 0)
   const { flashKey: apFlash }      = useValueFlash(player.armor?.armorPoints ?? 0)
 
@@ -285,18 +267,18 @@ export default function CombatPanel({ player, combat }: Props) {
               {player.gun.name} · {anim.isAnimating ? anim.displayAmmo : player.gun.ammo} ammo
             </FlashText>
           )}
-          {player.guards > 0 && (
-            <FlashText flashKey={guardsFlash} variant="red">{player.guards} guards</FlashText>
+          {aliveGuardCount > 0 && (
+            <FlashText flashKey={guardsFlash} variant="red">{aliveGuardCount} guards</FlashText>
           )}
-          {paGuards > 0 && (
-            <FlashText flashKey={paGuardsFlash} variant="red"><span style={{ color: 'var(--pip-blue)' }}>{paGuards} PA guards</span></FlashText>
+          {alivePAGuardCount > 0 && (
+            <FlashText flashKey={paGuardsFlash} variant="red"><span style={{ color: 'var(--pip-blue)' }}>{alivePAGuardCount} PA guards</span></FlashText>
           )}
           {player.brahmin > 0 && <span>{player.brahmin} brahmin</span>}
         </div>
       </div>
 
       {/* Protectors — player card + guards + brahmin */}
-      {(totalGuards > 0 || totalPAGuards > 0 || player.brahmin > 0) && (
+      {(player.guards.length > 0 || player.paGuards.length > 0 || player.brahmin > 0) && (
         <div className="border border-pip-border rounded p-3">
           <div className="pip-label mb-2">Protectors</div>
           <div className="flex gap-2 flex-wrap">
@@ -307,7 +289,11 @@ export default function CombatPanel({ player, combat }: Props) {
               const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
               return (
                 <div className="flex flex-col items-center gap-1" style={{ width: '3rem' }}>
-                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
+                  <div
+                    key={anim.playerDodgeKey > 0 ? `dodge-${anim.playerDodgeKey}` : 'still'}
+                    className="relative w-10 h-10 border rounded flex items-center justify-center"
+                    style={{ borderColor: 'var(--pip-amber)', animation: anim.playerDodgeKey > 0 ? 'allyDodge 420ms ease-out' : 'none' }}
+                  >
                     <PlayerCardFire flashKey={anim.playerFireKey} />
                     <FlashOverlay flashKey={anim.playerDamageKey} variant="damage" />
                     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
@@ -322,45 +308,36 @@ export default function CombatPanel({ player, combat }: Props) {
               )
             })()}
 
-            {Array.from({ length: totalGuards }).map((_, i) => {
-              const dead = i >= aliveGuards
+            {player.guards.map(g => {
+              const displayGuardHp = anim.isAnimating ? (anim.displayGuardHealth[g.id] ?? g.health) : g.health
+              const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
               return (
-                <div
-                  key={`g-${i}`}
-                  className="flex flex-col items-center gap-1"
-                  style={{ width: '3rem', opacity: dead ? 0.35 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
-                >
-                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-green)' }}>
-                    {!dead && <GuardGlow flashKey={anim.guardFireKeys[i] ?? 0} isPAGuard={false} />}
-                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-green)' }}>
-                      <path d="M20 6C20 6 19.1843 6 19.0001 6C16.2681 6 13.8871 4.93485 11.9999 3C10.1128 4.93478 7.73199 6 5.00009 6C4.81589 6 4.00009 6 4.00009 6C4.00009 6 4 8 4 9.16611C4 14.8596 7.3994 19.6436 12 21C16.6006 19.6436 20 14.8596 20 9.16611C20 8 20 6 20 6Z" />
-                    </svg>
-                  </div>
-                  <div className="h-1 rounded w-full" style={{ backgroundColor: dead ? 'var(--pip-border)' : 'var(--pip-green)', transition: 'background-color 400ms' }} />
-                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-green)', opacity: 0.7 }}>GUARD</div>
-                </div>
+                <GuardUnitCard
+                  key={g.id}
+                  unit={displayUnit}
+                  label="GUARD"
+                  color="var(--pip-green)"
+                  icon={GUARD_ICON}
+                  fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
+                  damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
+                  dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
+                />
               )
             })}
-            {Array.from({ length: totalPAGuards }).map((_, i) => {
-              const globalIdx = totalGuards + i
-              const dead = i >= alivePAGuards
+            {player.paGuards.map(g => {
+              const displayGuardHp = anim.isAnimating ? (anim.displayPAGuardHealth[g.id] ?? g.health) : g.health
+              const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
               return (
-                <div
-                  key={`pa-${i}`}
-                  className="flex flex-col items-center gap-1"
-                  style={{ width: '3rem', opacity: dead ? 0.35 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
-                >
-                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-blue)' }}>
-                    {!dead && <GuardGlow flashKey={anim.guardFireKeys[globalIdx] ?? 0} isPAGuard={true} />}
-                    <svg viewBox="0 0 100 100" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-blue)' }}>
-                      <g transform="translate(0,100) scale(0.1,-0.1)">
-                        <path d="M781 976 c-20 -21 -26 -23 -42 -13 -16 10 -24 7 -51 -20 -26 -27 -29 -34 -19 -47 18 -22 4 -38 -28 -31 -21 4 -33 -1 -55 -24 -25 -26 -27 -33 -16 -46 12 -14 2 -27 -70 -100 -83 -84 -85 -85 -125 -78 -32 4 -54 19 -111 74 -40 38 -77 69 -84 69 -19 0 -54 -21 -72 -44 -32 -38 -22 -64 52 -140 38 -40 70 -80 70 -89 0 -15 -44 -57 -60 -57 -4 0 -16 17 -25 37 -23 50 -44 73 -66 73 -29 0 -79 -49 -79 -77 0 -27 36 -93 50 -93 5 0 14 -9 20 -20 9 -16 7 -26 -9 -47 -39 -48 -30 -68 82 -180 133 -133 129 -133 256 -8 63 61 105 95 119 95 28 0 108 77 117 112 4 17 1 39 -9 60 l-17 32 82 82 c70 70 86 82 108 78 37 -8 81 38 64 66 -17 26 9 49 33 30 13 -11 20 -9 47 18 26 27 30 35 20 50 -9 14 -6 22 15 45 l26 27 -94 95 c-52 52 -97 95 -101 95 -3 0 -16 -11 -28 -24z m48 -40 c9 -10 8 -16 -4 -26 -21 -17 -51 6 -34 26 6 8 15 14 19 14 4 0 13 -6 19 -14z m85 -215 c-6 -7 -194 181 -194 194 0 5 45 -35 100 -90 54 -54 97 -101 94 -104z m-29 159 c4 -6 1 -17 -5 -26 -10 -11 -16 -12 -26 -3 -11 9 -11 15 -3 25 14 17 25 18 34 4z m-156 -44 c9 -10 8 -16 -4 -26 -19 -16 -41 1 -32 24 8 20 21 20 36 2z m217 -35 c-9 -14 -33 -14 -41 -1 -4 6 -1 18 6 26 11 13 14 13 27 0 8 -8 11 -19 8 -25z m-216 -76 c52 -52 91 -98 87 -102 -8 -7 -197 175 -197 189 0 19 21 2 110 -87z m55 55 c4 -6 1 -17 -5 -26 -10 -11 -16 -12 -26 -3 -11 9 -11 15 -3 25 14 17 25 18 34 4z m-157 -43 c9 -10 -9 -33 -77 -101 -78 -78 -89 -85 -101 -71 -12 14 -3 27 71 101 46 46 86 84 90 84 4 0 11 -6 17 -13z m218 -36 c-9 -14 -33 -14 -41 -1 -4 6 -1 18 6 26 11 13 14 13 27 0 8 -8 11 -19 8 -25z m-608 -44 l63 -63 -26 -24 -25 -24 -60 59 c-33 33 -60 64 -60 69 0 11 30 46 39 46 4 0 35 -28 69 -63z m449 17 c2 -5 -35 -47 -82 -94 -67 -67 -87 -82 -97 -72 -10 10 5 30 72 97 79 80 99 93 107 69z m-19 -151 c-76 -76 -89 -85 -103 -73 -14 12 -7 23 72 102 78 78 89 86 103 73 13 -14 5 -25 -72 -102z m-176 -51 c59 -60 108 -116 108 -125 0 -10 -16 -35 -36 -57 -57 -63 -72 -58 -190 63 -56 56 -104 110 -107 120 -8 23 67 107 96 107 12 0 62 -42 129 -108z m-392 -7 c0 -8 11 -27 25 -43 24 -28 24 -30 6 -46 -17 -16 -20 -14 -55 24 -41 45 -43 56 -19 82 12 14 19 15 30 7 7 -6 13 -17 13 -24z m268 -322 c-46 -46 -89 -83 -97 -83 -18 0 -179 157 -187 183 -5 15 13 38 77 103 l84 84 102 -102 103 -103 -82 -82z"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="h-1 rounded w-full" style={{ backgroundColor: dead ? 'var(--pip-border)' : 'var(--pip-blue)', transition: 'background-color 400ms' }} />
-                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-blue)', opacity: 0.7 }}>PA</div>
-                </div>
+                <GuardUnitCard
+                  key={g.id}
+                  unit={displayUnit}
+                  label="PA"
+                  color="var(--pip-blue)"
+                  icon={PA_GUARD_ICON}
+                  fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
+                  damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
+                  dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
+                />
               )
             })}
             {/* Mount card */}
@@ -374,8 +351,13 @@ export default function CombatPanel({ player, combat }: Props) {
                   className="flex flex-col items-center gap-1"
                   style={{ width: '3rem', opacity: mountIsDead ? 0.35 : 1, filter: mountIsDead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
                 >
-                  <div className="relative w-10 h-10 border rounded flex items-center justify-center" style={{ borderColor: 'var(--pip-amber)' }}>
+                  <div
+                    key={anim.mountDodgeKey > 0 ? `dodge-${anim.mountDodgeKey}` : 'still'}
+                    className="relative w-10 h-10 border rounded flex items-center justify-center"
+                    style={{ borderColor: 'var(--pip-amber)', animation: anim.mountDodgeKey > 0 ? 'allyDodge 420ms ease-out' : 'none' }}
+                  >
                     {!mountIsDead && <MountGlow flashKey={anim.mountFireKey} />}
+                    <FlashOverlay flashKey={anim.mountDamageKey} variant="damage" />
                     {mountIconFile ? (
                       <img src={mountIconFile} alt="" className="w-7 h-7" style={{ opacity: 0.85 }} />
                     ) : (
@@ -421,9 +403,9 @@ export default function CombatPanel({ player, combat }: Props) {
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
-            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: attacks each turn, shields you if guards &amp; armor are gone ({displayMountHp}/{player.mount.maxHealth} HP)</span>}
-            {totalGuards > 0 && <span style={{ color: 'var(--pip-green)' }}>Guard: absorbs {mc.guardHealth} HP ea.</span>}
-            {totalPAGuards > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA: absorbs {mc.powerArmorGuardHealth} HP ea.</span>}
+            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: attacks each turn, can be targeted directly like any other protector ({displayMountHp}/{player.mount.maxHealth} HP)</span>}
+            {player.guards.length > 0 && <span style={{ color: 'var(--pip-green)' }}>Guards: take partial damage, carry wounds into future rounds — heal free at a settlement doctor</span>}
+            {player.paGuards.length > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA guards: tougher, more likely to draw enemy fire</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Each brahmin: −12% escape chance, 30% bolt risk on escape</span>}
           </div>
         </div>
@@ -479,7 +461,7 @@ export default function CombatPanel({ player, combat }: Props) {
             className={
               line.includes('dead') || line.includes('defeated') ? 'text-pip-amber' :
               line.includes('killed') || line.includes('hit you') || line.includes('flee') || line.includes('Missed') ? 'text-pip-red' :
-              line.includes('armor absorbs') ? 'text-pip-blue' :
+              line.includes('armor absorbs') || line.includes('Armor absorb') ? 'text-pip-blue' :
               line.includes('Hit') ? 'text-pip-green-mid' :
               'text-pip-green'
             }

@@ -1,43 +1,51 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AnimStep, EnemyUnit } from '../types/game'
+import type { AnimStep, EnemyUnit, GuardUnit, PAGuardUnit } from '../types/game'
 
-const INTER_SHOT_MS      = 620   // gap between each shot starting
-const BURST_INTER_MS     = 130   // gap between shots within a burst (rapid fire)
-const SHOOTER_FLASH_MS   = 280   // how long the shooter glows before the bullet lands
-const TARGET_FLASH_DELAY = 220   // after shooter flash, when the enemy reacts (hit or dodge)
-const RETALIATION_PAUSE  = 900   // extra pause before enemies strike back
-const ATTACK_LAND_DELAY  = 360   // after enemy lunge, when damage registers on player
+const INTER_SHOT_MS         = 620   // gap between each player/guard shot starting
+const BURST_INTER_MS        = 130   // gap between shots within a burst (rapid fire)
+const SHOOTER_FLASH_MS      = 280   // how long the shooter glows before the bullet lands
+const TARGET_FLASH_DELAY    = 220   // after shooter flash, when the enemy reacts (hit or dodge)
+const RETALIATION_PAUSE     = 900   // extra pause before enemies strike back
+const ATTACK_LAND_DELAY     = 360   // after enemy lunge, when damage/dodge registers on its target
+const INTER_ENEMY_ATTACK_MS = 480   // gap between individual enemy attacks — quicker than player/guard shots
 
 export interface EnemyAnimEntry { key: number; type: 'hit' | 'miss' | 'attack' }
 
 export interface CombatAnimState {
   isAnimating: boolean
-  activeShooterIdx: number | null
+  activeShooterId: string | null
   activeTargetId: string | null
   displayEnemyHealth: Record<string, number>
   displayPlayerHealth: number
   displayPlayerAP: number
   displayAmmo: number
-  displayGuards: number      // alive count during animation; use to determine which cards are greyed
-  displayPAGuards: number
-  initialGuards: number      // pre-fight count; use as total cards to render (including grey dead)
-  initialPAGuards: number
+  displayGuardHealth: Record<string, number>     // keyed by GuardUnit.id
+  displayPAGuardHealth: Record<string, number>   // keyed by PAGuardUnit.id
   displayMountHealth: number
   initialMountHealth: number
   mountFireKey: number
+  mountDamageKey: number
+  mountDodgeKey: number
   mountDied: boolean
   playerFireKey: number
   playerDamageKey: number
-  guardFireKeys: Record<number, number>
+  playerDodgeKey: number
+  guardFireKeys: Record<string, number>
+  guardDamageKeys: Record<string, number>
+  guardDodgeKeys: Record<string, number>
   enemyHitKeys: Record<string, number>
   enemyAnimInfo: Record<string, EnemyAnimEntry>
+}
+
+function initialGuardHealthMap(guards: GuardUnit[] | PAGuardUnit[]): Record<string, number> {
+  return Object.fromEntries(guards.map(g => [g.id, g.health]))
 }
 
 export function useCombatAnimation(
   animSteps: AnimStep[] | null,
   enemies: EnemyUnit[],
-  initialGuards: number,
-  initialPAGuards: number,
+  guards: GuardUnit[],
+  paGuards: PAGuardUnit[],
   initialPlayerHealth: number,
   initialPlayerAP: number,
   initialMountHealth: number,
@@ -47,23 +55,26 @@ export function useCombatAnimation(
 ): CombatAnimState {
   const [state, setState] = useState<CombatAnimState>({
     isAnimating: false,
-    activeShooterIdx: null,
+    activeShooterId: null,
     activeTargetId: null,
     displayEnemyHealth: {},
     displayPlayerHealth: initialPlayerHealth,
     displayPlayerAP: initialPlayerAP,
     displayAmmo: initialAmmo,
-    displayGuards: initialGuards,
-    displayPAGuards: initialPAGuards,
-    initialGuards,
-    initialPAGuards,
+    displayGuardHealth: initialGuardHealthMap(guards),
+    displayPAGuardHealth: initialGuardHealthMap(paGuards),
     displayMountHealth: initialMountHealth,
     initialMountHealth,
     mountFireKey: 0,
+    mountDamageKey: 0,
+    mountDodgeKey: 0,
     mountDied: false,
     playerFireKey: 0,
     playerDamageKey: 0,
+    playerDodgeKey: 0,
     guardFireKeys: {},
+    guardDamageKeys: {},
+    guardDodgeKeys: {},
     enemyHitKeys: {},
     enemyAnimInfo: {},
   })
@@ -84,40 +95,51 @@ export function useCombatAnimation(
 
     const initialHealth  = Object.fromEntries(enemies.map(e => [e.id, e.health]))
     const workingHealth  = { ...initialHealth }
-    const workingFireKeys: Record<number, number>         = {}
-    const workingHitKeys:  Record<string, number>         = {}
-    const workingAnimInfo: Record<string, EnemyAnimEntry> = {}
+    const workingFireKeys: Record<string, number>          = {}
+    const workingHitKeys:  Record<string, number>          = {}
+    const workingAnimInfo: Record<string, EnemyAnimEntry>  = {}
+    const workingGuardHealth   = initialGuardHealthMap(guards)
+    const workingPAGuardHealth = initialGuardHealthMap(paGuards)
+    const workingGuardDamageKeys: Record<string, number> = {}
+    const workingGuardDodgeKeys:  Record<string, number> = {}
 
     setState(s => ({
       ...s,
       isAnimating: true,
-      activeShooterIdx: null,
+      activeShooterId: null,
       activeTargetId: null,
       displayEnemyHealth: initialHealth,
       displayPlayerHealth: initialPlayerHealth,
       displayPlayerAP: initialPlayerAP,
       displayAmmo: initialAmmo,
-      displayGuards: initialGuards,
-      displayPAGuards: initialPAGuards,
-      initialGuards,
-      initialPAGuards,
+      displayGuardHealth: { ...workingGuardHealth },
+      displayPAGuardHealth: { ...workingPAGuardHealth },
       displayMountHealth: initialMountHealth,
       initialMountHealth,
       mountFireKey: 0,
+      mountDamageKey: 0,
+      mountDodgeKey: 0,
       mountDied: false,
       playerFireKey: 0,
       playerDamageKey: 0,
+      playerDodgeKey: 0,
       guardFireKeys: {},
+      guardDamageKeys: {},
+      guardDodgeKeys: {},
       enemyHitKeys: {},
       enemyAnimInfo: {},
     }))
 
     let offset = 80
     let workingAmmo = initialAmmo
+    let workingPlayerHealth = initialPlayerHealth
+    let workingPlayerAP = initialPlayerAP
+    let workingMountHealth = initialMountHealth
+    let retaliationStarted = false
 
     for (const step of animSteps) {
       if (step.kind === 'shot') {
-        const shooterIdx  = step.by === 'player' ? -1 : step.guardIdx
+        const shooterId    = step.by === 'player' ? null : step.shooterId
         const targetId    = step.targetId
         const healthAfter = step.targetHealthAfter
         const hit         = step.hit
@@ -127,11 +149,11 @@ export function useCombatAnimation(
         if (step.by === 'player') workingAmmo = Math.max(0, workingAmmo - 1)
         const ammoAtShot = workingAmmo
         timersRef.current.push(setTimeout(() => {
-          if (shooterIdx === -1) {
-            setState(s => ({ ...s, activeShooterIdx: shooterIdx, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+          if (shooterId === null) {
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
           } else {
-            workingFireKeys[shooterIdx] = (workingFireKeys[shooterIdx] ?? 0) + 1
-            setState(s => ({ ...s, activeShooterIdx: shooterIdx, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+            workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
+            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
           }
         }, t1))
 
@@ -161,14 +183,14 @@ export function useCombatAnimation(
         offset += INTER_SHOT_MS
 
       } else if (step.kind === 'mount_attack') {
-        // ── Mount attack — same timing pattern as a shot ────────────────────
+        // ── Mount attack (targeting an enemy) — same timing pattern as a shot ──
         const targetId    = step.targetId
         const healthAfter = step.targetHealthAfter
         const hit         = step.hit
 
         // Mount card glows
         timersRef.current.push(setTimeout(() => {
-          setState(s => ({ ...s, activeShooterIdx: null, activeTargetId: null, mountFireKey: s.mountFireKey + 1 }))
+          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, mountFireKey: s.mountFireKey + 1 }))
         }, offset))
 
         // Enemy reacts
@@ -196,13 +218,96 @@ export function useCombatAnimation(
 
         offset += INTER_SHOT_MS
 
+      } else if (step.kind === 'enemy_attack') {
+        // ── Individual enemy attack — lunge on the attacker, then damage/dodge lands on its target ──
+        if (!retaliationStarted) {
+          offset += RETALIATION_PAUSE
+          retaliationStarted = true
+        }
+
+        const attackAt = offset
+        const enemyId  = step.enemyId
+        timersRef.current.push(setTimeout(() => {
+          if ((workingHealth[enemyId] ?? 0) > 0) {
+            workingAnimInfo[enemyId] = { key: (workingAnimInfo[enemyId]?.key ?? 0) + 1, type: 'attack' }
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, enemyAnimInfo: { ...workingAnimInfo } }))
+          }
+        }, attackAt))
+
+        const landAt = attackAt + ATTACK_LAND_DELAY
+        timersRef.current.push(setTimeout(() => {
+          if (step.hit) {
+            if (step.targetKind === 'player') {
+              const apLoss = step.armorAbsorbed ?? 0
+              const hpLoss = step.damage - apLoss
+              workingPlayerAP     = Math.max(0, workingPlayerAP - apLoss)
+              workingPlayerHealth = Math.max(0, workingPlayerHealth - hpLoss)
+              if (step.venomDotDamage) workingPlayerHealth = Math.max(0, workingPlayerHealth - step.venomDotDamage)
+              setState(s => ({
+                ...s,
+                displayPlayerHealth: workingPlayerHealth,
+                displayPlayerAP:     workingPlayerAP,
+                playerDamageKey:     s.playerDamageKey + 1,
+              }))
+            } else if (step.targetKind === 'guard') {
+              workingGuardHealth[step.targetId] = step.targetHealthAfter
+              workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
+              setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+            } else if (step.targetKind === 'pa_guard') {
+              workingPAGuardHealth[step.targetId] = step.targetHealthAfter
+              workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
+              setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+            } else {
+              workingMountHealth = step.targetHealthAfter
+              setState(s => ({ ...s, displayMountHealth: workingMountHealth, mountDamageKey: s.mountDamageKey + 1, mountDied: step.targetDied || s.mountDied }))
+            }
+          } else {
+            if (step.targetKind === 'player') {
+              setState(s => ({ ...s, playerDodgeKey: s.playerDodgeKey + 1 }))
+            } else if (step.targetKind === 'guard') {
+              workingGuardDodgeKeys[step.targetId] = (workingGuardDodgeKeys[step.targetId] ?? 0) + 1
+              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys } }))
+            } else if (step.targetKind === 'pa_guard') {
+              workingGuardDodgeKeys[step.targetId] = (workingGuardDodgeKeys[step.targetId] ?? 0) + 1
+              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys } }))
+            } else {
+              setState(s => ({ ...s, mountDodgeKey: s.mountDodgeKey + 1 }))
+            }
+          }
+          onLogLineRef.current?.(step.logLine)
+          if (step.venomApplied) onLogLineRef.current?.('Cazador venom enters your bloodstream. Accuracy -30%, +5 HP/round.')
+          if (step.venomDotDamage) onLogLineRef.current?.(`Venom burns through you. -${step.venomDotDamage} HP.`)
+        }, landAt))
+
+        offset += ATTACK_LAND_DELAY + INTER_ENEMY_ATTACK_MS
+
+      } else if (step.kind === 'chem_use') {
+        // ── Medic auto-heal — quick flash on the healed unit ──────────────
+        const t = offset
+        timersRef.current.push(setTimeout(() => {
+          if (step.targetKind === 'player') {
+            workingPlayerHealth = step.targetHealthAfter
+            setState(s => ({ ...s, displayPlayerHealth: workingPlayerHealth, playerDamageKey: s.playerDamageKey + 1 }))
+          } else if (step.targetKind === 'guard') {
+            workingGuardHealth[step.targetId] = step.targetHealthAfter
+            workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
+            setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+          } else {
+            workingPAGuardHealth[step.targetId] = step.targetHealthAfter
+            workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
+            setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+          }
+          onLogLineRef.current?.(step.logLine)
+        }, t))
+        offset += INTER_SHOT_MS
+
       } else if (step.kind === 'burst') {
         // ── Rapid-fire burst — shots staggered by BURST_INTER_MS, all close together ──
         // Player fires once (ammo already deducted as a block)
         workingAmmo = Math.max(0, workingAmmo - step.shots.length)
         const ammoAtBurst = workingAmmo
         timersRef.current.push(setTimeout(() => {
-          setState(s => ({ ...s, activeShooterIdx: -1, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtBurst }))
+          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtBurst }))
         }, offset))
 
         // Each shot in the burst lands BURST_INTER_MS apart
@@ -232,10 +337,10 @@ export function useCombatAnimation(
 
       } else if (step.kind === 'pa_burst') {
         // ── PA guard minigun burst — guard card glows, then shots land in rapid succession ──
-        const guardIdx = step.guardIdx
+        const shooterId = step.shooterId
         timersRef.current.push(setTimeout(() => {
-          workingFireKeys[guardIdx] = (workingFireKeys[guardIdx] ?? 0) + 1
-          setState(s => ({ ...s, activeShooterIdx: guardIdx, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+          workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
+          setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
         }, offset))
 
         step.shots.forEach((shot, si) => {
@@ -268,7 +373,7 @@ export function useCombatAnimation(
 
         // Player fires
         timersRef.current.push(setTimeout(() => {
-          setState(s => ({ ...s, activeShooterIdx: -1, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
         }, offset))
 
         // All targets react at the same moment
@@ -293,59 +398,12 @@ export function useCombatAnimation(
         }, offset + TARGET_FLASH_DELAY))
 
         offset += INTER_SHOT_MS
-
-      } else {
-        // ── Enemy retaliation — two sub-phases ──────────────────────────────
-        offset += RETALIATION_PAUSE
-
-        const guardsLost        = step.guardsLost
-        const paGuardsLost      = step.paGuardsLost
-        const hpDamage          = step.hpDamage
-        const armorAbsorb       = step.armorAbsorb
-        const mountDamageTaken  = step.mountDamageTaken
-        const mountDied         = step.mountDied
-
-        // Phase 1: alive enemies lunge (attack animation)
-        const attackAt = offset
-        timersRef.current.push(setTimeout(() => {
-          for (const e of enemies) {
-            if ((workingHealth[e.id] ?? e.health) > 0) {
-              workingAnimInfo[e.id] = {
-                key:  (workingAnimInfo[e.id]?.key ?? 0) + 1,
-                type: 'attack',
-              }
-            }
-          }
-          setState(s => ({
-            ...s,
-            activeShooterIdx: null,
-            activeTargetId:   null,
-            enemyAnimInfo:    { ...workingAnimInfo },
-          }))
-        }, attackAt))
-
-        // Phase 2: damage lands on player — HP/AP bars animate, guards/mount update
-        timersRef.current.push(setTimeout(() => {
-          setState(s => ({
-            ...s,
-            displayGuards:       Math.max(0, s.displayGuards   - guardsLost),
-            displayPAGuards:     Math.max(0, s.displayPAGuards - paGuardsLost),
-            displayPlayerHealth: Math.max(0, initialPlayerHealth - hpDamage),
-            displayPlayerAP:     Math.max(0, initialPlayerAP   - armorAbsorb),
-            displayMountHealth:  Math.max(0, s.displayMountHealth - mountDamageTaken),
-            mountDied:           mountDied || s.mountDied,
-            playerDamageKey:     (hpDamage > 0 || armorAbsorb > 0) ? s.playerDamageKey + 1 : s.playerDamageKey,
-          }))
-          for (const line of step.logLines) onLogLineRef.current?.(line)
-        }, attackAt + ATTACK_LAND_DELAY))
-
-        offset += ATTACK_LAND_DELAY + INTER_SHOT_MS
       }
     }
 
     // Clear active indicators
     timersRef.current.push(setTimeout(() => {
-      setState(s => ({ ...s, activeShooterIdx: null, activeTargetId: null }))
+      setState(s => ({ ...s, activeShooterId: null, activeTargetId: null }))
     }, offset))
 
     // Signal completion — reset hit keys to 0 so FlashOverlay is null when

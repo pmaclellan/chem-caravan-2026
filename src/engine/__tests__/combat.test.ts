@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount } from '../combat'
 import * as rngModule from '../rng'
-import type { PlayerState } from '../../types/game'
+import type { GuardUnit, PlayerState } from '../../types/game'
 import type { GameModeConfig } from '../../data/modes'
+
+function makeGuards(n: number): GuardUnit[] {
+  return Array.from({ length: n }, (_, i) => ({ id: `guard_${i}`, classId: 'standard' as const, health: 50, maxHealth: 50, dead: false }))
+}
 
 // Minimal mode config used in all tests — matches Commonwealth values
 // Cast to avoid listing world-data fields (settlements, roads, etc.) irrelevant to combat tests
@@ -66,8 +70,9 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     debt: 0,
     health: 100,
     maxHealth: 100,
-    guards: 0,
-    powerArmorGuards: 0,
+    guards: [],
+    paGuards: [],
+    nextGuardId: 0,
     brahmin: 0,
     location: 'diamond_city',
     ageOfDebt: 0,
@@ -179,9 +184,11 @@ describe('resolveFight', () => {
   })
 
   it('transitions to lost when player health reaches 0', () => {
-    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)   // player misses; enemies always hit max
+    // Low rng: enemies always hit (below default accuracy) and always land max damage.
+    // Player has no gun so it can't affect the outcome — isolates enemy damage only.
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(999)
-    const player = makePlayer({ health: 1 })
+    const player = makePlayer({ gun: null, health: 1 })
     const combat = initiateCombat(0.8, testMode)
     const { combat: result } = resolveFight(player, combat, testMode)
     expect(result.phase).toBe('lost')
@@ -191,21 +198,22 @@ describe('resolveFight', () => {
     // Always hit so we can count damage
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    const player = makePlayer({ guards: 2, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 10, ammoPerShot: 1, ammoPrice: 5 } })
+    const player = makePlayer({ guards: makeGuards(2), gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 10, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.5, testMode)
     const { player: result } = resolveFight(player, combat, testMode)
-    // Player spent 1 ammo + 2 guards spent 1 each = 3 total consumed
-    expect(result.gun!.ammo).toBe(7)
+    // Guards fire with their own sidearms — only the player's own shot touches player.gun.ammo
+    expect(result.gun!.ammo).toBe(9)
   })
 
-  it('guards stop firing if ammo runs out mid-turn', () => {
+  it('guards fire independently of player ammo', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.01)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    // Player has 2 ammo, 3 guards — player uses 1, guard 1 uses 1, guard 2 and 3 get nothing
-    const player = makePlayer({ guards: 3, gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 2, ammoPerShot: 1, ammoPrice: 5 } })
+    const player = makePlayer({ guards: makeGuards(3), gun: { id: 'p', name: 'p', accuracy: 1.0, damage: 5, ammo: 0, ammoPerShot: 1, ammoPrice: 5 } })
     const combat = initiateCombat(0.5, testMode)
     const { player: result } = resolveFight(player, combat, testMode)
+    // Player can't fire (no ammo) but guards still get their shots off
     expect(result.gun!.ammo).toBe(0)
+    expect(result.guards.some(g => g.dead === false)).toBe(true)
   })
 
   it('tracks totalDamageDealt correctly across hits', () => {
@@ -237,7 +245,7 @@ describe('resolveRun', () => {
 
   it('guards improve run chance — 5 guards at rng=0.85 should escape', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.85)
-    const player = makePlayer({ guards: 5, brahmin: 0 })
+    const player = makePlayer({ guards: makeGuards(5), brahmin: 0 })
     const { combat } = resolveRun(player, initiateCombat(0.4, testMode), testMode)
     expect(combat.phase).toBe('fled')
   })
@@ -246,7 +254,7 @@ describe('resolveRun', () => {
     // base 0.4 + 0 guards - 4 brahmin * 0.05 = 0.20. rng=0.15 should escape, rng=0.25 should fail
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.25)
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(5)
-    const player = makePlayer({ brahmin: 4, guards: 0 })
+    const player = makePlayer({ brahmin: 4, guards: [] })
     const { combat } = resolveRun(player, initiateCombat(0.4, testMode), testMode)
     expect(combat.phase).toBe('player_choice') // failed to flee
   })

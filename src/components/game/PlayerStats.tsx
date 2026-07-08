@@ -95,7 +95,7 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         <div className="flex justify-between items-center">
           <span className="pip-label">Guards</span>
           <span className="text-pip-green font-display">
-            {player.guards}{(player.powerArmorGuards ?? 0) > 0 ? ` · ${player.powerArmorGuards} PA` : ''}
+            {player.guards.filter(g => !g.dead).length}{player.paGuards.filter(g => !g.dead).length > 0 ? ` · ${player.paGuards.filter(g => !g.dead).length} PA` : ''}
           </span>
         </div>
         {salary > 0 && (
