@@ -1,3 +1,5 @@
+import type { CombatEffect } from '../types/game'
+
 export interface ChemDefinition {
   id: string
   name: string
@@ -10,6 +12,7 @@ export interface ChemDefinition {
   msgOverrides?: Partial<Record<string, { high?: string; low?: string }>>  // per-mode message overrides
   description: string
   imageUrl: string | null  // Fallout wiki item icon (null = no image available)
+  combatEffect?: CombatEffect  // usable mid-combat on self or a guard (stimpak/jet/ultrajet)
 }
 
 // Images sourced from the Fallout wiki (fallout.fandom.com) — Bethesda copyright, fan use only
@@ -27,6 +30,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     lowPriceMsg: "Chem cookers must be working overtime — Jet is dirt cheap.",
     description: "The Commonwealth's most popular chem. Slows time to a crawl.",
     imageUrl: `${W}/4/4d/Fallout4_Jet.png`,
+    combatEffect: { kind: 'accuracy_buff', accuracyBuffFraction: 0.25, buffDurationRounds: 2 },
   },
   psycho: {
     id: 'psycho',
@@ -131,6 +135,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     },
     description: "Healing nanomachine injection. The most valuable chem.",
     imageUrl: `${W}/e/e7/Fallout4_Stimpak.png`,
+    combatEffect: { kind: 'heal', healAmount: 25 },
   },
   ultrajet: {
     id: 'ultrajet',
@@ -143,6 +148,7 @@ export const CHEMS: Record<string, ChemDefinition> = {
     lowPriceMsg: "A wandering chemist undercut everyone — Ultrajet cheap today.",
     description: "Refined Jet. Rarer and far more potent.",
     imageUrl: `${W}/4/4d/Fallout4_Jet.png`, // no dedicated icon; Ultrajet is refined Jet
+    combatEffect: { kind: 'accuracy_buff', accuracyBuffFraction: 0.50, buffDurationRounds: 2 },
   },
   daytripper: {
     id: 'daytripper',

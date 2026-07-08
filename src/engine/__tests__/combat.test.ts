@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount } from '../combat'
+import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount, applyAccuracyBuff, tickActiveBuffs } from '../combat'
 import * as rngModule from '../rng'
-import type { GuardUnit, PlayerState } from '../../types/game'
+import type { ActiveBuff, GuardUnit, PlayerState } from '../../types/game'
 import type { GameModeConfig } from '../../data/modes'
 
 function makeGuards(n: number): GuardUnit[] {
@@ -286,5 +286,53 @@ describe('aliveEnemyCount', () => {
       enemies: combat.enemies.map((e, i) => i === 0 ? { ...e, dead: true } : e),
     }
     expect(aliveEnemyCount(withDead)).toBe(combat.enemies.length - 1)
+  })
+})
+
+// ── accuracy buffs (Jet/Ultrajet) ──────────────────────────────────────────────
+
+describe('applyAccuracyBuff', () => {
+  it('adds the buff bonus for a matching target', () => {
+    const buffs: ActiveBuff[] = [{ id: 'b1', chemId: 'jet', targetKind: 'player', targetId: 'player', accuracyBonus: 0.1, roundsRemaining: 2 }]
+    expect(applyAccuracyBuff(0.5, buffs, 'player', 'player')).toBeCloseTo(0.6)
+  })
+
+  it('leaves accuracy unchanged when no buff matches', () => {
+    const buffs: ActiveBuff[] = [{ id: 'b1', chemId: 'jet', targetKind: 'guard', targetId: 'guard_0', accuracyBonus: 0.1, roundsRemaining: 2 }]
+    expect(applyAccuracyBuff(0.5, buffs, 'player', 'player')).toBe(0.5)
+  })
+
+  it('clamps to the 0.95 ceiling', () => {
+    const buffs: ActiveBuff[] = [{ id: 'b1', chemId: 'ultrajet', targetKind: 'player', targetId: 'player', accuracyBonus: 0.5, roundsRemaining: 2 }]
+    expect(applyAccuracyBuff(0.9, buffs, 'player', 'player')).toBe(0.95)
+  })
+})
+
+describe('tickActiveBuffs', () => {
+  it('decrements roundsRemaining and drops expired buffs', () => {
+    const buffs: ActiveBuff[] = [
+      { id: 'b1', chemId: 'jet', targetKind: 'player', targetId: 'player', accuracyBonus: 0.1, roundsRemaining: 2 },
+      { id: 'b2', chemId: 'ultrajet', targetKind: 'guard', targetId: 'guard_0', accuracyBonus: 0.3, roundsRemaining: 1 },
+    ]
+    const ticked = tickActiveBuffs(buffs)
+    expect(ticked).toHaveLength(1)
+    expect(ticked[0].id).toBe('b1')
+    expect(ticked[0].roundsRemaining).toBe(1)
+  })
+})
+
+describe('resolveFight — buff integration', () => {
+  it('carries activeBuffs through a round, ticked down by one', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // miss everything, isolate buff bookkeeping
+    const player = makePlayer({ gun: null })
+    const combat = {
+      ...initiateCombat(0.1, testMode),
+      activeBuffs: [{ id: 'b1', chemId: 'jet', targetKind: 'player' as const, targetId: 'player', accuracyBonus: 0.1, roundsRemaining: 2 }],
+      chemUsedThisRound: true,
+    }
+    const { combat: result } = resolveFight(player, combat, testMode)
+    expect(result.activeBuffs).toHaveLength(1)
+    expect(result.activeBuffs[0].roundsRemaining).toBe(1)
+    expect(result.chemUsedThisRound).toBe(false)
   })
 })

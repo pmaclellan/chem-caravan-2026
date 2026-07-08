@@ -26,9 +26,10 @@ interface Props {
   fireFlashKey: number        // this unit fired at an enemy
   damageFlashKey: number      // this unit took a hit
   dodgeFlashKey: number       // this unit dodged an attack
+  buff?: { text: string; color: string } | null  // active Jet/Ultrajet accuracy buff, if any
 }
 
-export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey }: Props) {
+export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff }: Props) {
   const dead = unit.dead
   const hpPct = unit.maxHealth > 0 ? Math.max(0, Math.round((unit.health / unit.maxHealth) * 100)) : 0
   const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
@@ -67,6 +68,11 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         {!dead && <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />}
       </div>
+      {!dead && buff && (
+        <div className="text-center font-mono leading-none" style={{ fontSize: '0.55rem', color: buff.color }}>
+          {buff.text}
+        </div>
+      )}
       <div className="text-center" style={{ fontSize: '0.6rem', color, opacity: 0.7 }}>{label}</div>
     </div>
   )

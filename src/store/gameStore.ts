@@ -3,7 +3,8 @@ import pkg from '../../package.json'
 import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
 import { GUARD_CLASSES } from '../data/guardClasses'
-import type { AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
+import { CHEMS } from '../data/chems'
+import type { ActiveBuff, AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
 import {
   initializeGame,
   startTravel,
@@ -72,6 +73,86 @@ function updateSettlementStock(world: WorldState, loc: string, chemId: string, d
   }
 }
 
+// Applies a combat chem (Stimpak/Jet/Ultrajet) to the player or a guard mid-combat.
+// Free action — doesn't consume the FIGHT/RUN turn — but capped at 1 use per round across the party.
+function applyCombatChem(
+  state: GameState,
+  chemId: string,
+  targetKind: 'player' | 'guard' | 'pa_guard',
+  targetId: string,
+): { state: GameState; error?: string } {
+  const combat = state.combat
+  if (!combat) return { state, error: 'Not in combat.' }
+  if (combat.chemUsedThisRound) return { state, error: 'Already treated this round.' }
+
+  const chem = CHEMS[chemId]
+  const effect = chem?.combatEffect
+  if (!effect) return { state, error: 'This chem has no combat use.' }
+
+  const owned = state.player.inventory[chemId]
+  if (!owned || owned.quantity < 1) return { state, error: `No ${chem.name} in inventory.` }
+
+  let player = state.player
+  let targetName: string
+
+  if (targetKind === 'player') {
+    targetName = 'yourself'
+  } else if (targetKind === 'guard') {
+    const idx = player.guards.findIndex(g => g.id === targetId)
+    if (idx === -1 || player.guards[idx].dead) return { state, error: 'That guard is not available.' }
+    targetName = `Guard ${idx + 1}`
+  } else {
+    const idx = player.paGuards.findIndex(g => g.id === targetId)
+    if (idx === -1 || player.paGuards[idx].dead) return { state, error: 'That PA guard is not available.' }
+    targetName = `PA Guard ${idx + 1}`
+  }
+
+  const newQty = owned.quantity - 1
+  const inventory = { ...player.inventory }
+  if (newQty === 0) delete inventory[chemId]
+  else inventory[chemId] = { ...owned, quantity: newQty }
+  player = { ...player, inventory }
+
+  let newCombat: CombatState = combat
+  let logMsg: string
+
+  if (effect.kind === 'heal') {
+    const healAmount = effect.healAmount ?? 0
+    if (targetKind === 'player') {
+      player = { ...player, health: Math.min(player.maxHealth, player.health + healAmount) }
+    } else if (targetKind === 'guard') {
+      player = { ...player, guards: player.guards.map(g => g.id === targetId ? { ...g, health: Math.min(g.maxHealth, g.health + healAmount) } : g) }
+    } else {
+      player = { ...player, paGuards: player.paGuards.map(g => g.id === targetId ? { ...g, health: Math.min(g.maxHealth, g.health + healAmount) } : g) }
+    }
+    logMsg = `${chem.name} administered to ${targetName}. +${healAmount} HP.`
+  } else {
+    const fraction = effect.accuracyBuffFraction ?? 0
+    const duration = effect.buffDurationRounds ?? 2
+    const mc = GAME_MODES[state.mode]
+    const baseAccuracy =
+      targetKind === 'player' ? (player.gun?.accuracy ?? 0) :
+      targetKind === 'guard'  ? GUARD_CLASSES[player.guards.find(g => g.id === targetId)!.classId].accuracy :
+                                mc.powerArmorGuardAccuracy
+    const accuracyBonus = (1 - baseAccuracy) * fraction
+    const newBuff: ActiveBuff = {
+      id: `${chemId}_${targetId}_${combat.activeBuffs.length}_${state.world.turn}`,
+      chemId,
+      targetKind,
+      targetId,
+      accuracyBonus,
+      roundsRemaining: duration,
+    }
+    const activeBuffs = [...combat.activeBuffs.filter(b => !(b.targetKind === targetKind && b.targetId === targetId)), newBuff]
+    newCombat = { ...combat, activeBuffs }
+    logMsg = `${chem.name} administered to ${targetName}. Accuracy boosted for ${duration} rounds.`
+  }
+
+  newCombat = { ...newCombat, chemUsedThisRound: true }
+  const log = [...state.log, { turn: state.world.turn, message: logMsg, type: 'info' as const }]
+  return { state: { ...state, player, combat: newCombat, log } }
+}
+
 interface GameStore {
   gameId: string | null
   gameState: GameState | null
@@ -135,6 +216,9 @@ interface GameStore {
   retire: () => void
   buyAntivenom: () => void
   useAntivenom: () => void
+  useStimpakInCombat: (targetKind: 'player' | 'guard' | 'pa_guard', targetId: string) => void
+  useJetInCombat: (targetKind: 'player' | 'guard' | 'pa_guard', targetId: string) => void
+  useUltrajetInCombat: (targetKind: 'player' | 'guard' | 'pa_guard', targetId: string) => void
 
   // Celebration modals
   dismissDebtFreedom: () => void
@@ -953,6 +1037,30 @@ export const useGameStore = create<GameStore>((set, get) => {
         const combat = state.combat ? { ...state.combat, playerVenomed: false } : state.combat
         const log = [...state.log, { turn: state.world.turn, message: 'Antivenom administered. Venom cleared.', type: 'info' as const }]
         return { ...state, player, combat, log }
+      })
+    },
+
+    useStimpakInCombat: (targetKind, targetId) => {
+      mutate(state => {
+        const { state: next, error } = applyCombatChem(state, 'stimpak', targetKind, targetId)
+        if (error) { set({ toast: error }); return state }
+        return next
+      })
+    },
+
+    useJetInCombat: (targetKind, targetId) => {
+      mutate(state => {
+        const { state: next, error } = applyCombatChem(state, 'jet', targetKind, targetId)
+        if (error) { set({ toast: error }); return state }
+        return next
+      })
+    },
+
+    useUltrajetInCombat: (targetKind, targetId) => {
+      mutate(state => {
+        const { state: next, error } = applyCombatChem(state, 'ultrajet', targetKind, targetId)
+        if (error) { set({ toast: error }); return state }
+        return next
       })
     },
 
