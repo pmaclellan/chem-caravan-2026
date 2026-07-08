@@ -3,6 +3,7 @@ import type { PlayerState, SettlementMarket } from '../../types/game'
 import { CHEMS, CHEM_IDS } from '../../data/chems'
 import { useGameStore } from '../../store/gameStore'
 import { calculateCapacity, totalInventoryItems } from '../../engine/travel'
+import { RECOVERY_TURNS_TO_FULL } from '../../engine/market'
 import { priceColor } from '../../utils/priceColor'
 
 interface Props { player: PlayerState; market: SettlementMarket }
@@ -44,6 +45,8 @@ export default function MarketPanel({ player, market }: Props) {
               const chem = CHEMS[chemId]
               const price = market.prices[chemId]
               const stock = market.stock[chemId] ?? 0
+              const depletion = market.depletion?.[chemId] ?? 0
+              const recoverTurns = depletion > 0 ? Math.ceil(depletion / (chem.maxStock / RECOVERY_TURNS_TO_FULL)) : 0
               const owned = player.inventory[chemId]?.quantity ?? 0
               const paidPrice = player.inventory[chemId]?.pricePaid ?? 0
               const pnlPerUnit = owned > 0 ? price - paidPrice : null
@@ -72,7 +75,12 @@ export default function MarketPanel({ player, market }: Props) {
                   </td>
                   <td className="py-1 pr-2 text-right font-display"
                     style={priceColor(price, chem.basePrice, chem.priceVariance)}>{price}</td>
-                  <td className="py-1 pr-2 text-right text-pip-green-dim">{stock}</td>
+                  <td className="py-1 pr-2 text-right text-pip-green-dim">
+                    {stock}
+                    {recoverTurns > 0 && (
+                      <div className="text-[10px] text-pip-amber opacity-70 leading-tight">recovering ~{recoverTurns}t</div>
+                    )}
+                  </td>
                   <td className="py-1 pr-2 text-right text-pip-green-dim">{owned > 0 ? owned : '—'}</td>
                   <td className="py-1 pr-2 text-right">
                     {pnlPerUnit !== null ? (

@@ -73,6 +73,23 @@ function updateSettlementStock(world: WorldState, loc: string, chemId: string, d
   }
 }
 
+// Tracks purchase debt that suppresses this settlement's stock roll below a fresh value on future
+// visits (see refreshMarket in engine/market.ts) — the write side of stock depletion. Only buying
+// adds debt; it never goes negative and decays purely through refreshMarket over elapsed turns.
+function updateSettlementDepletion(world: WorldState, loc: string, chemId: string, delta: number): WorldState {
+  const prev = world.settlements[loc]?.depletion[chemId] ?? 0
+  return {
+    ...world,
+    settlements: {
+      ...world.settlements,
+      [loc]: {
+        ...world.settlements[loc],
+        depletion: { ...world.settlements[loc].depletion, [chemId]: Math.max(0, prev + delta) },
+      },
+    },
+  }
+}
+
 // Applies a combat chem (Stimpak/Jet/Ultrajet) to the player or a guard mid-combat.
 // Free action — doesn't consume the FIGHT/RUN turn — but capped at 1 use per round across the party.
 function applyCombatChem(
@@ -874,7 +891,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         purchase.pricePaid = market.prices[chemId]
         purchase.ok = true
         const loc = state.player.location
-        const world = updateSettlementStock(state.world, loc, chemId, -quantity)
+        let world = updateSettlementStock(state.world, loc, chemId, -quantity)
+        world = updateSettlementDepletion(world, loc, chemId, quantity)
         const log = [...state.log, {
           turn: state.world.turn,
           message: `Bought ${quantity} ${chemId} for ${market.prices[chemId] * quantity} caps.`,
@@ -931,7 +949,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         if (!price || inStock < quantity) { set({ toast: 'Not enough stock.' }); return state }
         purchase.pricePaid = price
         purchase.ok = true
-        const syntheticMarket = { prices: payload.prices, stock: payload.stock, lastRefreshed: 0 }
+        const syntheticMarket = { prices: payload.prices, stock: payload.stock, lastRefreshed: 0, depletion: {} }
         const { player, error } = buyChems(state.player, syntheticMarket, chemId, quantity)
         if (error) { set({ toast: error }); return state }
         const newPayload = { ...payload, stock: { ...payload.stock, [chemId]: inStock - quantity } }

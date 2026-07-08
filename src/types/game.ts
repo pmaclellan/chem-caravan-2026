@@ -127,6 +127,7 @@ export interface SettlementMarket {
   prices: Record<string, number>  // chemId -> current price
   stock: Record<string, number>   // chemId -> units available this turn
   lastRefreshed: number           // turn number
+  depletion: Record<string, number>  // chemId -> debt units suppressing stock below a fresh roll, decays over turns away
 }
 
 export type MarketEventType = 'shortage' | 'surplus' | 'new_shipment'

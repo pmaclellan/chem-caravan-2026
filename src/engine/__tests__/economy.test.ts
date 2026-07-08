@@ -55,6 +55,7 @@ function makeMarket(overrides: Partial<SettlementMarket> = {}): SettlementMarket
     prices: { jet: 80, stimpak: 200 },
     stock: { jet: 10, stimpak: 3 },
     lastRefreshed: 1,
+    depletion: {},
     ...overrides,
   }
 }

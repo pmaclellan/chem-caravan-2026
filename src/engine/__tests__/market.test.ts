@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   initializeMarket,
+  refreshMarket,
   applyMarketEvents,
   tickMarketEvents,
+  RECOVERY_TURNS_TO_FULL,
 } from '../market'
-import type { MarketEvent } from '../../types/game'
+import * as rngModule from '../rng'
+import type { MarketEvent, SettlementMarket } from '../../types/game'
 
 const TEST_CHEMS = ['jet', 'psycho', 'stimpak']
 
@@ -92,6 +95,53 @@ describe('applyMarketEvents', () => {
 
     applyMarketEvents(market, [event], 'diamond_city')
     expect(market.prices['jet']).toBe(original['jet'])
+  })
+})
+
+describe('refreshMarket — stock depletion', () => {
+  it('decays remaining debt proportionally to turns elapsed', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.1)   // passes jet's 0.85 availability, low price variance
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(15) // fresh roll = jet's full maxStock
+
+    const existing: SettlementMarket = { prices: {}, stock: {}, lastRefreshed: 0, depletion: { jet: 15 } }
+    const result = refreshMarket(existing, 3, ['jet']) // 3 turns away
+
+    // recoveryRate = maxStock(15) / RECOVERY_TURNS_TO_FULL(5) = 3/turn -> remainingDebt = 15 - 3*3 = 6
+    expect(result.depletion['jet']).toBe(6)
+    expect(result.stock['jet']).toBe(15 - 6)
+  })
+
+  it('never lets stock go negative even under heavy debt', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.1)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(15)
+
+    const existing: SettlementMarket = { prices: {}, stock: {}, lastRefreshed: 0, depletion: { jet: 1000 } }
+    const result = refreshMarket(existing, 1, ['jet']) // barely any recovery yet
+
+    expect(result.stock['jet']).toBe(0)
+    expect(result.depletion['jet']).toBeGreaterThan(0)
+  })
+
+  it('leaves undepleted chems fully untouched', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.1)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(15)
+
+    const existing: SettlementMarket = { prices: {}, stock: {}, lastRefreshed: 0, depletion: {} }
+    const result = refreshMarket(existing, 5, ['jet'])
+
+    expect(result.depletion['jet']).toBeUndefined()
+    expect(result.stock['jet']).toBe(15)
+  })
+
+  it('fully clears debt once enough turns have passed', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.1)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(15)
+
+    const existing: SettlementMarket = { prices: {}, stock: {}, lastRefreshed: 0, depletion: { jet: 15 } }
+    const result = refreshMarket(existing, RECOVERY_TURNS_TO_FULL, ['jet'])
+
+    expect(result.depletion['jet']).toBeUndefined()
+    expect(result.stock['jet']).toBe(15)
   })
 })
 
