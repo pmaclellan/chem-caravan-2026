@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { GAME_MODES } from '../data/modes'
 import { GUARD_CLASSES } from '../data/guardClasses'
 import { CHEMS } from '../data/chems'
-import type { ActiveBuff, AnimStep, GameState, GameRow, GameModeId, GameType, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
+import type { ActiveBuff, AnimStep, GameState, GameRow, GameModeId, GameType, GuardClassId, ActiveGameSummary, PlayerState, CombatState } from '../types/game'
 import {
   initializeGame,
   startTravel,
@@ -204,7 +204,7 @@ interface GameStore {
   heal: () => void
   borrow: (amount: number) => void
   payDebt: (amount: number) => void
-  hireguards: (count: number) => void
+  hireguards: (classId: GuardClassId, count: number) => void
   purchasePowerArmorGuard: (count: number) => void
   purchaseBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
@@ -1088,12 +1088,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       })
     },
 
-    hireguards: (count) => {
+    hireguards: (classId, count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = hireGuards(state.player, count, mc.maxGuards)
+        const { player, error } = hireGuards(state.player, classId, count, mc.maxGuards)
         if (error) { set({ toast: error }); return state }
-        const log = [...state.log, { turn: state.world.turn, message: `Hired ${count} guard${count > 1 ? 's' : ''}.`, type: 'info' as const }]
+        const className = GUARD_CLASSES[classId].name
+        const log = [...state.log, { turn: state.world.turn, message: `Hired ${count} ${className} guard${count > 1 ? 's' : ''}.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },

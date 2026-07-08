@@ -208,24 +208,34 @@ describe('calculateFinalScore', () => {
 describe('hireGuards', () => {
   it('deducts caps and adds guards', () => {
     const player = makePlayer({ caps: 500, guards: makeGuards(1) })
-    const { player: result, error } = hireGuards(player, 2, 10)
+    const { player: result, error } = hireGuards(player, 'standard', 2, 10)
     expect(error).toBeUndefined()
     expect(result.caps).toBe(500 - 2 * GUARD_CLASSES.standard.hireCost)
     expect(result.guards.filter(g => !g.dead).length).toBe(3)
   })
 
   it('rejects when not enough caps', () => {
-    const { error } = hireGuards(makePlayer({ caps: 100 }), 1, 10)
+    const { error } = hireGuards(makePlayer({ caps: 100 }), 'standard', 1, 10)
     expect(error).toBeTruthy()
   })
 
   it('respects the roster cap', () => {
     const player = makePlayer({ caps: 100000, guards: makeGuards(9) })
-    const { player: result, error } = hireGuards(player, 5, 10)
+    const { player: result, error } = hireGuards(player, 'standard', 5, 10)
     expect(error).toBeUndefined()
     // Only 1 slot remained (cap 10) — only 1 should actually be hired
     expect(result.guards.filter(g => !g.dead).length).toBe(10)
     expect(result.caps).toBe(100000 - GUARD_CLASSES.standard.hireCost)
+  })
+
+  it('hires the requested class with its own cost/HP', () => {
+    const player = makePlayer({ caps: 1000 })
+    const { player: result, error } = hireGuards(player, 'sniper', 1, 10)
+    expect(error).toBeUndefined()
+    expect(result.caps).toBe(1000 - GUARD_CLASSES.sniper.hireCost)
+    const hired = result.guards.find(g => !g.dead)!
+    expect(hired.classId).toBe('sniper')
+    expect(hired.maxHealth).toBe(GUARD_CLASSES.sniper.health)
   })
 })
 

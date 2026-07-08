@@ -336,3 +336,46 @@ describe('resolveFight — buff integration', () => {
     expect(result.chemUsedThisRound).toBe(false)
   })
 })
+
+// ── guard classes: shotgunner splash, medic auto-heal ──────────────────────────
+
+describe('resolveFight — guard classes', () => {
+  it('shotgunner splash damages a second alive enemy on hit', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01) // always hit
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(10)
+    const shotgunner: GuardUnit = { id: 'guard_0', classId: 'shotgunner', health: 50, maxHealth: 50, dead: false }
+    const player = makePlayer({ gun: null, guards: [shotgunner] })
+    const combat = initiateCombat(0.9, multiEnemyMode, { raider: 1, super_mutant: 1 }, undefined, 2)
+    const { combat: result } = resolveFight(player, combat, multiEnemyMode)
+    // Both enemies should have taken damage: the primary target and the splash target
+    expect(result.enemies.every(e => e.health < e.maxHealth)).toBe(true)
+  })
+
+  it('medic auto-heals the most wounded ally once per round using a stimpak', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // medic's own shot misses, irrelevant to the heal
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
+    const medic: GuardUnit = { id: 'guard_0', classId: 'medic', health: 50, maxHealth: 50, dead: false }
+    const wounded: GuardUnit = { id: 'guard_1', classId: 'standard', health: 10, maxHealth: 50, dead: false }
+    const player = makePlayer({
+      gun: null,
+      guards: [medic, wounded],
+      inventory: { stimpak: { quantity: 2, pricePaid: 200 } },
+    })
+    const combat = initiateCombat(0.8, testMode)
+    const { player: result, combat: combatResult } = resolveFight(player, combat, testMode)
+    const healedWounded = result.guards.find(g => g.id === 'guard_1')!
+    expect(healedWounded.health).toBe(35) // 10 + 25 stimpak heal
+    expect(result.inventory['stimpak']?.quantity ?? 0).toBe(1)
+    expect(combatResult.log.some(l => l.includes('administers a Stimpak'))).toBe(true)
+  })
+
+  it('medic does nothing when no ally is wounded', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
+    const medic: GuardUnit = { id: 'guard_0', classId: 'medic', health: 50, maxHealth: 50, dead: false }
+    const player = makePlayer({ gun: null, guards: [medic], inventory: { stimpak: { quantity: 2, pricePaid: 200 } } })
+    const combat = initiateCombat(0.1, testMode)
+    const { player: result } = resolveFight(player, combat, testMode)
+    expect(result.inventory['stimpak']?.quantity).toBe(2)
+  })
+})
