@@ -151,7 +151,7 @@ describe('resolveFight', () => {
   it('returns log message if no ammo', () => {
     const player = makePlayer({ gun: { id: 'p', name: 'p', accuracy: 0.7, damage: 40, ammo: 0, ammoPerShot: 1, ammoPrice: 5 } })
     const { combat: result } = resolveFight(player, initiateCombat(0.4, testMode), testMode)
-    expect(result.log.some(l => l.includes('No ammo'))).toBe(true)
+    expect(result.log.some(l => l.includes('Not enough ammo'))).toBe(true)
   })
 
   it('consumes ammo on player shot', () => {

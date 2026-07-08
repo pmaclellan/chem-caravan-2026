@@ -341,6 +341,8 @@ export function resolveFight(
   } else {
     log.push(`Not enough ammo to fire the ${gun.name}.`)
   }
+  } else {
+    log.push('You have no weapon equipped!')
   } // end if (gun)
 
   // ── Guards fire with their own sidearms (no shared ammo pool) ────────────
