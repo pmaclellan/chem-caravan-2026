@@ -42,23 +42,19 @@ describe('getAdjacentRoads', () => {
   it('returns roads from diamond_city', () => {
     const roads = getAdjacentRoads(cwMode, 'diamond_city')
     const dests = roads.map(r => getRoadDestination(r, 'diamond_city'))
-    expect(dests).toContain('goodneighbor')
-    expect(dests).toContain('bunker_hill')
-    expect(dests).toContain('jamaica_plain')
     expect(dests).toContain('park_street_station')
+    expect(dests).toContain('jamaica_plain')
+    expect(dests).toContain('cambridge_police_station')
+    expect(dests).toContain('vault_81')
   })
 
-  it('returns roads from graygarden (a spoke node)', () => {
-    const roads = getAdjacentRoads(cwMode, 'graygarden')
-    expect(roads.length).toBe(2) // bunker_hill and sanctuary_hills
+  it('returns roads from the_castle (a spoke node)', () => {
+    const roads = getAdjacentRoads(cwMode, 'the_castle')
+    expect(roads.length).toBe(1) // jamaica_plain only
   })
 
   it('every settlement has at least one road', () => {
-    const settlements = [
-      'diamond_city', 'goodneighbor', 'bunker_hill', 'the_castle',
-      'vault_81', 'sanctuary_hills', 'graygarden', 'jamaica_plain', 'park_street_station',
-    ]
-    for (const s of settlements) {
+    for (const s of Object.keys(cwMode.settlements)) {
       expect(getAdjacentRoads(cwMode, s).length).toBeGreaterThan(0)
     }
   })
@@ -68,7 +64,7 @@ describe('getAdjacentRoads', () => {
     const roads = getAdjacentRoads(mojMode, 'the_strip')
     const dests = roads.map(r => getRoadDestination(r, 'the_strip'))
     expect(dests).toContain('freeside')
-    expect(dests).toContain('camp_mccarran')
+    expect(dests).toContain('ncr_sharecropper_farms')
   })
 })
 
