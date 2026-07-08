@@ -8,6 +8,7 @@ import { initStats } from './statsReducer'
 import { initiateCombat } from './combat'
 import { awardXp, getScaleFactor, XpEventType } from './xp'
 import { rng } from './rng'
+import { shouldEscalateWave } from './tuning'
 
 export { getScaleFactor } from './xp'
 
@@ -462,21 +463,21 @@ export function startCombat(state: GameState): GameState {
     : null
 
   const payload = state.pendingEvent?.payload as {
-    enemyTypeId?: string; count?: number; isSecondEncounter?: boolean
+    enemyTypeId?: string; count?: number; nextWaveNumber?: number
     priorWaveCaps?: number; priorWaveXp?: number; priorWaveLoot?: Record<string, number>
   } | undefined
   const forcedTypeId       = payload?.enemyTypeId
   const forcedCount        = payload?.count
-  const waveNumber         = payload?.isSecondEncounter ? 2 : 1
+  const waveNumber         = payload?.nextWaveNumber ?? 1
   const isCheckpointFight  = state.pendingEvent?.type === 'brotherhood_checkpoint'
   const sf = getScaleFactor(state.world.turn, state.gameType)
   let combat = initiateCombat(road?.dangerLevel ?? 0.5, mc, road?.enemyWeights, forcedTypeId, forcedCount, sf, state.world.turn, state.gameType, waveNumber, isCheckpointFight)
-  if (payload?.isSecondEncounter) {
+  if (waveNumber > 1) {
     combat = {
       ...combat,
-      priorWaveCapsLooted: payload.priorWaveCaps ?? 0,
-      priorWaveXpGained:   payload.priorWaveXp   ?? 0,
-      priorWaveEnemyLoot:  payload.priorWaveLoot  ?? {},
+      priorWaveCapsLooted: payload?.priorWaveCaps ?? 0,
+      priorWaveXpGained:   payload?.priorWaveXp   ?? 0,
+      priorWaveEnemyLoot:  payload?.priorWaveLoot  ?? {},
     }
   }
   return {
@@ -486,9 +487,6 @@ export function startCombat(state: GameState): GameState {
     log: [...state.log, makeLog(state.world.turn, `COMBAT: ${combat.log[0]}`, 'danger')],
   }
 }
-
-// Danger threshold above which a second enemy wave can spawn.
-const SECOND_WAVE_MIN_DANGER = 0.55
 
 export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
   let { player, combat } = result
@@ -557,49 +555,57 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
 
   if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
     const mc = GAME_MODES[state.mode]
-    const isFirstEncounter = !state.pendingEvent?.payload?.['isSecondEncounter']
-    if (isFirstEncounter) {
-      const road = mc.roads.find(r =>
-        (r.from === player.location && r.to === dest) ||
-        (r.to   === player.location && r.from === dest)
-      )
-      if (road && road.dangerLevel >= SECOND_WAVE_MIN_DANGER && rng() < road.dangerLevel - 0.40) {
-        const warningMsg = combat.phase === 'won'
-          ? 'You push forward — only to find another pack closing in.'
-          : 'Still running — and you sprint right into a second ambush.'
-        const sf = getScaleFactor(turn, state.gameType)
-        const preview = initiateCombat(road.dangerLevel, mc, road.enemyWeights, undefined, undefined, sf, turn, state.gameType)
-        const previewTypeId = preview.enemies[0]?.typeId
-        const previewCount  = preview.enemies.length
-        const previewName   = mc.enemies.find(e => e.id === previewTypeId)?.name ?? 'enemies'
-        const secondWave: TravelEvent = {
-          type: 'raider_ambush',
-          title: 'SECOND WAVE!',
-          description: preview.log[0],
-          payload: {
-            isSecondEncounter: true,
-            enemyTypeId: previewTypeId,
-            count: previewCount,
-            enemyName: previewName,
-            forfeitCaps: combat.capsLooted,
-            forfeitChems: combat.enemyLoot,
-            priorWaveCaps: combat.capsLooted,
-            priorWaveXp: combat.xpGained,
-            priorWaveLoot: combat.enemyLoot,
-          },
-        }
-        return {
-          ...resolvedState,
-          phase: 'event',
-          pendingEvent: secondWave,
-          log: [...resolvedState.log, makeLog(turn, warningMsg, 'danger')],
-        }
+    const road = mc.roads.find(r =>
+      (r.from === player.location && r.to === dest) ||
+      (r.to   === player.location && r.from === dest)
+    )
+    if (road && shouldEscalateWave(combat.waveNumber, road.dangerLevel, turn, state.gameType)) {
+      const nextWave = combat.waveNumber + 1
+      const waveTitle: Record<number, string> = { 2: 'SECOND WAVE!', 3: 'THIRD WAVE!', 4: 'FOURTH WAVE!' }
+      const warningMsg = combat.phase === 'won'
+        ? 'You push forward — only to find another pack closing in.'
+        : 'Still running — and you sprint right into another ambush.'
+      const sf = getScaleFactor(turn, state.gameType)
+      const preview = initiateCombat(road.dangerLevel, mc, road.enemyWeights, undefined, undefined, sf, turn, state.gameType)
+      const previewTypeId = preview.enemies[0]?.typeId
+      const previewCount  = preview.enemies.length
+      const previewName   = mc.enemies.find(e => e.id === previewTypeId)?.name ?? 'enemies'
+      const nextWaveEvent: TravelEvent = {
+        type: 'raider_ambush',
+        title: waveTitle[nextWave] ?? 'NEXT WAVE!',
+        description: preview.log[0],
+        payload: {
+          nextWaveNumber: nextWave,
+          enemyTypeId: previewTypeId,
+          count: previewCount,
+          enemyName: previewName,
+          forfeitCaps: combat.capsLooted,
+          forfeitChems: combat.enemyLoot,
+          // Carry forward the FULL cumulative take across all prior waves, not just this one's
+          priorWaveCaps: combat.capsLooted + combat.priorWaveCapsLooted,
+          priorWaveXp: combat.xpGained + combat.priorWaveXpGained,
+          priorWaveLoot: mergeLootMaps(combat.enemyLoot, combat.priorWaveEnemyLoot),
+        },
+      }
+      return {
+        ...resolvedState,
+        phase: 'event',
+        pendingEvent: nextWaveEvent,
+        log: [...resolvedState.log, makeLog(turn, warningMsg, 'danger')],
       }
     }
     return { ...resolvedState, phase: 'combat_summary' }
   }
 
   return resolvedState
+}
+
+function mergeLootMaps(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const merged = { ...a }
+  for (const [chemId, qty] of Object.entries(b)) {
+    merged[chemId] = (merged[chemId] ?? 0) + qty
+  }
+  return merged
 }
 
 export function dismissCombatSummary(state: GameState): GameState {

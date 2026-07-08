@@ -40,14 +40,14 @@ export default function EventPanel({ event, player }: Props) {
       </div>
 
       {event.type === 'raider_ambush' && (() => {
-        const { count, enemyName, isSecondEncounter, forfeitCaps, forfeitChems } = (event.payload ?? {}) as {
+        const { count, enemyName, nextWaveNumber, forfeitCaps, forfeitChems } = (event.payload ?? {}) as {
           enemyTypeId?: string; count?: number; enemyName?: string
-          isSecondEncounter?: boolean; forfeitCaps?: number; forfeitChems?: Record<string, number>
+          nextWaveNumber?: number; forfeitCaps?: number; forfeitChems?: Record<string, number>
         }
         const fightLabel = count != null && enemyName
           ? `FIGHT — ${count} ${count === 1 ? enemyName : `${enemyName}s`}`
           : `FIGHT (${count ?? '?'} ${count === 1 ? 'enemy' : 'enemies'})`
-        const hasForfeit = isSecondEncounter && ((forfeitCaps ?? 0) > 0 || Object.keys(forfeitChems ?? {}).length > 0)
+        const hasForfeit = (nextWaveNumber ?? 1) > 1 && ((forfeitCaps ?? 0) > 0 || Object.keys(forfeitChems ?? {}).length > 0)
         const chemCount = Object.values(forfeitChems ?? {}).reduce((s, n) => s + n, 0)
         const forfeitDesc = [
           (forfeitCaps ?? 0) > 0 ? `${forfeitCaps} ¤` : '',
@@ -60,7 +60,7 @@ export default function EventPanel({ event, player }: Props) {
           <div className="flex flex-col gap-3">
             {hasForfeit && (
               <div className="border border-pip-red rounded px-3 py-2 text-xs text-pip-red">
-                Running forfeits first wave loot: {forfeitDesc}
+                Running forfeits this fight's loot: {forfeitDesc}
               </div>
             )}
             {ownedGunIds.length > 1 && (
