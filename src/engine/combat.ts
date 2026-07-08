@@ -1,4 +1,4 @@
-import type { AnimStep, ArmorState, CombatState, EnemyUnit, GameType, GuardUnit, MountState, PAGuardUnit, PlayerState } from '../types/game'
+import type { ActiveBuff, AnimStep, ArmorState, CombatState, EnemyUnit, GameType, GuardUnit, MountState, PAGuardUnit, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
 import { GUARD_CLASSES } from '../data/guardClasses'
 import { rng, rngInt, rngWeightedPick } from './rng'
@@ -196,6 +196,25 @@ export function targetLabel(target: TargetRef, guards: GuardUnit[], paGuards: PA
   return `Guard ${guards.findIndex(g => g.id === target.id) + 1}`
 }
 
+const ACCURACY_CEILING = 0.95
+
+// Looks up an active Jet/Ultrajet accuracy bonus for a specific firer (player/guard/pa_guard) and
+// applies it to their base accuracy, clamped so there's always at least a 5% miss chance.
+export function applyAccuracyBuff(
+  baseAccuracy: number,
+  activeBuffs: ActiveBuff[],
+  targetKind: 'player' | 'guard' | 'pa_guard',
+  targetId: string,
+): number {
+  const buff = activeBuffs.find(b => b.targetKind === targetKind && b.targetId === targetId)
+  return Math.min(ACCURACY_CEILING, baseAccuracy + (buff?.accuracyBonus ?? 0))
+}
+
+// Ticks buff durations down by one round and expires any that hit 0 — call once per resolved round.
+export function tickActiveBuffs(activeBuffs: ActiveBuff[]): ActiveBuff[] {
+  return activeBuffs.map(b => ({ ...b, roundsRemaining: b.roundsRemaining - 1 })).filter(b => b.roundsRemaining > 0)
+}
+
 export function resolveFight(
   player: PlayerState,
   combat: CombatState,
@@ -232,7 +251,8 @@ export function resolveFight(
   } else if (playerCanFire) {
     gun.ammo -= gun.ammoPerShot
     if (gun.cooldownTurns) gun.cooldownRemaining = gun.cooldownTurns
-    const effectiveAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+    const venomedAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
+    const effectiveAccuracy = applyAccuracyBuff(venomedAccuracy, combat.activeBuffs, 'player', 'player')
 
     // Collect burst shots to emit as a single burst animStep
     const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
@@ -327,8 +347,9 @@ export function resolveFight(
     const label = `Guard ${guards.findIndex(g => g.id === guardUnit.id) + 1}`
     const target = updatedEnemies.find(e => !e.dead)
     if (!target) break
+    const guardAccuracy = applyAccuracyBuff(classDef.accuracy, combat.activeBuffs, 'guard', guardUnit.id)
 
-    if (rng() < classDef.accuracy) {
+    if (rng() < guardAccuracy) {
       const dmg = rngInt(classDef.damage[0], classDef.damage[1])
       const dealt = Math.min(dmg, target.health)
       damageDealt += dealt
@@ -369,7 +390,7 @@ export function resolveFight(
   for (const paGuardUnit of alivePAGuardUnits) {
     const label = `PA Guard ${paGuards.findIndex(g => g.id === paGuardUnit.id) + 1}`
     const shots = modeConfig.powerArmorGuardShotsPerTurn
-    const acc   = modeConfig.powerArmorGuardAccuracy
+    const acc   = applyAccuracyBuff(modeConfig.powerArmorGuardAccuracy, combat.activeBuffs, 'pa_guard', paGuardUnit.id)
     const dmgRange = modeConfig.powerArmorGuardDamage
     const burstShots: Array<{ targetId: string | null; hit: boolean; damage: number; targetDied: boolean; targetHealthAfter: number; logLine: string }> = []
     for (let s = 0; s < shots; s++) {
@@ -556,8 +577,8 @@ export function resolveFight(
       log: [...combat.log, ...log],
       enragedEnemyIds: [],
       playerVenomed,
-      activeBuffs: combat.activeBuffs,
-      chemUsedThisRound: combat.chemUsedThisRound,
+      activeBuffs: tickActiveBuffs(combat.activeBuffs),
+      chemUsedThisRound: false,
     },
     animSteps,
   }
@@ -632,6 +653,8 @@ export function resolveRun(
       totalDamageTaken: combat.totalDamageTaken + damageTaken,
       phase,
       log: [...combat.log, ...log],
+      activeBuffs: tickActiveBuffs(combat.activeBuffs),
+      chemUsedThisRound: false,
     },
     animSteps,
   }

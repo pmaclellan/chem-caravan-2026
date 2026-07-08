@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { CombatState, PlayerState } from '../../types/game'
+import type { ActiveBuff, CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { useValueFlash } from '../../hooks/useValueFlash'
 import { useCombatAnimation } from '../../hooks/useCombatAnimation'
@@ -10,7 +10,17 @@ import GuardUnitCard from './GuardUnitCard'
 import TamingMinigame from './TamingMinigame'
 import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
+import { CHEMS } from '../../data/chems'
 import { runEscapeChance } from '../../engine/tuning'
+
+function findBuff(activeBuffs: ActiveBuff[], targetKind: 'player' | 'guard' | 'pa_guard', targetId: string): { text: string; color: string } | null {
+  const buff = activeBuffs.find(b => b.targetKind === targetKind && b.targetId === targetId)
+  if (!buff) return null
+  return {
+    text: `${buff.chemId.toUpperCase()} · ${buff.roundsRemaining}`,
+    color: buff.chemId === 'ultrajet' ? 'var(--pip-blue)' : 'var(--pip-amber)',
+  }
+}
 
 const KEYFRAMES = `
   @keyframes mountFire {
@@ -101,6 +111,72 @@ function PlayerDamageGlow({ flashKey }: { flashKey: number }) {
         zIndex: 1,
       }}
     />
+  )
+}
+
+const COMBAT_CHEM_IDS = ['stimpak', 'jet', 'ultrajet'] as const
+
+interface ChemTarget { kind: 'player' | 'guard' | 'pa_guard'; id: string }
+
+function FieldMedicinePanel({ player, combat }: { player: PlayerState; combat: CombatState }) {
+  const { useStimpakInCombat, useJetInCombat, useUltrajetInCombat } = useGameStore()
+  const [target, setTarget] = useState<ChemTarget>({ kind: 'player', id: 'player' })
+
+  const owned = COMBAT_CHEM_IDS.filter(id => (player.inventory[id]?.quantity ?? 0) > 0)
+  if (owned.length === 0) return null
+
+  const targets: Array<ChemTarget & { label: string }> = [
+    { kind: 'player', id: 'player', label: 'YOU' },
+    ...player.guards.filter(g => !g.dead).map((g, i) => ({ kind: 'guard' as const, id: g.id, label: `G${i + 1}` })),
+    ...player.paGuards.filter(g => !g.dead).map((g, i) => ({ kind: 'pa_guard' as const, id: g.id, label: `PA${i + 1}` })),
+  ]
+
+  const actionFor: Record<typeof COMBAT_CHEM_IDS[number], (kind: ChemTarget['kind'], id: string) => void> = {
+    stimpak: useStimpakInCombat,
+    jet: useJetInCombat,
+    ultrajet: useUltrajetInCombat,
+  }
+
+  return (
+    <div className="border border-pip-border rounded p-3">
+      <div className="pip-label mb-2">Field Medicine</div>
+      <div className="flex gap-1 flex-wrap mb-2">
+        {targets.map(t => {
+          const selected = target.kind === t.kind && target.id === t.id
+          return (
+            <button
+              key={`${t.kind}-${t.id}`}
+              className="pip-btn text-xs px-2 py-0.5"
+              style={selected ? { borderColor: 'var(--pip-amber)', color: 'var(--pip-amber)' } : undefined}
+              onClick={() => setTarget({ kind: t.kind, id: t.id })}
+            >
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="space-y-1.5">
+        {owned.map(chemId => {
+          const chem = CHEMS[chemId]
+          const qty = player.inventory[chemId]?.quantity ?? 0
+          return (
+            <div key={chemId} className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-pip-green-dim">{chem.name} × {qty}</span>
+              <button
+                className="pip-btn-amber text-xs px-2 py-0.5"
+                disabled={combat.chemUsedThisRound}
+                onClick={() => actionFor[chemId](target.kind, target.id)}
+              >
+                USE
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      {combat.chemUsedThisRound && (
+        <div className="mt-1.5 text-[10px] text-pip-amber">Already treated this round.</div>
+      )}
+    </div>
   )
 }
 
@@ -303,6 +379,12 @@ export default function CombatPanel({ player, combat }: Props) {
                   <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
                     <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
                   </div>
+                  {(() => {
+                    const buff = findBuff(combat.activeBuffs, 'player', 'player')
+                    return buff && (
+                      <div className="text-center font-mono leading-none" style={{ fontSize: '0.55rem', color: buff.color }}>{buff.text}</div>
+                    )
+                  })()}
                   <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>YOU</div>
                 </div>
               )
@@ -321,6 +403,7 @@ export default function CombatPanel({ player, combat }: Props) {
                   fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
+                  buff={findBuff(combat.activeBuffs, 'guard', g.id)}
                 />
               )
             })}
@@ -337,6 +420,7 @@ export default function CombatPanel({ player, combat }: Props) {
                   fireFlashKey={anim.guardFireKeys[g.id] ?? 0}
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
+                  buff={findBuff(combat.activeBuffs, 'pa_guard', g.id)}
                 />
               )
             })}
@@ -410,6 +494,8 @@ export default function CombatPanel({ player, combat }: Props) {
           </div>
         </div>
       )}
+
+      {!isResolved && <FieldMedicinePanel player={player} combat={combat} />}
 
       {combat.playerVenomed && !isResolved && (
         <div className="border border-red-500 px-2 py-1 rounded text-xs flex items-center justify-between gap-2">
