@@ -2,6 +2,7 @@
 // easy to find and adjust without hunting through engine logic.
 
 import type { GameType } from '../types/game'
+import { rng } from './rng'
 
 /**
  * Cursor speed multiplier for the taming mini-game, based on the creature's
@@ -63,4 +64,40 @@ export function minEnemyCount(
     Math.floor(1 + turn / 15),
     3 + Math.floor(roadDangerLevel * 4),
   )
+}
+
+/**
+ * Whether an additional combat wave chains on after the current one resolves.
+ *
+ * Wave 2 keeps the original formula exactly (dangerLevel >= 0.55, roll against
+ * dangerLevel - 0.40) — no regression there. Waves 3 and 4 are late-game Free
+ * Play content, turn-gated (wave 3 unlocks at turn 50, wave 4 at turn 75).
+ * Standard mode is hard-capped at 30 turns so waves 3/4 are already
+ * unreachable there — the explicit free_play check is defensive, so a future
+ * maxTurns tuning change can't silently leak this into standard mode.
+ *
+ * The danger floor stays flat at 0.55 across every wave rather than climbing
+ * per wave — actual road data tops out at 0.58 (Commonwealth), 0.65 (Capital
+ * Wasteland), 0.85 (Mojave), so a climbing floor would make wave 3/4
+ * unreachable outside Mojave. Instead, rarity comes entirely from the rising
+ * trigger threshold: on the same road, each further wave is a strictly harder
+ * roll than the last, and the harder modes' higher-danger roads naturally see
+ * later waves more often without any wave being flatly impossible elsewhere.
+ */
+const WAVE_MIN_DANGER: Record<number, number> = { 2: 0.55, 3: 0.55, 4: 0.55 }
+const WAVE_TRIGGER_THRESHOLD: Record<number, number> = { 2: 0.40, 3: 0.48, 4: 0.55 }
+const WAVE_TURN_GATE: Record<number, number> = { 3: 50, 4: 75 } // no gate for wave 2
+
+export function shouldEscalateWave(
+  currentWave: number,
+  dangerLevel: number,
+  turn: number,
+  gameType: GameType,
+): boolean {
+  const nextWave = currentWave + 1
+  if (nextWave > 4) return false
+  const turnGate = WAVE_TURN_GATE[nextWave]
+  if (turnGate !== undefined && (gameType !== 'free_play' || turn < turnGate)) return false
+  if (dangerLevel < WAVE_MIN_DANGER[nextWave]) return false
+  return rng() < dangerLevel - WAVE_TRIGGER_THRESHOLD[nextWave]
 }

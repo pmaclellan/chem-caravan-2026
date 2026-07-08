@@ -595,7 +595,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             if (choice === 'fight') return startCombat(state)
             // Run before combat: roll escape chance
             const payload = (event.payload ?? {}) as {
-              isSecondEncounter?: boolean
+              nextWaveNumber?: number
               forfeitCaps?: number
               forfeitChems?: Record<string, number>
             }
@@ -607,7 +607,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             if (rng() < runChance) {
               let escapedPlayer = state.player
               const extraLogs: { turn: number; message: string; type: 'profit' | 'danger' }[] = []
-              if (payload.isSecondEncounter) {
+              if ((payload.nextWaveNumber ?? 1) > 1) {
                 const forfeitCaps  = payload.forfeitCaps  ?? 0
                 const forfeitChems = payload.forfeitChems ?? {}
                 if (forfeitCaps > 0 || Object.keys(forfeitChems).length > 0) {
