@@ -6,6 +6,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.0',
+    date: 'Jul 9, 2026',
+    items: [
+      'Combat overhaul: guards and Power Armor guards now have individual, persistent HP that carries wounded across waves and encounters, healing free at any settlement doctor — replaces the old pooled damage-absorption system',
+      'Every attack (yours, your guards\', the enemy\'s) now targets and rolls to-hit independently, including a real miss chance for enemies — no more guaranteed hits',
+      'Guard classes: Standard, Shotgunner (buckshot spray hits multiple enemies), Sniper (heavy damage, 1-turn reload), and Medic (grants your party extra Field Medicine uses per round)',
+      'Usable combat chems — Stimpak, Jet, and Ultrajet can be applied mid-fight without spending your turn, up to a per-round cap raised by Medics',
+      'Free Play: 3rd and 4th combat waves can now chain in on high-danger roads past turn 50/75',
+      'Settlement chem stock depletes when you buy it out and recovers gradually over turns away, with a "recovering ~Nt" indicator',
+      'Dismiss guards, Power Armor guards, and mounts from your roster (no refund)',
+      'Sell brahmin, guns, and armor back for half price — a real way to shed brahmin once they become a late-game liability',
+      'New Sniper Rifle (Commonwealth) and Double-Barrel Shotgun rework (Commonwealth + Capital Wasteland, fires both barrels then reloads)',
+      'Anti-Materiel Rifle (Mojave) and Laser Musket (Commonwealth) retuned so neither dominates its region\'s weapon lineup',
+      'Four new guns: Chinese Assault Rifle and Gauss Rifle (Capital Wasteland), Grenade Rifle and Silenced .22 Pistol (Mojave)',
+      'Field Medicine redesigned — arm a chem, then click a glowing protector card directly to apply it',
+      'Reload and buff status now show as small icon badges on protector cards, timed to each unit\'s own animation',
+      'Per-guard-class icons shown during combat',
+      '"Needs Power Armor" now shown clearly in red only when unmet, replacing a cryptic tag that read as needing Power Armor guards instead of wearing your own suit',
+      'Mobile market events now show turns remaining, matching desktop',
+      'Cazador plural spelling corrected (Cazadores) throughout',
+      'Market panel: stock column no longer shifts when a "recovering" notice appears',
+      'Netlify deploys now run the test suite first',
+      'Subtle build/deploy version stamp on desktop and in the mobile Player tab, to confirm a fresh deploy went out',
+    ],
+  },
+  {
     version: '1.1.1',
     date: 'Jul 4, 2026',
     items: [
