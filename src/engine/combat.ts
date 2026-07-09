@@ -342,7 +342,7 @@ export function resolveFight(
     }
 
     if (isBurst && burstShots.length > 0) {
-      animSteps.push({ kind: 'burst', shots: burstShots })
+      animSteps.push({ kind: 'burst', shots: burstShots, shooterCooldownRemaining })
     }
   } else {
     log.push(`Not enough ammo to fire the ${gun.name}.`)
