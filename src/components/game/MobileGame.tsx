@@ -529,7 +529,10 @@ export default function MobileGame() {
               {world.activeMarketEvents.length} MARKET EVENT{world.activeMarketEvents.length > 1 ? 'S' : ''} ACTIVE
             </div>
             {world.activeMarketEvents.map(ev => (
-              <div key={ev.id} className="text-xs text-pip-green-dim">{ev.message}</div>
+              <div key={ev.id} className="text-xs text-pip-green-dim">
+                {ev.message}{' '}
+                <span className="text-pip-amber">({ev.turnsRemaining} turn{ev.turnsRemaining !== 1 ? 's' : ''} left)</span>
+              </div>
             ))}
           </div>
         )}
