@@ -82,7 +82,7 @@ export function initiateCombat(
     great_khan:    (n) => n === 1 ? "A Great Khan rides out of the dust." : `${n} Great Khans block the road ahead.`,
     legionnaire:   (n) => n === 1 ? "A Legionnaire steps from the shadows, blade drawn." : `${n} Legionnaires step from the shadows.`,
     powder_ganger: (n) => n === 1 ? "A Powder Ganger raises a lit stick of dynamite." : `${n} Powder Gangers light their dynamite.`,
-    cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadors swarm out of the canyon.`,
+    cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadores swarm out of the canyon.`,
     thug:          (n) => n === 1 ? "A Thug steps out of the alley, cracking his knuckles." : `${n} Thugs spill out of the alleyway, looking for trouble.`,
   }
   const description = COMBAT_INTRO[enemyType.id]?.(count) ?? (count === 1 ? `A ${enemyType.name} blocks the road ahead.` : `${count} ${enemyType.name}s block the road ahead.`)

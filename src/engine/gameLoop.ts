@@ -499,13 +499,14 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     const killerTypeId = combat.enemies[0]?.typeId
     const killerType = mc.enemies.find(e => e.id === killerTypeId)
     const killerName = killerType?.name ?? 'enemies'
+    const killerNamePlural = killerName === 'Cazador' ? 'Cazadores' : `${killerName}s`
     return {
       ...state,
       player,
       combat,
       phase: 'game_over',
       gameOverReason: 'combat',
-      endReason: `Killed by ${killerName}s on the road`,
+      endReason: `Killed by ${killerNamePlural} on the road`,
       log: [...state.log, ...newLogs],
     }
   }

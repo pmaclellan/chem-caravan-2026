@@ -105,7 +105,7 @@ const AMBUSH_LINES: Record<string, (n: number) => string> = {
   radscorpion:   (n) => n === 1 ? "The ground ruptures — a Radscorpion rears up, claws snapping." : `${n} Radscorpions burst from the sand, tails raised.`,
   yao_guai:      (n) => n === 1 ? "A Yao Guai crashes out of the brush, snarling." : `${n} Yao Guai surge from cover. They're hunting.`,
   powder_ganger: (n) => n === 1 ? "A Powder Ganger raises a lit stick of dynamite." : `${n} Powder Gangers light their fuses. Hit the dirt.`,
-  cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadors swarm out of the canyon.`,
+  cazador:       (n) => n === 1 ? "A Cazador darts from the brush, wings buzzing." : `${n} Cazadores swarm out of the canyon.`,
   thug:          (n) => n === 1 ? "A Thug steps out of the alley, cracking his knuckles." : `${n} Thugs spill out of the alleyway. They want your caps.`,
 }
 

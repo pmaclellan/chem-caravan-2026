@@ -277,7 +277,7 @@ export const ROADS: Road[] = [
     from: 'red_rock_canyon',
     to: 'sloan',
     dangerLevel: 0.75,
-    description: "Watch out for Cazadors.",
+    description: "Watch out for Cazadores.",
     enemyWeights: { cazador: 5, radscorpion: 1 },
   },
   {
