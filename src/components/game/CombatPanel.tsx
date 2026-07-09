@@ -16,6 +16,7 @@ import { TAMEABLE_ENEMY_IDS } from '../../data/mounts'
 import { CHEMS } from '../../data/chems'
 import { GUARD_CLASSES } from '../../data/guardClasses'
 import { runEscapeChance } from '../../engine/tuning'
+import { chemUseCap } from '../../engine/combat'
 
 const KEYFRAMES = `
   @keyframes mountFire {
@@ -154,9 +155,16 @@ function ChemTray({ player, combat, armedChem, setArmedChem }: ChemTrayProps) {
   const owned = COMBAT_CHEM_IDS.filter(id => (player.inventory[id]?.quantity ?? 0) > 0)
   if (owned.length === 0) return null
 
+  const cap = chemUseCap(player)
+  const usesRemaining = cap - combat.chemUsesThisRound
+  const exhausted = usesRemaining <= 0
+
   return (
     <div className="border border-pip-border rounded p-3">
-      <div className="pip-label mb-2">Field Medicine</div>
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="pip-label">Field Medicine</div>
+        <div className="text-[10px] font-mono text-pip-green-dim">{combat.chemUsesThisRound} / {cap} used this round</div>
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         {owned.map(chemId => {
@@ -167,11 +175,11 @@ function ChemTray({ player, combat, armedChem, setArmedChem }: ChemTrayProps) {
             <button
               key={chemId}
               className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded border font-mono transition-colors ${!isArmed ? 'hover:bg-pip-border-dim' : ''}`}
-              disabled={combat.chemUsedThisRound}
+              disabled={exhausted}
               style={{
                 borderColor: isArmed ? CHEM_COLOR[chemId] : 'var(--pip-border)',
                 backgroundColor: isArmed ? 'var(--pip-border-dim)' : undefined,
-                opacity: combat.chemUsedThisRound ? 0.5 : 1,
+                opacity: exhausted ? 0.5 : 1,
               }}
               onClick={() => setArmedChem(isArmed ? null : chemId)}
             >
@@ -182,14 +190,14 @@ function ChemTray({ player, combat, armedChem, setArmedChem }: ChemTrayProps) {
         })}
       </div>
 
-      {armedChem && !combat.chemUsedThisRound && (
+      {armedChem && !exhausted && (
         <div className="mt-2 text-[10px] font-mono text-pip-amber flex items-center gap-1">
           <ChemIcon chemId={armedChem} size={10} /> Click a glowing protector above to apply {CHEMS[armedChem].name}
         </div>
       )}
 
-      {combat.chemUsedThisRound && (
-        <div className="mt-2 text-[10px] text-pip-amber">Already treated this round.</div>
+      {exhausted && (
+        <div className="mt-2 text-[10px] text-pip-amber">No treatments remaining this round.</div>
       )}
     </div>
   )
@@ -216,10 +224,10 @@ export default function CombatPanel({ player, combat }: Props) {
 
   const [armedChem, setArmedChem] = useState<CombatChemId | null>(null)
 
-  // A chem used up mid-round (by us or an auto-Medic) can't stay armed for a target we'll never reach.
+  // Once this round's treatment budget is used up, an armed chem can't stay armed for a target we'll never reach.
   useEffect(() => {
-    if (combat.chemUsedThisRound) setArmedChem(null)
-  }, [combat.chemUsedThisRound])
+    if (combat.chemUsesThisRound >= chemUseCap(player)) setArmedChem(null)
+  }, [combat.chemUsesThisRound, player])
 
   const chemActionFor: Record<CombatChemId, (kind: 'player' | 'guard' | 'pa_guard', id: string) => void> = {
     stimpak: useStimpakInCombat,

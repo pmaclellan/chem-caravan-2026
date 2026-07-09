@@ -18,7 +18,7 @@ import {
   dismissCombatSummary,
   retireGame as retireGameFn,
 } from '../engine/gameLoop'
-import { resolveFight, resolveRun } from '../engine/combat'
+import { resolveFight, resolveRun, chemUseCap } from '../engine/combat'
 import { canAttemptTame, resolveTameSuccess, resolveFailedTame } from '../engine/taming'
 import { loseBrahmin } from '../engine/travel'
 import { rng } from '../engine/rng'
@@ -103,7 +103,7 @@ function applyCombatChem(
 ): { state: GameState; error?: string } {
   const combat = state.combat
   if (!combat) return { state, error: 'Not in combat.' }
-  if (combat.chemUsedThisRound) return { state, error: 'Already treated this round.' }
+  if (combat.chemUsesThisRound >= chemUseCap(state.player)) return { state, error: 'No treatments remaining this round.' }
 
   const chem = CHEMS[chemId]
   const effect = chem?.combatEffect
@@ -168,7 +168,7 @@ function applyCombatChem(
     logMsg = `${chem.name} administered to ${targetName}. Accuracy boosted for ${duration} rounds.`
   }
 
-  newCombat = { ...newCombat, chemUsedThisRound: true }
+  newCombat = { ...newCombat, chemUsesThisRound: combat.chemUsesThisRound + 1 }
   const log = [...state.log, { turn: state.world.turn, message: logMsg, type: 'info' as const }]
   return { state: { ...state, player, combat: newCombat, log } }
 }
@@ -309,11 +309,17 @@ function normalizeState(state: GameState): GameState {
         )
       })(),
     },
-    combat: state.combat ? {
-      ...state.combat,
-      activeBuffs: state.combat.activeBuffs ?? [],
-      chemUsedThisRound: state.combat.chemUsedThisRound ?? false,
-    } : state.combat,
+    combat: state.combat ? (() => {
+      // Pre-medic-rework saves stored a boolean chemUsedThisRound instead of a count.
+      const legacyCombat = state.combat as unknown as { chemUsedThisRound?: boolean; chemUsesThisRound?: number }
+      return {
+        ...state.combat,
+        activeBuffs: state.combat.activeBuffs ?? [],
+        chemUsesThisRound: typeof legacyCombat.chemUsesThisRound === 'number'
+          ? legacyCombat.chemUsesThisRound
+          : (legacyCombat.chemUsedThisRound ? 1 : 0),
+      }
+    })() : state.combat,
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
     stats: state.stats ? { ...initStats(), ...state.stats } : initStats(),

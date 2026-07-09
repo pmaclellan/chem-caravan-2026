@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount, applyAccuracyBuff, tickActiveBuffs } from '../combat'
+import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount, applyAccuracyBuff, tickActiveBuffs, chemUseCap } from '../combat'
 import * as rngModule from '../rng'
 import type { ActiveBuff, GuardUnit, PlayerState } from '../../types/game'
 import type { GameModeConfig } from '../../data/modes'
@@ -347,16 +347,16 @@ describe('resolveFight — buff integration', () => {
     const combat = {
       ...initiateCombat(0.1, testMode),
       activeBuffs: [{ id: 'b1', chemId: 'jet', targetKind: 'player' as const, targetId: 'player', accuracyBonus: 0.1, roundsRemaining: 2 }],
-      chemUsedThisRound: true,
+      chemUsesThisRound: 1,
     }
     const { combat: result } = resolveFight(player, combat, testMode)
     expect(result.activeBuffs).toHaveLength(1)
     expect(result.activeBuffs[0].roundsRemaining).toBe(1)
-    expect(result.chemUsedThisRound).toBe(false)
+    expect(result.chemUsesThisRound).toBe(0)
   })
 })
 
-// ── guard classes: shotgunner splash, medic auto-heal ──────────────────────────
+// ── guard classes: shotgunner splash, medic chem-use cap ───────────────────────
 
 describe('resolveFight — guard classes', () => {
   it('shotgunner splash damages a second alive enemy on hit', () => {
@@ -374,8 +374,23 @@ describe('resolveFight — guard classes', () => {
     expect(guardSteps[0].kind).toBe('blast')
   })
 
-  it('medic auto-heals the most wounded ally once per round using a stimpak', () => {
-    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // medic's own shot misses, irrelevant to the heal
+  it('chemUseCap is 1 with no medics', () => {
+    const player = makePlayer({ guards: [] })
+    expect(chemUseCap(player)).toBe(1)
+  })
+
+  it('chemUseCap grants +1 per living medic guard', () => {
+    const medic1: GuardUnit = { id: 'guard_0', classId: 'medic', health: 30, maxHealth: 30, dead: false }
+    const medic2: GuardUnit = { id: 'guard_1', classId: 'medic', health: 30, maxHealth: 30, dead: false }
+    const deadMedic: GuardUnit = { id: 'guard_2', classId: 'medic', health: 0, maxHealth: 30, dead: true }
+    const standard: GuardUnit = { id: 'guard_3', classId: 'standard', health: 50, maxHealth: 50, dead: false }
+    const player = makePlayer({ guards: [medic1, medic2, deadMedic, standard] })
+    // 1 base + 2 living medics; the dead medic and the non-medic standard guard don't count
+    expect(chemUseCap(player)).toBe(3)
+  })
+
+  it('medic guards fire their own shot but no longer auto-heal', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // medic's own shot misses
     vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
     const medic: GuardUnit = { id: 'guard_0', classId: 'medic', health: 50, maxHealth: 50, dead: false }
     const wounded: GuardUnit = { id: 'guard_1', classId: 'standard', health: 10, maxHealth: 50, dead: false }
@@ -386,20 +401,10 @@ describe('resolveFight — guard classes', () => {
     })
     const combat = initiateCombat(0.8, testMode)
     const { player: result, combat: combatResult } = resolveFight(player, combat, testMode)
-    const healedWounded = result.guards.find(g => g.id === 'guard_1')!
-    expect(healedWounded.health).toBe(35) // 10 + 25 stimpak heal
-    expect(result.inventory['stimpak']?.quantity ?? 0).toBe(1)
-    expect(combatResult.log.some(l => l.includes('administers a Stimpak'))).toBe(true)
-  })
-
-  it('medic does nothing when no ally is wounded', () => {
-    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
-    vi.spyOn(rngModule, 'rngInt').mockReturnValue(1)
-    const medic: GuardUnit = { id: 'guard_0', classId: 'medic', health: 50, maxHealth: 50, dead: false }
-    const player = makePlayer({ gun: null, guards: [medic], inventory: { stimpak: { quantity: 2, pricePaid: 200 } } })
-    const combat = initiateCombat(0.1, testMode)
-    const { player: result } = resolveFight(player, combat, testMode)
-    expect(result.inventory['stimpak']?.quantity).toBe(2)
+    const stillWounded = result.guards.find(g => g.id === 'guard_1')!
+    expect(stillWounded.health).toBe(10) // no auto-heal — stays wounded
+    expect(result.inventory['stimpak']?.quantity ?? 0).toBe(2) // stimpak untouched
+    expect(combatResult.log.some(l => l.includes('administers a Stimpak'))).toBe(false)
   })
 
   it('sniper enters a 1-turn cooldown after firing and skips the next round', () => {

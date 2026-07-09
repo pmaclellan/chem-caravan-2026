@@ -181,7 +181,7 @@ export interface CombatState {
   enragedEnemyIds?: string[]   // enemy ids that deal +20% damage next turn (set on failed tame)
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
   activeBuffs: ActiveBuff[]        // combat-scoped, cleared with the rest of `combat` when combat ends
-  chemUsedThisRound: boolean       // per-round cap shared by manual chem use AND Medic auto-use
+  chemUsesThisRound: number        // manual Field Medicine uses so far this round — capped by chemUseCap() (1 base + 1 per living Medic guard)
 }
 
 export type AnimStep =
@@ -219,15 +219,6 @@ export type AnimStep =
       logLine: string
       venomApplied?: boolean
       venomDotDamage?: number
-    }
-  | {
-      kind: 'chem_use'   // Medic auto-trigger only — manual player chem use needs no AnimStep
-      chemId: string
-      targetKind: 'player' | 'guard' | 'pa_guard'
-      targetId: string
-      healAmount: number
-      targetHealthAfter: number
-      logLine: string
     }
   | {
       kind: 'burst'   // rapid multi-shot (minigun) — all shots animate in quick succession
