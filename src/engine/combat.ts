@@ -350,9 +350,21 @@ export function resolveFight(
   for (const guardUnit of aliveGuardUnits) {
     const classDef = GUARD_CLASSES[guardUnit.classId]
     const label = `Guard ${guards.findIndex(g => g.id === guardUnit.id) + 1}`
+
+    const inCooldown = (guardUnit.cooldownRemaining ?? 0) > 0
+    if (inCooldown) {
+      const remaining = guardUnit.cooldownRemaining! - 1
+      guardUnit.cooldownRemaining = remaining
+      log.push(remaining > 0
+        ? `${label} reloads… (${remaining} turn${remaining > 1 ? 's' : ''} remaining)`
+        : `${label} reloads… Ready next turn.`)
+      continue
+    }
+
     const target = updatedEnemies.find(e => !e.dead)
     if (!target) break
     const guardAccuracy = applyAccuracyBuff(classDef.accuracy, combat.activeBuffs, 'guard', guardUnit.id)
+    if (classDef.cooldownTurns) guardUnit.cooldownRemaining = classDef.cooldownTurns
 
     if (rng() < guardAccuracy) {
       const dmg = rngInt(classDef.damage[0], classDef.damage[1])

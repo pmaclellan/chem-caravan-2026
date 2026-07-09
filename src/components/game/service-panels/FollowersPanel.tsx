@@ -84,6 +84,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
                 <div className="text-[10px] text-pip-green-dim mb-1">{def.description}</div>
                 <div className="text-[10px] text-pip-green-dim mb-1.5">
                   Acc {Math.round(def.accuracy * 100)}% · Dmg {def.damage[0]}-{def.damage[1]} · {def.health} HP
+                  {def.cooldownTurns ? ` · ${def.cooldownTurns}-turn reload` : ''}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {[1, 2].map(n => (

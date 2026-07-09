@@ -382,4 +382,29 @@ describe('resolveFight — guard classes', () => {
     const { player: result } = resolveFight(player, combat, testMode)
     expect(result.inventory['stimpak']?.quantity).toBe(2)
   })
+
+  it('sniper enters a 1-turn cooldown after firing and skips the next round', () => {
+    // rng high -> every accuracy roll (guard's own shot AND enemy counterattack) misses.
+    // A 'shot' animStep is pushed on a miss too, so this still proves the sniper fired
+    // while keeping the enemy from one-shotting the sniper mid-test via a lucky counterattack.
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(60)
+    const sniper: GuardUnit = { id: 'guard_0', classId: 'sniper', health: 40, maxHealth: 40, dead: false }
+    const player = makePlayer({ gun: null, guards: [sniper] })
+    const combat = initiateCombat(0.8, testMode)
+
+    const round1 = resolveFight(player, combat, testMode)
+    const sniperAfterRound1 = round1.player.guards.find(g => g.id === 'guard_0')!
+    expect(sniperAfterRound1.cooldownRemaining).toBe(1)
+    expect(round1.animSteps.some(s => s.kind === 'shot' && s.by === 'guard')).toBe(true)
+
+    const round2 = resolveFight(round1.player, round1.combat, testMode)
+    const sniperAfterRound2 = round2.player.guards.find(g => g.id === 'guard_0')!
+    expect(sniperAfterRound2.cooldownRemaining).toBe(0)
+    expect(round2.animSteps.some(s => s.kind === 'shot' && s.by === 'guard')).toBe(false)
+    expect(round2.combat.log.some(l => l.includes('reloads'))).toBe(true)
+
+    const round3 = resolveFight(round2.player, round2.combat, testMode)
+    expect(round3.animSteps.some(s => s.kind === 'shot' && s.by === 'guard')).toBe(true)
+  })
 })
