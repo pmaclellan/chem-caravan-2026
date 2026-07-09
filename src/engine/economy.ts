@@ -215,6 +215,7 @@ export function buyGun(
     ammo: gunDef.ammoWithPurchase,
     ammoPerShot: gunDef.ammoPerShot,
     ammoPrice: gunDef.ammoPrice,
+    ...(gunDef.damageRange    ? { damageRange:    gunDef.damageRange    } : {}),
     ...(gunDef.shotsPerTurn   ? { shotsPerTurn:   gunDef.shotsPerTurn   } : {}),
     ...(gunDef.cooldownTurns  ? { cooldownTurns:  gunDef.cooldownTurns  } : {}),
     ...(gunDef.splashRatios   ? { splashRatios:   gunDef.splashRatios   } : {}),

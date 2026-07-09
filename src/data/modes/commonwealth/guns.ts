@@ -4,6 +4,7 @@ export interface GunDefinition {
   price: number
   accuracy: number
   damage: number
+  damageRange?: [number, number]  // sniper rifle only — rolled per shot instead of using the flat `damage` value
   ammoPerShot: number
   ammoPrice: number        // caps per round
   ammoWithPurchase: number // rounds included when buying
@@ -82,6 +83,19 @@ export const GUNS: Record<string, GunDefinition> = {
     ammoPrice: 15,
     ammoWithPurchase: 12,
     description: "Crank-powered Institute reject. Wildly inaccurate, but a hit puts anything down.",
+  },
+  sniper_rifle: {
+    id: 'sniper_rifle',
+    name: 'Sniper Rifle',
+    price: 1800,
+    accuracy: 0.75,
+    damage: 72,
+    damageRange: [55, 90],
+    ammoPerShot: 1,
+    cooldownTurns: 1,
+    ammoPrice: 8,
+    ammoWithPurchase: 5,
+    description: "Scoped and suppressed. Hits hard, but needs a turn to work the bolt after every shot.",
   },
   gatling_laser: {
     id: 'gatling_laser',

@@ -77,6 +77,7 @@ export interface GunState {
   name: string
   accuracy: number
   damage: number
+  damageRange?: [number, number]  // sniper rifle only — rolled per shot instead of using the flat `damage` value
   ammo: number
   ammoPerShot: number
   ammoPrice: number        // caps per round (gun-specific)

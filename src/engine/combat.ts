@@ -264,14 +264,15 @@ export function resolveFight(
       const target = updatedEnemies.find(e => !e.dead)
       if (!target) break
       const shotLabel = isBurst ? ` (shot ${s + 1})` : ''
+      const dmg = gun.damageRange ? rngInt(gun.damageRange[0], gun.damageRange[1]) : gun.damage
       if (rng() < effectiveAccuracy) {
-        const dealt = Math.min(gun.damage, target.health)
+        const dealt = Math.min(dmg, target.health)
         damageDealt += dealt
-        target.health = Math.max(0, target.health - gun.damage)
+        target.health = Math.max(0, target.health - dmg)
         target.dead = target.health <= 0
         const logLine = target.dead
-          ? `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage) — ${target.name} is dead!`
-          : `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${gun.damage} damage)`
+          ? `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${dmg} damage) — ${target.name} is dead!`
+          : `You fire the ${gun.name}${shotLabel} at ${target.name}. Hit! (${dmg} damage)`
         log.push(logLine)
 
         // Splash damage — hits subsequent alive enemies at decreasing ratios
@@ -280,7 +281,7 @@ export function resolveFight(
           const splashTargets = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
           for (let si = 0; si < Math.min(gun.splashRatios.length, splashTargets.length); si++) {
             const st = splashTargets[si]
-            const splashDmg = Math.max(1, Math.round(gun.damage * gun.splashRatios[si]))
+            const splashDmg = Math.max(1, Math.round(dmg * gun.splashRatios[si]))
             const splashDealt = Math.min(splashDmg, st.health)
             damageDealt += splashDealt
             st.health = Math.max(0, st.health - splashDmg)
@@ -310,13 +311,13 @@ export function resolveFight(
           const others = updatedEnemies.filter(e => !e.dead && e.id !== target.id)
           if (others.length > 0) {
             const stray = others[Math.floor(rng() * others.length)]
-            const strayDealt = Math.min(gun.damage, stray.health)
+            const strayDealt = Math.min(dmg, stray.health)
             damageDealt += strayDealt
-            stray.health = Math.max(0, stray.health - gun.damage)
+            stray.health = Math.max(0, stray.health - dmg)
             stray.dead = stray.health <= 0
             const strayLine = stray.dead
-              ? `Stray round clips ${stray.name} for ${gun.damage} damage — ${stray.name} is dead!`
-              : `Stray round clips ${stray.name} for ${gun.damage} damage.`
+              ? `Stray round clips ${stray.name} for ${dmg} damage — ${stray.name} is dead!`
+              : `Stray round clips ${stray.name} for ${dmg} damage.`
             log.push(strayLine)
             strayShot = { targetId: stray.id, hit: true, damage: strayDealt, targetDied: stray.dead, targetHealthAfter: stray.health, logLine: strayLine }
           }
