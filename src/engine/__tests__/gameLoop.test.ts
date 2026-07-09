@@ -81,7 +81,7 @@ describe('afterCombat — wave escalation carries cumulative loot forward', () =
       priorWaveXpGained: 20,     // from wave 1
       priorWaveEnemyLoot: { jet: 3 },
       activeBuffs: [],
-      chemUsedThisRound: false,
+      chemUsesThisRound: 0,
     }
 
     const result = afterCombat(stateAtNovac, { player: stateAtNovac.player, combat })
@@ -105,7 +105,7 @@ describe('afterCombat — wave escalation carries cumulative loot forward', () =
     const combat: CombatState = {
       enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
       phase: 'won', log: [], waveNumber: 4, isCheckpointFight: false,
-      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsedThisRound: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsesThisRound: 0,
     }
     const result = afterCombat(stateAtNovac, { player: stateAtNovac.player, combat })
     expect(result.phase).toBe('combat_summary')
@@ -134,7 +134,7 @@ describe('afterCombat — reload cooldown clearing', () => {
     const combat: CombatState = {
       enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
       phase: 'won', log: [], waveNumber: 1, isCheckpointFight: false,
-      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsedThisRound: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsesThisRound: 0,
     }
     const result = afterCombat(stateAtNovac, { player, combat })
     expect(result.phase).toBe('combat_summary')
@@ -153,7 +153,7 @@ describe('afterCombat — reload cooldown clearing', () => {
     const combat: CombatState = {
       enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
       phase: 'won', log: [], waveNumber: 1, isCheckpointFight: false,
-      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsedThisRound: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsesThisRound: 0,
     }
     const result = afterCombat(stateAtNovac, { player, combat })
     expect(result.phase).toBe('event')

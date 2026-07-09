@@ -1,7 +1,6 @@
 import type { ActiveBuff, AnimStep, ArmorState, CombatState, EnemyUnit, GameType, GuardUnit, MountState, PAGuardUnit, PlayerState } from '../types/game'
 import type { GameModeConfig } from '../data/modes'
 import { GUARD_CLASSES } from '../data/guardClasses'
-import { CHEMS } from '../data/chems'
 import { rng, rngInt, rngWeightedPick } from './rng'
 import { addChemStash } from './economy'
 import { loseBrahmin } from './travel'
@@ -104,8 +103,14 @@ export function initiateCombat(
     priorWaveXpGained: 0,
     priorWaveEnemyLoot: {},
     activeBuffs: [],
-    chemUsedThisRound: false,
+    chemUsesThisRound: 0,
   }
+}
+
+// Base 1 manual Field Medicine use per round, +1 for each living Medic guard in the squad.
+export function chemUseCap(player: PlayerState): number {
+  const medicCount = player.guards.filter(g => !g.dead && GUARD_CLASSES[g.classId].grantsExtraChemUse).length
+  return 1 + medicCount
 }
 
 // ── Per-attack targeting — shared by resolveFight() and taming.ts's failed-tame retaliation ──
@@ -234,8 +239,6 @@ export function resolveFight(
   let gun = player.gun ? { ...player.gun } : null
   let armor = player.armor ? { ...player.armor } : null
   let mount = player.mount ? { ...player.mount } : null
-  let inventory = player.inventory
-  let chemUsedThisRoundLocal = combat.chemUsedThisRound
   let damageDealt = 0
 
   // ── Player fires (only if armed) ─────────────────────────────────────────
@@ -412,53 +415,6 @@ export function resolveFight(
       log.push(logLine)
       animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine, shooterCooldownRemaining })
     }
-
-    // Medic: auto-uses a Stimpak on the most wounded eligible ally (self included), once per round
-    if (classDef.isMedic) {
-      if (chemUsedThisRoundLocal) {
-        log.push(`${label} has no clear opening — someone already treated this round.`)
-      } else {
-        const stimpakOwned = inventory['stimpak']?.quantity ?? 0
-        const healAmount = CHEMS.stimpak.combatEffect?.healAmount ?? 25
-        const candidates: Array<{ kind: 'player' | 'guard' | 'pa_guard'; id: string; deficit: number }> = []
-        if (health < player.maxHealth) candidates.push({ kind: 'player', id: 'player', deficit: player.maxHealth - health })
-        for (const g of guards) if (!g.dead && g.health < g.maxHealth) candidates.push({ kind: 'guard', id: g.id, deficit: g.maxHealth - g.health })
-        for (const g of paGuards) if (!g.dead && g.health < g.maxHealth) candidates.push({ kind: 'pa_guard', id: g.id, deficit: g.maxHealth - g.health })
-
-        if (stimpakOwned > 0 && candidates.length > 0) {
-          candidates.sort((a, b) => b.deficit - a.deficit)
-          const pick = candidates[0]
-
-          const owned = inventory['stimpak']!
-          const newQty = owned.quantity - 1
-          const newInventory = { ...inventory }
-          if (newQty <= 0) delete newInventory['stimpak']
-          else newInventory['stimpak'] = { ...owned, quantity: newQty }
-          inventory = newInventory
-
-          let targetHealthAfter = 0
-          let pickLabel = ''
-          if (pick.kind === 'player') {
-            health = Math.min(player.maxHealth, health + healAmount)
-            targetHealthAfter = health
-            pickLabel = 'yourself'
-          } else if (pick.kind === 'guard') {
-            guards = guards.map(g => g.id === pick.id ? { ...g, health: Math.min(g.maxHealth, g.health + healAmount) } : g)
-            targetHealthAfter = guards.find(g => g.id === pick.id)!.health
-            pickLabel = `Guard ${guards.findIndex(g => g.id === pick.id) + 1}`
-          } else {
-            paGuards = paGuards.map(g => g.id === pick.id ? { ...g, health: Math.min(g.maxHealth, g.health + healAmount) } : g)
-            targetHealthAfter = paGuards.find(g => g.id === pick.id)!.health
-            pickLabel = `PA Guard ${paGuards.findIndex(g => g.id === pick.id) + 1}`
-          }
-
-          const medicLogLine = `${label} administers a Stimpak to ${pickLabel}. +${healAmount} HP.`
-          log.push(medicLogLine)
-          animSteps.push({ kind: 'chem_use', chemId: 'stimpak', targetKind: pick.kind, targetId: pick.id, healAmount, targetHealthAfter, logLine: medicLogLine })
-          chemUsedThisRoundLocal = true
-        }
-      }
-    }
   }
 
   // ── PA guards fire (unclassed, flat per-mode stats, minigun burst) ───────
@@ -622,7 +578,7 @@ export function resolveFight(
   // ── Determine outcome ─────────────────────────────────────────────────────
   let phase = combat.phase
   let wonCaps = 0
-  let updatedPlayer: PlayerState = { ...player, health, guards, paGuards, gun: gun ?? null, armor: armor ?? null, mount: mount ?? null, inventory }
+  let updatedPlayer: PlayerState = { ...player, health, guards, paGuards, gun: gun ?? null, armor: armor ?? null, mount: mount ?? null }
 
   if (aliveEnemies.length === 0) {
     phase = 'won'
@@ -654,7 +610,7 @@ export function resolveFight(
       enragedEnemyIds: [],
       playerVenomed,
       activeBuffs: tickActiveBuffs(combat.activeBuffs),
-      chemUsedThisRound: false,
+      chemUsesThisRound: 0,
     },
     animSteps,
   }
@@ -730,7 +686,7 @@ export function resolveRun(
       phase,
       log: [...combat.log, ...log],
       activeBuffs: tickActiveBuffs(combat.activeBuffs),
-      chemUsedThisRound: false,
+      chemUsesThisRound: 0,
     },
     animSteps,
   }

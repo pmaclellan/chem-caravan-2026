@@ -10,7 +10,7 @@ export interface GuardClassDefinition {
   hireCost: number
   salaryPerTurn: number
   splashRatios?: number[]   // shotgunner only — reuses the gun-splash mechanic
-  isMedic?: boolean
+  grantsExtraChemUse?: boolean  // medic only — +1 to the per-round Field Medicine cap (see chemUseCap() in combat.ts) per living medic
   cooldownTurns?: number    // sniper only — rounds of reload after firing, reuses the gun-cooldown mechanic
 }
 
@@ -50,13 +50,13 @@ export const GUARD_CLASSES: Record<GuardClassId, GuardClassDefinition> = {
   medic: {
     id: 'medic',
     name: 'Medic',
-    description: 'Weak in a fight, but keeps the caravan patched up — auto-uses a Stimpak on the most wounded ally each round, if one is available.',
+    description: 'Weak in a fight, but frees up your hands — each Medic in the squad grants one extra Field Medicine application per round.',
     accuracy: 0.40,
     damage: [10, 18],
     health: 30,
     hireCost: 175,
     salaryPerTurn: 40,
-    isMedic: true,
+    grantsExtraChemUse: true,
   },
 }
 
