@@ -256,6 +256,32 @@ describe('resolveFight', () => {
     expect(shot).toBeDefined()
     expect(shot!.kind === 'shot' ? shot!.shooterCooldownRemaining : undefined).toBe(1)
   })
+
+  it('a gun with both shotsPerTurn and cooldownTurns bursts, then sits out a round, then bursts again', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01) // always hit
+    const player = makePlayer({
+      gun: { id: 'double_barrel', name: 'Double-Barrel Shotgun', accuracy: 0.65, damage: 75, ammo: 20, ammoPerShot: 2, ammoPrice: 10, shotsPerTurn: 2, cooldownTurns: 1 },
+    })
+    const combat = initiateCombat(0.1, testMode, undefined, undefined, 4) // force 4 enemies so targets remain by round 3
+
+    const round1 = resolveFight(player, combat, testMode)
+    expect(round1.player.gun!.ammo).toBe(18) // ammoPerShot consumed once per round, not per shot
+    expect(round1.player.gun!.cooldownRemaining).toBe(1)
+    const burst1 = round1.animSteps.find(s => s.kind === 'burst')
+    expect(burst1).toBeDefined()
+    expect(burst1!.kind === 'burst' ? burst1!.shots.length : 0).toBe(2)
+    expect(burst1!.kind === 'burst' ? burst1!.shooterCooldownRemaining : undefined).toBe(1)
+
+    const round2 = resolveFight(round1.player, round1.combat, testMode)
+    expect(round2.player.gun!.ammo).toBe(18) // no ammo spent while reloading
+    expect(round2.player.gun!.cooldownRemaining).toBe(0)
+    expect(round2.animSteps.some(s => s.kind === 'burst')).toBe(false)
+    expect(round2.combat.log.some(l => l.includes('Reloading'))).toBe(true)
+
+    const round3 = resolveFight(round2.player, round2.combat, testMode)
+    expect(round3.animSteps.some(s => s.kind === 'burst')).toBe(true)
+    expect(round3.player.gun!.cooldownRemaining).toBe(1)
+  })
 })
 
 // ── resolveRun ────────────────────────────────────────────────────────────────

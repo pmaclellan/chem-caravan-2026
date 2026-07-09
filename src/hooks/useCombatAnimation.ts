@@ -302,8 +302,10 @@ export function useCombatAnimation(
         // Player fires once (ammo already deducted as a block)
         workingAmmo = Math.max(0, workingAmmo - step.shots.length)
         const ammoAtBurst = workingAmmo
+        const burstCooldown = step.shooterCooldownRemaining
         timersRef.current.push(setTimeout(() => {
-          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtBurst }))
+          if (burstCooldown !== undefined) workingGunCooldown = burstCooldown
+          setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtBurst, displayGunCooldown: workingGunCooldown }))
         }, offset))
 
         // Each shot in the burst lands BURST_INTER_MS apart

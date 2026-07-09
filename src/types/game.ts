@@ -230,6 +230,7 @@ export type AnimStep =
         targetHealthAfter: number
         logLine: string
       }>
+      shooterCooldownRemaining?: number  // set post-burst when the gun also has a reload cooldown (e.g. Double-Barrel Shotgun)
     }
   | {
       kind: 'pa_burst'  // PA guard minigun burst — same timing as burst, keyed to a guard slot
