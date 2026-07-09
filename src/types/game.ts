@@ -62,6 +62,7 @@ export interface GuardUnit {
   health: number
   maxHealth: number
   dead: boolean          // true once killed in combat; pruned on arrival at the next settlement
+  cooldownRemaining?: number  // sniper only — rounds left before next shot; persists across waves/encounters like gun cooldown
 }
 
 export interface PAGuardUnit {

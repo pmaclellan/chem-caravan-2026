@@ -11,6 +11,7 @@ export interface GuardClassDefinition {
   salaryPerTurn: number
   splashRatios?: number[]   // shotgunner only — reuses the gun-splash mechanic
   isMedic?: boolean
+  cooldownTurns?: number    // sniper only — rounds of reload after firing, reuses the gun-cooldown mechanic
 }
 
 export const GUARD_CLASSES: Record<GuardClassId, GuardClassDefinition> = {
@@ -38,12 +39,13 @@ export const GUARD_CLASSES: Record<GuardClassId, GuardClassDefinition> = {
   sniper: {
     id: 'sniper',
     name: 'Sniper',
-    description: 'Lines up devastating shots but doesn\'t land many. Glass cannon — low HP, high burst.',
-    accuracy: 0.35,
-    damage: [45, 70],
+    description: 'Lines up devastating shots but needs a turn to reload after every shot.',
+    accuracy: 0.75,
+    damage: [50, 80],
     health: 40,
     hireCost: 200,
     salaryPerTurn: 45,
+    cooldownTurns: 1,
   },
   medic: {
     id: 'medic',
@@ -51,7 +53,7 @@ export const GUARD_CLASSES: Record<GuardClassId, GuardClassDefinition> = {
     description: 'Weak in a fight, but keeps the caravan patched up — auto-uses a Stimpak on the most wounded ally each round, if one is available.',
     accuracy: 0.40,
     damage: [10, 18],
-    health: 55,
+    health: 30,
     hireCost: 175,
     salaryPerTurn: 40,
     isMedic: true,
