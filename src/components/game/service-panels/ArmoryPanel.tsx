@@ -65,8 +65,11 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                         {def.name}
                       </span>
                       {def.requiresPowerArmor && (
-                        <span className={`text-[9px] font-mono flex-shrink-0 ${hasPA ? 'text-pip-green-dim' : 'text-pip-red'}`}>
-                          [PA]
+                        <span
+                          className={`text-[9px] font-mono flex-shrink-0 ${hasPA ? 'text-pip-green-dim' : 'text-pip-red'}`}
+                          title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
+                        >
+                          [wear PA]
                         </span>
                       )}
                     </div>
@@ -83,7 +86,12 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                     <span className="text-[10px] font-mono text-pip-border leading-tight">
                       {statsStr}
                       {def.requiresPowerArmor && (
-                        <span className={`ml-1 ${hasPA ? '' : 'text-pip-red'}`}>[PA]</span>
+                        <span
+                          className={`ml-1 ${hasPA ? '' : 'text-pip-red'}`}
+                          title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
+                        >
+                          [wear PA]
+                        </span>
                       )}
                     </span>
                   </div>

@@ -154,6 +154,19 @@ describe('resolveFight', () => {
     expect(result.log.some(l => l.includes('Not enough ammo'))).toBe(true)
   })
 
+  it('blocks firing a PA-required gun without power armor equipped, with a message distinguishing it from PA guards', () => {
+    const player = makePlayer({
+      gun: { id: 'gatling_laser', name: 'Gatling Laser', accuracy: 0.45, damage: 50, ammo: 60, ammoPerShot: 3, ammoPrice: 6, requiresPowerArmor: true },
+      armor: null,
+    })
+    const { combat: result, animSteps } = resolveFight(player, initiateCombat(0.4, testMode), testMode)
+    expect(animSteps).toHaveLength(0) // whole round is blocked, nothing fires
+    const msg = result.log.find(l => l.includes('Gatling Laser'))
+    expect(msg).toBeDefined()
+    expect(msg).toContain('YOU')
+    expect(msg).toContain('not the same as power armor guards')
+  })
+
   it('consumes ammo on player shot', () => {
     vi.spyOn(rngModule, 'rng').mockReturnValue(0.5)
     const player = makePlayer()
