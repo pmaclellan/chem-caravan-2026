@@ -4,7 +4,7 @@ import type { ArmorDefinition, GuardClassId, GunState, GuardUnit, InventoryEntry
 import type { TamingToolDefinition } from '../data/mounts'
 import { CHEMS } from '../data/chems'
 import { GUARD_CLASSES } from '../data/guardClasses'
-import { calculateCapacity, totalInventoryItems } from './travel'
+import { calculateCapacity, totalInventoryItems, dropExcessInventory } from './travel'
 
 export function applyTurnInterest(player: PlayerState, interestRate: number): PlayerState {
   if (player.debt <= 0) return player
@@ -201,6 +201,28 @@ export function buyBrahmin(
   return { player: { ...player, caps: player.caps - cost, brahmin: player.brahmin + actual } }
 }
 
+// Half-price refund — brahmin become a liability late-game (escape-chance penalty, bolt risk
+// while fleeing) and this gives players a way to shed them without a full resale market.
+export function dismissBrahmin(
+  player: PlayerState,
+  count: number,
+  brahminCost: number,
+): { player: PlayerState; error?: string; dropped: Record<string, number> } {
+  const actual = Math.min(count, player.brahmin)
+  if (actual === 0) return { player, error: "You don't have any brahmin.", dropped: {} }
+  const refund = Math.floor(brahminCost / 2) * actual
+  const updated = { ...player, brahmin: player.brahmin - actual, caps: player.caps + refund }
+  // Losing brahmin shrinks pack capacity — drop cheapest excess inventory, same as a bolted brahmin
+  const after = dropExcessInventory(updated)
+  const dropped: Record<string, number> = {}
+  for (const [id, entry] of Object.entries(player.inventory)) {
+    const before = entry.quantity
+    const nowQty = after.inventory[id]?.quantity ?? 0
+    if (nowQty < before) dropped[id] = before - nowQty
+  }
+  return { player: after, dropped }
+}
+
 export function buyGun(
   player: PlayerState,
   gunDef: GunDefinition,
@@ -245,6 +267,20 @@ export function equipGun(
   }
 }
 
+// Half-price refund, based on the gun's base price — remaining ammo in the sold gun is not
+// separately refunded. Selling your equipped gun unequips it; other owned guns are unaffected.
+export function sellGun(
+  player: PlayerState,
+  gunDef: GunDefinition,
+): { player: PlayerState; error?: string } {
+  if (!player.ownedGuns?.[gunDef.id]) return { player, error: "You don't own that gun." }
+  const refund = Math.floor(gunDef.price / 2)
+  const ownedGuns = { ...player.ownedGuns }
+  delete ownedGuns[gunDef.id]
+  const gun = player.gun?.id === gunDef.id ? null : player.gun
+  return { player: { ...player, caps: player.caps + refund, gun, ownedGuns } }
+}
+
 export function buyArmor(
   player: PlayerState,
   armorDef: ArmorDefinition,
@@ -263,6 +299,17 @@ export function buyArmor(
       },
     },
   }
+}
+
+// Half-price refund based on base price, regardless of current damage — no proration, just
+// one flat number, matching the same simplicity as brahmin/gun sell-back.
+export function sellArmor(
+  player: PlayerState,
+  armorDef: ArmorDefinition,
+): { player: PlayerState; error?: string } {
+  if (!player.armor || player.armor.id !== armorDef.id) return { player, error: "You don't have that armor equipped." }
+  const refund = Math.floor(armorDef.price / 2)
+  return { player: { ...player, caps: player.caps + refund, armor: null } }
 }
 
 export function repairArmor(player: PlayerState): { player: PlayerState; error?: string } {

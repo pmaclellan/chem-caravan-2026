@@ -115,7 +115,11 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
                   <span className="text-pip-green-dim">
                     {def.name} #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP)</span>
                   </span>
-                  <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissGuard(g.id)}>
+                  <button
+                    className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
+                    onClick={() => store.dismissGuard(g.id)}
+                    title="No refund — they keep their sign-on pay"
+                  >
                     DISMISS
                   </button>
                 </div>
@@ -159,7 +163,11 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
                 <span className="text-pip-green-dim">
                   PA Guard #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP)</span>
                 </span>
-                <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissPAGuard(g.id)}>
+                <button
+                  className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
+                  onClick={() => store.dismissPAGuard(g.id)}
+                  title="No refund — they keep their sign-on pay"
+                >
                   DISMISS
                 </button>
               </div>
@@ -172,9 +180,9 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
       <div className="border-t border-pip-border-dim pt-3 space-y-2">
         <div className="pip-label">BRAHMIN — {mc.brahminCost} ¤ each</div>
         <div className="text-xs text-pip-green-dim">
-          {player.brahmin} / {mc.maxBrahmin} · +{mc.capacityPerBrahmin} inventory capacity each
+          {player.brahmin} / {mc.maxBrahmin} · +{mc.capacityPerBrahmin} inventory capacity each · more brahmin lower your escape odds
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {[1, 2].map(n => (
             <button
               key={n}
@@ -183,6 +191,17 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
               onClick={() => store.purchaseBrahmin(n)}
             >
               BUY {n} ({(n * mc.brahminCost).toLocaleString()} ¤)
+            </button>
+          ))}
+          {[1, 2].map(n => (
+            <button
+              key={n}
+              className="pip-btn-danger text-xs"
+              disabled={player.brahmin < n}
+              onClick={() => store.dismissBrahmin(n)}
+              title="Sold at half price — a liability late-game when danger rises and you need to flee"
+            >
+              SELL {n} (+{(n * Math.floor(mc.brahminCost / 2)).toLocaleString()} ¤)
             </button>
           ))}
         </div>

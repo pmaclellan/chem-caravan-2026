@@ -9,10 +9,14 @@ import {
   dismissGuard,
   dismissPAGuard,
   dismissMount,
+  dismissBrahmin,
+  sellGun,
+  sellArmor,
   repayDebt,
 } from '../economy'
 import type { DebtEnforcementEntry, GameModeConfig } from '../../data/modes'
-import type { GuardUnit, PAGuardUnit, PlayerState, SettlementMarket } from '../../types/game'
+import type { ArmorDefinition, GuardUnit, PAGuardUnit, PlayerState, SettlementMarket } from '../../types/game'
+import type { GunDefinition } from '../../data/guns'
 import { GUARD_CLASSES } from '../../data/guardClasses'
 
 const EMPTY_MC = { guns: {}, armors: {} } as GameModeConfig
@@ -304,5 +308,113 @@ describe('repayDebt', () => {
     const { player: result } = repayDebt(makePlayer({ caps: 500, debt: 100 }), 300)
     expect(result.debt).toBe(0)
     expect(result.caps).toBe(400) // only 100 actually paid
+  })
+})
+
+describe('dismissBrahmin', () => {
+  it('refunds half of brahminCost per brahmin and reduces the count', () => {
+    const player = makePlayer({ brahmin: 3, caps: 100 })
+    const { player: result, error } = dismissBrahmin(player, 1, 300)
+    expect(error).toBeUndefined()
+    expect(result.brahmin).toBe(2)
+    expect(result.caps).toBe(250) // 100 + floor(300/2)
+  })
+
+  it('caps the dismissed count at what the player actually owns', () => {
+    const player = makePlayer({ brahmin: 1, caps: 0 })
+    const { player: result } = dismissBrahmin(player, 5, 300)
+    expect(result.brahmin).toBe(0)
+    expect(result.caps).toBe(150) // only 1 actually dismissed
+  })
+
+  it('errors when the player has no brahmin', () => {
+    const { error } = dismissBrahmin(makePlayer({ brahmin: 0 }), 1, 300)
+    expect(error).toBeTruthy()
+  })
+
+  it('drops excess inventory when losing brahmin shrinks capacity below current pack weight', () => {
+    // brahmin 1 -> capacity 30; dismissing it -> capacity 20; inventory has 25 items
+    const player = makePlayer({
+      brahmin: 1,
+      caps: 0,
+      inventory: { jet: { quantity: 25, pricePaid: 80 } },
+    })
+    const { player: result, dropped } = dismissBrahmin(player, 1, 300)
+    expect(result.brahmin).toBe(0)
+    expect(result.inventory['jet']?.quantity ?? 0).toBeLessThanOrEqual(20)
+    expect(dropped['jet']).toBeGreaterThan(0)
+  })
+})
+
+describe('sellGun', () => {
+  const testGun: GunDefinition = {
+    id: 'pipe_pistol', name: 'Pipe Pistol', price: 200, accuracy: 0.55, damage: 25,
+    ammoPerShot: 1, ammoPrice: 3, ammoWithPurchase: 30, description: 'x',
+  }
+
+  it('refunds half price and removes the gun from ownedGuns', () => {
+    const player = makePlayer({
+      caps: 100,
+      ownedGuns: { pipe_pistol: { id: 'pipe_pistol', name: 'Pipe Pistol', accuracy: 0.55, damage: 25, ammo: 10, ammoPerShot: 1, ammoPrice: 3 } },
+    })
+    const { player: result, error } = sellGun(player, testGun)
+    expect(error).toBeUndefined()
+    expect(result.caps).toBe(200) // 100 + floor(200/2)
+    expect(result.ownedGuns['pipe_pistol']).toBeUndefined()
+  })
+
+  it('unequips the gun if it was equipped', () => {
+    const gunState = { id: 'pipe_pistol', name: 'Pipe Pistol', accuracy: 0.55, damage: 25, ammo: 10, ammoPerShot: 1, ammoPrice: 3 }
+    const player = makePlayer({ gun: gunState, ownedGuns: { pipe_pistol: gunState } })
+    const { player: result } = sellGun(player, testGun)
+    expect(result.gun).toBeNull()
+  })
+
+  it('leaves a different equipped gun untouched', () => {
+    const equipped = { id: 'combat_rifle', name: 'Combat Rifle', accuracy: 0.75, damage: 65, ammo: 20, ammoPerShot: 1, ammoPrice: 8 }
+    const owned = { id: 'pipe_pistol', name: 'Pipe Pistol', accuracy: 0.55, damage: 25, ammo: 10, ammoPerShot: 1, ammoPrice: 3 }
+    const player = makePlayer({ gun: equipped, ownedGuns: { combat_rifle: equipped, pipe_pistol: owned } })
+    const { player: result } = sellGun(player, testGun)
+    expect(result.gun?.id).toBe('combat_rifle')
+    expect(result.ownedGuns['pipe_pistol']).toBeUndefined()
+  })
+
+  it('errors when the gun is not owned', () => {
+    const { error } = sellGun(makePlayer(), testGun)
+    expect(error).toBeTruthy()
+  })
+})
+
+describe('sellArmor', () => {
+  const testArmor: ArmorDefinition = {
+    id: 'leather_armor', name: 'Leather Armor', price: 300, armorPoints: 50, repairCostPerAP: 2, description: 'x',
+  }
+
+  it('refunds half price and clears armor', () => {
+    const player = makePlayer({
+      caps: 100,
+      armor: { id: 'leather_armor', name: 'Leather Armor', armorPoints: 30, maxArmorPoints: 50, repairCostPerAP: 2 },
+    })
+    const { player: result, error } = sellArmor(player, testArmor)
+    expect(error).toBeUndefined()
+    expect(result.caps).toBe(250) // 100 + floor(300/2)
+    expect(result.armor).toBeNull()
+  })
+
+  it('refunds the same amount regardless of current damage', () => {
+    const damaged = makePlayer({ caps: 0, armor: { id: 'leather_armor', name: 'Leather Armor', armorPoints: 1, maxArmorPoints: 50, repairCostPerAP: 2 } })
+    const { player: result } = sellArmor(damaged, testArmor)
+    expect(result.caps).toBe(150)
+  })
+
+  it('errors when no armor is equipped', () => {
+    const { error } = sellArmor(makePlayer({ armor: null }), testArmor)
+    expect(error).toBeTruthy()
+  })
+
+  it('errors when a different armor is equipped', () => {
+    const player = makePlayer({ armor: { id: 'combat_armor', name: 'Combat Armor', armorPoints: 80, maxArmorPoints: 80, repairCostPerAP: 3 } })
+    const { error } = sellArmor(player, testArmor)
+    expect(error).toBeTruthy()
   })
 })

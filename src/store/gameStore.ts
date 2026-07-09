@@ -34,10 +34,13 @@ import {
   dismissPAGuard as dismissPAGuardFn,
   dismissMount as dismissMountFn,
   buyBrahmin,
+  dismissBrahmin as dismissBrahminFn,
   buyGun,
+  sellGun as sellGunFn,
   equipGun as equipGunFn,
   buyAmmo,
   buyArmor,
+  sellArmor as sellArmorFn,
   repairArmor,
   buyTamingTool,
   buySaddle,
@@ -230,11 +233,14 @@ interface GameStore {
   dismissPAGuard: (guardId: string) => void
   dismissMount: () => void
   purchaseBrahmin: (count: number) => void
+  dismissBrahmin: (count: number) => void
   purchaseGun: (gunId: string) => void
+  sellGun: (gunId: string) => void
   equipGun: (gunId: string) => void
   purchaseAmmo: (rounds: number) => void
   purchaseAmmoForGun: (gunId: string, rounds: number) => void
   purchaseArmor: (armorId: string) => void
+  sellArmor: () => void
   repairArmor: () => void
   retire: () => void
   buyAntivenom: () => void
@@ -1178,6 +1184,22 @@ export const useGameStore = create<GameStore>((set, get) => {
       })
     },
 
+    dismissBrahmin: (count) => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const { player, error, dropped } = dismissBrahminFn(state.player, count, mc.brahminCost)
+        if (error) { set({ toast: error }); return state }
+        const refund = Math.floor(mc.brahminCost / 2) * (state.player.brahmin - player.brahmin)
+        const droppedDesc = Object.entries(dropped).map(([id, q]) => `${q}× ${id}`).join(', ')
+        const capacity = mc.baseCapacity + player.brahmin * mc.capacityPerBrahmin
+        const msg = droppedDesc
+          ? `Dismissed brahmin for ${refund} ¤. Capacity now ${capacity}. Lost: ${droppedDesc} (pack over capacity).`
+          : `Dismissed brahmin for ${refund} ¤. Capacity now ${capacity}.`
+        const log = [...state.log, { turn: state.world.turn, message: msg, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
     purchaseGun: (gunId) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
@@ -1186,6 +1208,19 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyGun(state.player, gunDef)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Purchased ${gunDef.name} with ${gunDef.ammoWithPurchase} rounds.`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    sellGun: (gunId) => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const gunDef = mc.guns[gunId]
+        if (!gunDef) return state
+        const { player, error } = sellGunFn(state.player, gunDef)
+        if (error) { set({ toast: error }); return state }
+        const refund = Math.floor(gunDef.price / 2)
+        const log = [...state.log, { turn: state.world.turn, message: `Sold ${gunDef.name} for ${refund} ¤.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
@@ -1236,6 +1271,20 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { player, error } = buyArmor(state.player, armorDef)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Purchased ${armorDef.name}. (${armorDef.armorPoints} AP)`, type: 'info' as const }]
+        return { ...state, player, log }
+      })
+    },
+
+    sellArmor: () => {
+      mutate(state => {
+        const mc = GAME_MODES[state.mode]
+        const armorId = state.player.armor?.id
+        const armorDef = armorId ? mc.armors[armorId] : undefined
+        if (!armorDef) return state
+        const { player, error } = sellArmorFn(state.player, armorDef)
+        if (error) { set({ toast: error }); return state }
+        const refund = Math.floor(armorDef.price / 2)
+        const log = [...state.log, { turn: state.world.turn, message: `Sold ${armorDef.name} for ${refund} ¤.`, type: 'info' as const }]
         return { ...state, player, log }
       })
     },
