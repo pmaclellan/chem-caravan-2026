@@ -78,6 +78,7 @@ export default function EventPanel({ event, player }: Props) {
                         key={gid}
                         disabled={equipped || paLocked}
                         onClick={() => equipGun(gid)}
+                        title={paLocked ? 'You must personally wear Power Armor to fire this — separate from hiring power armor guards' : undefined}
                         className={`text-xs px-2 py-1 rounded border font-mono ${
                           equipped
                             ? 'border-pip-green text-pip-green bg-pip-border-dim cursor-default'
@@ -86,7 +87,7 @@ export default function EventPanel({ event, player }: Props) {
                               : 'border-pip-amber text-pip-amber hover:bg-pip-border-dim'
                         }`}
                       >
-                        {def.name} ({state.ammo} rds){paLocked ? ' [PA]' : ''}
+                        {def.name} ({state.ammo} rds){paLocked ? ' [wear PA]' : ''}
                       </button>
                     )
                   })}

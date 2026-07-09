@@ -227,7 +227,7 @@ export function resolveFight(
   modeConfig: GameModeConfig,
 ): { player: PlayerState; combat: CombatState; animSteps: AnimStep[] } {
   if (player.gun?.requiresPowerArmor && player.armor?.id !== 'power_armor') {
-    return { player, combat: { ...combat, log: [...combat.log, `${player.gun.name} requires Power Armor to wield. Equip Power Armor first.`] }, animSteps: [] }
+    return { player, combat: { ...combat, log: [...combat.log, `${player.gun.name} requires YOU to be wearing Power Armor (not the same as power armor guards). Equip a suit from the Armory.`] }, animSteps: [] }
   }
   const log: string[] = []
   const animSteps: AnimStep[] = []

@@ -260,7 +260,9 @@ export default function CombatPanel({ player, combat }: Props) {
   const gunCooldown = player.gun?.cooldownRemaining ?? 0
   const hasGuards   = aliveGuardCount > 0 || alivePAGuardCount > 0
   const hasMount    = !!player.mount
-  const gunCanFire  = !!player.gun && (player.gun.ammo > 0 || gunCooldown > 0)
+  // Distinct from power armor GUARDS — this is whether the player themself is wearing a suit
+  const paLocked    = !!player.gun?.requiresPowerArmor && player.armor?.id !== 'power_armor'
+  const gunCanFire  = !!player.gun && !paLocked && (player.gun.ammo > 0 || gunCooldown > 0)
   const canFight    = (gunCanFire || hasGuards || hasMount) && !isResolving
 
   const runChancePct = Math.round(runEscapeChance(aliveGuardCount, alivePAGuardCount, player.brahmin) * 100)
@@ -589,16 +591,23 @@ export default function CombatPanel({ player, combat }: Props) {
 
       {!isResolved && (
         <div className="flex gap-3">
-          <button className="pip-btn-danger flex-1" disabled={!canFight} onClick={fight}>
+          <button
+            className="pip-btn-danger flex-1"
+            disabled={!canFight}
+            onClick={fight}
+            title={paLocked ? `${player.gun!.name} requires YOU to be wearing Power Armor — not the same as hiring power armor guards` : undefined}
+          >
             {isResolving
               ? 'FIGHTING...'
-              : gunCooldown > 0
-                ? `RELOADING — ${gunCooldown} turn${gunCooldown > 1 ? 's' : ''} left`
-                : gunCanFire
-                  ? `FIGHT — ${player.gun!.name} (${player.gun!.ammo} ammo)`
-                  : canFight
-                    ? 'FIGHT — Guards only'
-                    : 'NO GUN / NO AMMO'}
+              : paLocked
+                ? `${player.gun!.name} needs YOU in Power Armor`
+                : gunCooldown > 0
+                  ? `RELOADING — ${gunCooldown} turn${gunCooldown > 1 ? 's' : ''} left`
+                  : gunCanFire
+                    ? `FIGHT — ${player.gun!.name} (${player.gun!.ammo} ammo)`
+                    : canFight
+                      ? 'FIGHT — Guards only'
+                      : 'NO GUN / NO AMMO'}
           </button>
           {canTame && (
             <button className="pip-btn-amber" onClick={openTamingMinigame} style={{ flexShrink: 0, fontSize: '0.9rem', padding: '2px 12px' }}>
