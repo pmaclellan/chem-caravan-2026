@@ -112,6 +112,22 @@ describe('afterCombat — wave escalation carries cumulative loot forward', () =
   })
 })
 
+// ── afterCombat — death screen text ─────────────────────────────────────────
+
+describe('afterCombat — killed-by message', () => {
+  it('pluralizes Cazador as Cazadores, not Cazadors', () => {
+    const state: GameState = initializeGame('Test', 'mojave_wasteland', 'free_play')
+    const combat: CombatState = {
+      enemies: [{ id: 'enemy_0', typeId: 'cazador', name: 'Cazador', health: 0, maxHealth: 40, dead: true }],
+      capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
+      phase: 'lost', log: [], waveNumber: 1, isCheckpointFight: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsesThisRound: 0,
+    }
+    const result = afterCombat(state, { player: state.player, combat })
+    expect(result.endReason).toBe('Killed by Cazadores on the road')
+  })
+})
+
 // ── afterCombat — weapon/guard reload cooldown clearing ────────────────────
 
 describe('afterCombat — reload cooldown clearing', () => {

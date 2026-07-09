@@ -38,7 +38,7 @@ export const TRANSIT_QUOTES: TransitQuote[] = [
   { text: "The Mojave will teach you respect or it will kill you. Either way, lesson learned.", speaker: "Desert hermit" },
 
   // Gameplay tips
-  { text: "The Great Khans operate a drug lab out of Red Rock Canyon. It's the place to go for reliably cheap chems — if you can make it past the Cazadors and Deathclaws on the approach.", speaker: "Omniscient Guide" },
+  { text: "The Great Khans operate a drug lab out of Red Rock Canyon. It's the place to go for reliably cheap chems — if you can make it past the Cazadores and Deathclaws on the approach.", speaker: "Omniscient Guide" },
   { text: "Cazador venom doesn't stop when the fight does. It drains HP every turn until you use antivenom or see a doctor. Don't skip the antivenom before heading northwest.", speaker: "Omniscient Guide" },
   { text: "The Strip, Freeside, and NCR Sharecropper Farms are relatively safe roads — you'll run into Thugs and Fiends, not apex predators. Good early-run trade routes.", speaker: "Omniscient Guide" },
   { text: "Novac is isolated but well-supplied. The run from Goodsprings is long and dangerous. Make it count — go with a full pack.", speaker: "Omniscient Guide" },
