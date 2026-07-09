@@ -89,8 +89,8 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                   </div>
                 )}
 
-                {/* Action button */}
-                <div className="flex-shrink-0">
+                {/* Action buttons */}
+                <div className="flex-shrink-0 flex items-center gap-1">
                   {equipped ? (
                     <span className="text-[10px] font-mono text-pip-green opacity-50 tracking-widest">
                       EQUIPPED
@@ -110,6 +110,15 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                       onClick={() => store.purchaseGun(gunId)}
                     >
                       {def.price.toLocaleString()} ¤
+                    </button>
+                  )}
+                  {owned && (
+                    <button
+                      className="pip-btn-danger text-[10px] px-2 py-0.5 whitespace-nowrap"
+                      onClick={() => store.sellGun(gunId)}
+                      title="Sold at half price — remaining ammo is not refunded"
+                    >
+                      SELL (+{Math.floor(def.price / 2).toLocaleString()} ¤)
                     </button>
                   )}
                 </div>
@@ -164,13 +173,26 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                 <div className="text-pip-green text-sm">{armor.name}</div>
                 <div className="text-xs text-pip-green-dim">{armor.armorPoints} AP · {armor.repairCostPerAP} ¤/AP repair</div>
               </div>
-              <button
-                className={equipped ? 'pip-btn text-xs' : 'pip-btn-amber text-xs'}
-                disabled={equipped || player.caps < armor.price}
-                onClick={() => store.purchaseArmor(armorId)}
-              >
-                {equipped ? 'EQUIPPED' : `${armor.price} ¤`}
-              </button>
+              {equipped ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-mono text-pip-green opacity-50 tracking-widest px-1">EQUIPPED</span>
+                  <button
+                    className="pip-btn-danger text-xs"
+                    onClick={() => store.sellArmor()}
+                    title="Sold at half price, regardless of current damage"
+                  >
+                    SELL (+{Math.floor(armor.price / 2).toLocaleString()} ¤)
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="pip-btn-amber text-xs"
+                  disabled={player.caps < armor.price}
+                  onClick={() => store.purchaseArmor(armorId)}
+                >
+                  {armor.price} ¤
+                </button>
+              )}
             </div>
           )
         })}
@@ -243,7 +265,11 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
             <div className="border border-pip-amber rounded p-2 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
-                <button className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0" onClick={() => store.dismissMount()}>
+                <button
+                  className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
+                  onClick={() => store.dismissMount()}
+                  title="No refund — tamed, not bought"
+                >
                   RELEASE
                 </button>
               </div>
