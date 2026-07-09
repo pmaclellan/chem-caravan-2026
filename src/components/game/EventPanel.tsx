@@ -87,7 +87,7 @@ export default function EventPanel({ event, player }: Props) {
                               : 'border-pip-amber text-pip-amber hover:bg-pip-border-dim'
                         }`}
                       >
-                        {def.name} ({state.ammo} rds){paLocked ? ' [wear PA]' : ''}
+                        {def.name} ({state.ammo} rds){paLocked ? ' — Needs Power Armor' : ''}
                       </button>
                     )
                   })}
