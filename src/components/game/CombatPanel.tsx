@@ -287,9 +287,15 @@ export default function CombatPanel({ player, combat }: Props) {
     player.armor?.armorPoints ?? 0,
     initialMountHealth,
     player.gun?.ammo ?? 0,
+    gunCooldown,
     completeCombatAnim,
     onLogLine,
   )
+
+  // Reload badge/dim state for the "YOU" card — lags behind the raw cooldown value while
+  // animating so it flips in sync with this shot's own fire animation, not the instant the
+  // round resolves (which can visually precede the shot animation by a beat).
+  const displayGunCooldown = anim.isAnimating ? anim.displayGunCooldown : gunCooldown
 
   // Newest message at top — reverse after building the full list.
   // During animation: augment committed log with real-time lines.
@@ -407,13 +413,13 @@ export default function CombatPanel({ player, combat }: Props) {
               const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
               const selectable = isValidChemTarget('player', 'player')
               const selectColor = armedChem ? CHEM_COLOR[armedChem] : undefined
-              const reloading = gunCooldown > 0
+              const reloading = displayGunCooldown > 0
               return (
                 <div
                   className={`flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
                   style={{ width: '3rem', opacity: reloading ? 0.55 : 1, transition: 'opacity 400ms' }}
                   onClick={selectable ? () => applyArmedChemTo('player', 'player') : undefined}
-                  title={selectable ? 'Apply here' : reloading ? `Reloading — ${gunCooldown} round${gunCooldown > 1 ? 's' : ''} left` : undefined}
+                  title={selectable ? 'Apply here' : reloading ? `Reloading — ${displayGunCooldown} round${displayGunCooldown > 1 ? 's' : ''} left` : undefined}
                 >
                   <div
                     key={anim.playerDodgeKey > 0 ? `dodge-${anim.playerDodgeKey}` : 'still'}
@@ -434,13 +440,13 @@ export default function CombatPanel({ player, combat }: Props) {
                       const buff = findBuff(combat.activeBuffs, 'player', 'player')
                       return buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />
                     })()}
-                    {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={gunCooldown} label="Reloading" />}
+                    {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={displayGunCooldown} label="Reloading" />}
                   </div>
                   <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
                     <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
                   </div>
                   <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>
-                    {reloading ? `RELOAD ${gunCooldown}t` : 'YOU'}
+                    {reloading ? `RELOAD ${displayGunCooldown}t` : 'YOU'}
                   </div>
                 </div>
               )
@@ -450,6 +456,9 @@ export default function CombatPanel({ player, combat }: Props) {
               const displayGuardHp = anim.isAnimating ? (anim.displayGuardHealth[g.id] ?? g.health) : g.health
               const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
               const selectable = isValidChemTarget('guard', g.id)
+              // Lags behind the raw cooldown value while animating so the reload badge flips
+              // in sync with this guard's own shot, not the instant the round resolves.
+              const displayGuardCooldown = anim.isAnimating ? (anim.displayGuardCooldown[g.id] ?? g.cooldownRemaining ?? 0) : (g.cooldownRemaining ?? 0)
               return (
                 <GuardUnitCard
                   key={g.id}
@@ -461,7 +470,7 @@ export default function CombatPanel({ player, combat }: Props) {
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
                   buff={findBuff(combat.activeBuffs, 'guard', g.id)}
-                  reloadRoundsRemaining={g.cooldownRemaining}
+                  reloadRoundsRemaining={displayGuardCooldown}
                   selectable={selectable}
                   selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
                   onSelect={() => applyArmedChemTo('guard', g.id)}

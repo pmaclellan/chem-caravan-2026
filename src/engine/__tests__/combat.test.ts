@@ -232,12 +232,16 @@ describe('resolveFight', () => {
       gun: { id: 'sniper_rifle', name: 'Sniper Rifle', accuracy: 0.75, damage: 999, damageRange: [55, 90], ammo: 5, ammoPerShot: 1, ammoPrice: 8, cooldownTurns: 1 },
     })
     const combat = initiateCombat(0.1, testMode)
-    const { player: result, combat: combatResult } = resolveFight(player, combat, testMode)
+    const { player: result, combat: combatResult, animSteps } = resolveFight(player, combat, testMode)
     // Rolled damage (72) is logged, not the flat `damage` fallback (999) — and it overkills
     // the 40 HP test enemy, so totalDamageDealt is capped at the enemy's remaining health.
     expect(combatResult.log.some(l => l.includes('(72 damage)'))).toBe(true)
     expect(combatResult.totalDamageDealt).toBe(40)
     expect(result.gun!.cooldownRemaining).toBe(1)
+    // Threaded onto the shot itself so the UI can sync the reload badge to this shot's animation
+    const shot = animSteps.find(s => s.kind === 'shot' && s.by === 'player')
+    expect(shot).toBeDefined()
+    expect(shot!.kind === 'shot' ? shot!.shooterCooldownRemaining : undefined).toBe(1)
   })
 })
 
@@ -411,7 +415,10 @@ describe('resolveFight — guard classes', () => {
     const round1 = resolveFight(player, combat, testMode)
     const sniperAfterRound1 = round1.player.guards.find(g => g.id === 'guard_0')!
     expect(sniperAfterRound1.cooldownRemaining).toBe(1)
-    expect(round1.animSteps.some(s => s.kind === 'shot' && s.by === 'guard')).toBe(true)
+    const round1Shot = round1.animSteps.find(s => s.kind === 'shot' && s.by === 'guard')
+    expect(round1Shot).toBeDefined()
+    // Threaded onto the shot itself so the UI can sync the reload badge to this shot's animation
+    expect(round1Shot!.kind === 'shot' ? round1Shot!.shooterCooldownRemaining : undefined).toBe(1)
 
     const round2 = resolveFight(round1.player, round1.combat, testMode)
     const sniperAfterRound2 = round2.player.guards.find(g => g.id === 'guard_0')!
@@ -421,5 +428,16 @@ describe('resolveFight — guard classes', () => {
 
     const round3 = resolveFight(round2.player, round2.combat, testMode)
     expect(round3.animSteps.some(s => s.kind === 'shot' && s.by === 'guard')).toBe(true)
+  })
+
+  it('a standard guard (no cooldown) leaves shooterCooldownRemaining undefined on its shot', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(20)
+    const player = makePlayer({ gun: null, guards: makeGuards(1) })
+    const combat = initiateCombat(0.8, testMode)
+    const { animSteps } = resolveFight(player, combat, testMode)
+    const shot = animSteps.find(s => s.kind === 'shot' && s.by === 'guard')
+    expect(shot).toBeDefined()
+    expect(shot!.kind === 'shot' ? shot!.shooterCooldownRemaining : 'wrong-kind').toBeUndefined()
   })
 })

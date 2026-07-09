@@ -254,6 +254,8 @@ export function resolveFight(
   } else if (playerCanFire) {
     gun.ammo -= gun.ammoPerShot
     if (gun.cooldownTurns) gun.cooldownRemaining = gun.cooldownTurns
+    // Threaded onto this shot's AnimStep so the UI can sync the reload badge to the shot's own animation
+    const shooterCooldownRemaining = gun.cooldownTurns ? gun.cooldownRemaining : undefined
     const venomedAccuracy = (combat.playerVenomed ?? false) ? gun.accuracy * 0.70 : gun.accuracy
     const effectiveAccuracy = applyAccuracyBuff(venomedAccuracy, combat.activeBuffs, 'player', 'player')
 
@@ -297,9 +299,9 @@ export function resolveFight(
         if (isBurst) {
           burstShots.push({ targetId: target.id, hit: true, damage: dealt, targetDied: target.dead, targetHealthAfter: target.health, logLine })
         } else if (splashHits.length > 0) {
-          animSteps.push({ kind: 'blast', shooterId: null, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
+          animSteps.push({ kind: 'blast', shooterId: null, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine, shooterCooldownRemaining })
         } else {
-          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine, shooterCooldownRemaining })
         }
       } else {
         const logLine = `You fire the ${gun.name}${shotLabel} at ${target.name}. Missed.`
@@ -328,7 +330,7 @@ export function resolveFight(
           burstShots.push({ targetId: target.id, hit: false, damage: 0, targetDied: false, targetHealthAfter: target.health, logLine })
           if (strayShot) burstShots.push(strayShot)
         } else {
-          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+          animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine, shooterCooldownRemaining })
           if (strayShot) {
             animSteps.push({ kind: 'shot', by: 'player', shooterId: null, hit: true, damage: strayShot.damage, targetId: strayShot.targetId, targetDied: strayShot.targetDied, targetHealthAfter: strayShot.targetHealthAfter, logLine: strayShot.logLine })
           }
@@ -366,6 +368,8 @@ export function resolveFight(
     if (!target) break
     const guardAccuracy = applyAccuracyBuff(classDef.accuracy, combat.activeBuffs, 'guard', guardUnit.id)
     if (classDef.cooldownTurns) guardUnit.cooldownRemaining = classDef.cooldownTurns
+    // Threaded onto this shot's AnimStep so the UI can sync the reload badge to the shot's own animation
+    const shooterCooldownRemaining = classDef.cooldownTurns ? guardUnit.cooldownRemaining : undefined
 
     if (rng() < guardAccuracy) {
       const dmg = rngInt(classDef.damage[0], classDef.damage[1])
@@ -399,14 +403,14 @@ export function resolveFight(
       }
 
       if (splashHits.length > 0) {
-        animSteps.push({ kind: 'blast', shooterId: guardUnit.id, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine })
+        animSteps.push({ kind: 'blast', shooterId: guardUnit.id, primaryTargetId: target.id, primaryDamage: dealt, primaryDied: target.dead, primaryHealthAfter: target.health, splashHits, logLine, shooterCooldownRemaining })
       } else {
-        animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine })
+        animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: true, damage: dealt, targetId: target.id, targetDied: target.dead, targetHealthAfter: target.health, logLine, shooterCooldownRemaining })
       }
     } else {
       const logLine = `${label} fires. Missed.`
       log.push(logLine)
-      animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine })
+      animSteps.push({ kind: 'shot', by: 'guard', shooterId: guardUnit.id, hit: false, damage: 0, targetId: target.id, targetDied: false, targetHealthAfter: target.health, logLine, shooterCooldownRemaining })
     }
 
     // Medic: auto-uses a Stimpak on the most wounded eligible ally (self included), once per round

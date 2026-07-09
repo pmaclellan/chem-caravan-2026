@@ -195,6 +195,7 @@ export type AnimStep =
       targetDied: boolean
       targetHealthAfter: number
       logLine: string
+      shooterCooldownRemaining?: number  // set post-shot when the shooter has a reload cooldown — lets the UI sync the reload badge to this shot's animation
     }
   | {
       kind: 'mount_attack'
@@ -262,6 +263,7 @@ export type AnimStep =
       // Splash targets — all animate simultaneously with the primary
       splashHits: Array<{ targetId: string; damage: number; died: boolean; healthAfter: number; logLine: string }>
       logLine: string   // primary hit log line
+      shooterCooldownRemaining?: number  // set post-shot when the shooter has a reload cooldown — lets the UI sync the reload badge to this shot's animation
     }
 
 export type LogType = 'info' | 'danger' | 'profit' | 'system'
