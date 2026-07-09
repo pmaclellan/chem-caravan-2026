@@ -256,7 +256,7 @@ export default function MobileGame() {
                   <div key={g.id} className="flex items-center justify-between gap-2">
                     <div>
                       <div className="text-pip-green text-sm font-display">{g.name}</div>
-                      <div className="text-xs text-pip-green-dim">{ammo} rds · {Math.round(g.accuracy * 100)}% acc · {g.damage} dmg</div>
+                      <div className="text-xs text-pip-green-dim">{ammo} rds · {Math.round(g.accuracy * 100)}% acc · {g.damageRange ? `${g.damageRange[0]}-${g.damageRange[1]}` : g.damage} dmg</div>
                     </div>
                     {equipped ? (
                       <span className="text-xs text-pip-green-dim">EQUIPPED</span>

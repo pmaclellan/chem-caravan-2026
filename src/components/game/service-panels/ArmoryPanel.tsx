@@ -32,7 +32,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
 
           const statParts: string[] = [
             `Acc ${Math.round(def.accuracy * 100)}%`,
-            `${def.damage} dmg`,
+            def.damageRange ? `${def.damageRange[0]}-${def.damageRange[1]} dmg` : `${def.damage} dmg`,
           ]
           if (def.shotsPerTurn && def.shotsPerTurn > 1) statParts.push(`${def.shotsPerTurn} shots/turn`)
           else if (def.ammoPerShot > 1)                  statParts.push(`${def.ammoPerShot} rds/shot`)

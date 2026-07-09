@@ -224,6 +224,21 @@ describe('resolveFight', () => {
     const { combat: result } = resolveFight(player, combat, testMode)
     expect(result.totalDamageDealt).toBeGreaterThan(0)
   })
+
+  it('a gun with damageRange rolls per-shot damage instead of using the flat damage field', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01) // always hit
+    vi.spyOn(rngModule, 'rngInt').mockReturnValue(72)
+    const player = makePlayer({
+      gun: { id: 'sniper_rifle', name: 'Sniper Rifle', accuracy: 0.75, damage: 999, damageRange: [55, 90], ammo: 5, ammoPerShot: 1, ammoPrice: 8, cooldownTurns: 1 },
+    })
+    const combat = initiateCombat(0.1, testMode)
+    const { player: result, combat: combatResult } = resolveFight(player, combat, testMode)
+    // Rolled damage (72) is logged, not the flat `damage` fallback (999) — and it overkills
+    // the 40 HP test enemy, so totalDamageDealt is capped at the enemy's remaining health.
+    expect(combatResult.log.some(l => l.includes('(72 damage)'))).toBe(true)
+    expect(combatResult.totalDamageDealt).toBe(40)
+    expect(result.gun!.cooldownRemaining).toBe(1)
+  })
 })
 
 // ── resolveRun ────────────────────────────────────────────────────────────────

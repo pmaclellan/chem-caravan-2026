@@ -407,18 +407,20 @@ export default function CombatPanel({ player, combat }: Props) {
               const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
               const selectable = isValidChemTarget('player', 'player')
               const selectColor = armedChem ? CHEM_COLOR[armedChem] : undefined
+              const reloading = gunCooldown > 0
               return (
                 <div
                   className={`flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
-                  style={{ width: '3rem' }}
+                  style={{ width: '3rem', opacity: reloading ? 0.55 : 1, transition: 'opacity 400ms' }}
                   onClick={selectable ? () => applyArmedChemTo('player', 'player') : undefined}
-                  title={selectable ? 'Apply here' : undefined}
+                  title={selectable ? 'Apply here' : reloading ? `Reloading — ${gunCooldown} round${gunCooldown > 1 ? 's' : ''} left` : undefined}
                 >
                   <div
                     key={anim.playerDodgeKey > 0 ? `dodge-${anim.playerDodgeKey}` : 'still'}
                     className="relative w-10 h-10 border rounded flex items-center justify-center"
                     style={{
                       borderColor: selectable ? selectColor : 'var(--pip-amber)',
+                      borderStyle: reloading ? 'dashed' : 'solid',
                       animation: anim.playerDodgeKey > 0 ? 'allyDodge 420ms ease-out' : selectable ? 'guardCardSelectablePulse 1.1s ease-in-out infinite' : 'none',
                       ...( selectable ? { '--select-color': selectColor } as React.CSSProperties : {} ),
                     }}
@@ -432,11 +434,14 @@ export default function CombatPanel({ player, combat }: Props) {
                       const buff = findBuff(combat.activeBuffs, 'player', 'player')
                       return buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />
                     })()}
+                    {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={gunCooldown} label="Reloading" />}
                   </div>
                   <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
                     <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
                   </div>
-                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>YOU</div>
+                  <div className="text-center" style={{ fontSize: '0.6rem', color: 'var(--pip-amber)', opacity: 0.7 }}>
+                    {reloading ? `RELOAD ${gunCooldown}t` : 'YOU'}
+                  </div>
                 </div>
               )
             })()}
@@ -547,7 +552,6 @@ export default function CombatPanel({ player, combat }: Props) {
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3" style={{ fontSize: '0.6rem', opacity: 0.6 }}>
-            {player.mount && !mountIsDead && <span style={{ color: 'var(--pip-amber)' }}>Mount: attacks each turn, can be targeted directly like any other protector ({displayMountHp}/{player.mount.maxHealth} HP)</span>}
             {player.guards.length > 0 && <span style={{ color: 'var(--pip-green)' }}>Guards: take partial damage, carry wounds into future rounds — heal free at a settlement doctor</span>}
             {player.paGuards.length > 0 && <span style={{ color: 'var(--pip-blue)' }}>PA guards: tougher, more likely to draw enemy fire</span>}
             {player.brahmin > 0 && <span style={{ color: 'var(--pip-amber)' }}>Each brahmin: −12% escape chance, 30% bolt risk on escape</span>}
