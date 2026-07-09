@@ -456,6 +456,7 @@ export default function CombatPanel({ player, combat }: Props) {
                   damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                   dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
                   buff={findBuff(combat.activeBuffs, 'guard', g.id)}
+                  reloadRoundsRemaining={g.cooldownRemaining}
                   selectable={selectable}
                   selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
                   onSelect={() => applyArmedChemTo('guard', g.id)}
