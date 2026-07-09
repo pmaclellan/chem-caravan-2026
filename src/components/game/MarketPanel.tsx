@@ -34,7 +34,7 @@ export default function MarketPanel({ player, market }: Props) {
               <th className="text-left py-1 pr-2 w-6"></th>
               <th className="text-left py-1 pr-2">Chem</th>
               <th className="text-right py-1 pr-2">Price</th>
-              <th className="text-right py-1 pr-2">Stock</th>
+              <th className="text-right py-1 pr-2 w-32">Stock</th>
               <th className="text-right py-1 pr-2">Own</th>
               <th className="text-right py-1 pr-2">P/L</th>
               <th className="py-1 pl-1" colSpan={2}></th>
@@ -75,7 +75,7 @@ export default function MarketPanel({ player, market }: Props) {
                   </td>
                   <td className="py-1 pr-2 text-right font-display"
                     style={priceColor(price, chem.basePrice, chem.priceVariance)}>{price}</td>
-                  <td className="py-1 pr-2 text-right text-pip-green-dim whitespace-nowrap">
+                  <td className="py-1 pr-2 text-right text-pip-green-dim whitespace-nowrap w-32">
                     {recoverTurns > 0 && (
                       <span className="text-[10px] text-pip-amber opacity-70">(recovering ~{recoverTurns}t) </span>
                     )}

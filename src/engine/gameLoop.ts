@@ -535,14 +535,6 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
       newLogs.push(makeLog(turn, "Cazador venom is still in your system. -10 HP per turn until cured.", 'danger'))
     }
     combat = { ...combat, playerVenomed: false }
-    // Clear weapon cooldown between combats — the player has time to reload
-    if (player.gun?.cooldownRemaining) {
-      const clearedGun = { ...player.gun, cooldownRemaining: 0 }
-      const clearedOwned = player.ownedGuns[player.gun.id]
-        ? { ...player.ownedGuns, [player.gun.id]: clearedGun }
-        : player.ownedGuns
-      player = { ...player, gun: clearedGun, ownedGuns: clearedOwned }
-    }
   }
 
   const isCloseCall =
@@ -587,6 +579,8 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
           priorWaveLoot: mergeLootMaps(combat.enemyLoot, combat.priorWaveEnemyLoot),
         },
       }
+      // No cooldown clear here — the next wave arrives too fast for a mid-reload
+      // weapon/guard to have actually finished reloading.
       return {
         ...resolvedState,
         phase: 'event',
@@ -594,10 +588,24 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
         log: [...resolvedState.log, makeLog(turn, warningMsg, 'danger')],
       }
     }
-    return { ...resolvedState, phase: 'combat_summary' }
+    return { ...resolvedState, player: clearCombatCooldowns(player), phase: 'combat_summary' }
   }
 
+  if (combat.phase === 'won' || combat.phase === 'fled') {
+    return { ...resolvedState, player: clearCombatCooldowns(player) }
+  }
   return resolvedState
+}
+
+// Combat is genuinely over (no chained wave incoming) — the player has time to reload
+// before the next fight, so clear the gun's and any sniper guards' reload cooldowns.
+function clearCombatCooldowns(player: PlayerState): PlayerState {
+  const gun = player.gun?.cooldownRemaining ? { ...player.gun, cooldownRemaining: 0 } : player.gun
+  const ownedGuns = gun && gun !== player.gun && player.ownedGuns[gun.id]
+    ? { ...player.ownedGuns, [gun.id]: gun }
+    : player.ownedGuns
+  const guards = player.guards.map(g => g.cooldownRemaining ? { ...g, cooldownRemaining: 0 } : g)
+  return { ...player, gun, ownedGuns, guards }
 }
 
 function mergeLootMaps(a: Record<string, number>, b: Record<string, number>): Record<string, number> {

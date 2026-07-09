@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { initializeGame, afterCombat } from '../gameLoop'
 import { shouldEscalateWave } from '../tuning'
 import * as rngModule from '../rng'
-import type { CombatState, GameState, TravelEvent } from '../../types/game'
+import type { CombatState, GameState, PlayerState, TravelEvent } from '../../types/game'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -109,5 +109,55 @@ describe('afterCombat — wave escalation carries cumulative loot forward', () =
     }
     const result = afterCombat(stateAtNovac, { player: stateAtNovac.player, combat })
     expect(result.phase).toBe('combat_summary')
+  })
+})
+
+// ── afterCombat — weapon/guard reload cooldown clearing ────────────────────
+
+describe('afterCombat — reload cooldown clearing', () => {
+  function playerWithCooldowns(basePlayer: PlayerState): PlayerState {
+    return {
+      ...basePlayer,
+      gun: { id: 'missile_launcher', name: 'Missile Launcher', accuracy: 0.8, damage: 220, ammo: 5, ammoPerShot: 1, ammoPrice: 100, cooldownTurns: 2, cooldownRemaining: 2 },
+      guards: [{ id: 'guard_0', classId: 'sniper', health: 40, maxHealth: 40, dead: false, cooldownRemaining: 1 }],
+    }
+  }
+
+  it('clears gun and guard reload cooldowns when combat is genuinely over (no next wave)', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // guarantees no escalation
+    const state: GameState = {
+      ...initializeGame('Test', 'mojave_wasteland', 'free_play'),
+      pendingDestination: 'nelson',
+    }
+    const stateAtNovac: GameState = { ...state, player: { ...state.player, location: 'novac' }, world: { ...state.world, turn: 60 } }
+    const player = playerWithCooldowns(stateAtNovac.player)
+    const combat: CombatState = {
+      enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
+      phase: 'won', log: [], waveNumber: 1, isCheckpointFight: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsedThisRound: false,
+    }
+    const result = afterCombat(stateAtNovac, { player, combat })
+    expect(result.phase).toBe('combat_summary')
+    expect(result.player.gun!.cooldownRemaining).toBe(0)
+    expect(result.player.guards[0].cooldownRemaining).toBe(0)
+  })
+
+  it('does NOT clear cooldowns when a next wave is about to chain in — no time to reload', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.01) // guarantees escalation triggers
+    const state: GameState = {
+      ...initializeGame('Test', 'mojave_wasteland', 'free_play'),
+      pendingDestination: 'nelson',
+    }
+    const stateAtNovac: GameState = { ...state, player: { ...state.player, location: 'novac' }, world: { ...state.world, turn: 60 } }
+    const player = playerWithCooldowns(stateAtNovac.player)
+    const combat: CombatState = {
+      enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
+      phase: 'won', log: [], waveNumber: 1, isCheckpointFight: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {}, activeBuffs: [], chemUsedThisRound: false,
+    }
+    const result = afterCombat(stateAtNovac, { player, combat })
+    expect(result.phase).toBe('event')
+    expect(result.player.gun!.cooldownRemaining).toBe(2)
+    expect(result.player.guards[0].cooldownRemaining).toBe(1)
   })
 })
