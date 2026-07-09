@@ -161,16 +161,14 @@ export function useCombatAnimation(
         const t1 = offset
         if (step.by === 'player') workingAmmo = Math.max(0, workingAmmo - 1)
         const ammoAtShot = workingAmmo
-        if (step.shooterCooldownRemaining !== undefined) {
-          if (shooterId === null) workingGunCooldown = step.shooterCooldownRemaining
-          else workingGuardCooldown[shooterId] = step.shooterCooldownRemaining
-        }
-        const gunCooldownAtShot = workingGunCooldown
+        const shotCooldown = step.shooterCooldownRemaining
         timersRef.current.push(setTimeout(() => {
           if (shooterId === null) {
-            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: gunCooldownAtShot }))
+            if (shotCooldown !== undefined) workingGunCooldown = shotCooldown
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: workingGunCooldown }))
           } else {
             workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
+            if (shotCooldown !== undefined) workingGuardCooldown[shooterId] = shotCooldown
             setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys }, displayGuardCooldown: { ...workingGuardCooldown } }))
           }
         }, t1))
@@ -299,26 +297,6 @@ export function useCombatAnimation(
 
         offset += ATTACK_LAND_DELAY + INTER_ENEMY_ATTACK_MS
 
-      } else if (step.kind === 'chem_use') {
-        // ── Medic auto-heal — quick flash on the healed unit ──────────────
-        const t = offset
-        timersRef.current.push(setTimeout(() => {
-          if (step.targetKind === 'player') {
-            workingPlayerHealth = step.targetHealthAfter
-            setState(s => ({ ...s, displayPlayerHealth: workingPlayerHealth, playerDamageKey: s.playerDamageKey + 1 }))
-          } else if (step.targetKind === 'guard') {
-            workingGuardHealth[step.targetId] = step.targetHealthAfter
-            workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
-            setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
-          } else {
-            workingPAGuardHealth[step.targetId] = step.targetHealthAfter
-            workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
-            setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
-          }
-          onLogLineRef.current?.(step.logLine)
-        }, t))
-        offset += INTER_SHOT_MS
-
       } else if (step.kind === 'burst') {
         // ── Rapid-fire burst — shots staggered by BURST_INTER_MS, all close together ──
         // Player fires once (ammo already deducted as a block)
@@ -391,18 +369,16 @@ export function useCombatAnimation(
           workingAmmo = Math.max(0, workingAmmo - 1)
         }
         const ammoAtShot = workingAmmo
-        if (step.shooterCooldownRemaining !== undefined) {
-          if (shooterId === null) workingGunCooldown = step.shooterCooldownRemaining
-          else workingGuardCooldown[shooterId] = step.shooterCooldownRemaining
-        }
-        const gunCooldownAtShot = workingGunCooldown
+        const shotCooldown = step.shooterCooldownRemaining
 
         // Shooter fires — player (ammo + player glow) or a guard (fire-glow, no ammo)
         timersRef.current.push(setTimeout(() => {
           if (shooterId === null) {
-            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: gunCooldownAtShot }))
+            if (shotCooldown !== undefined) workingGunCooldown = shotCooldown
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: workingGunCooldown }))
           } else {
             workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
+            if (shotCooldown !== undefined) workingGuardCooldown[shooterId] = shotCooldown
             setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys }, displayGuardCooldown: { ...workingGuardCooldown } }))
           }
         }, offset))
