@@ -21,6 +21,8 @@ export interface CombatAnimState {
   displayAmmo: number
   displayGuardHealth: Record<string, number>     // keyed by GuardUnit.id
   displayPAGuardHealth: Record<string, number>   // keyed by PAGuardUnit.id
+  displayGunCooldown: number
+  displayGuardCooldown: Record<string, number>   // keyed by GuardUnit.id
   displayMountHealth: number
   initialMountHealth: number
   mountFireKey: number
@@ -41,6 +43,10 @@ function initialGuardHealthMap(guards: GuardUnit[] | PAGuardUnit[]): Record<stri
   return Object.fromEntries(guards.map(g => [g.id, g.health]))
 }
 
+function initialGuardCooldownMap(guards: GuardUnit[]): Record<string, number> {
+  return Object.fromEntries(guards.map(g => [g.id, g.cooldownRemaining ?? 0]))
+}
+
 export function useCombatAnimation(
   animSteps: AnimStep[] | null,
   enemies: EnemyUnit[],
@@ -50,6 +56,7 @@ export function useCombatAnimation(
   initialPlayerAP: number,
   initialMountHealth: number,
   initialAmmo: number,
+  initialGunCooldown: number,
   onComplete: () => void,
   onLogLine?: (line: string) => void,
 ): CombatAnimState {
@@ -63,6 +70,8 @@ export function useCombatAnimation(
     displayAmmo: initialAmmo,
     displayGuardHealth: initialGuardHealthMap(guards),
     displayPAGuardHealth: initialGuardHealthMap(paGuards),
+    displayGunCooldown: initialGunCooldown,
+    displayGuardCooldown: initialGuardCooldownMap(guards),
     displayMountHealth: initialMountHealth,
     initialMountHealth,
     mountFireKey: 0,
@@ -102,6 +111,8 @@ export function useCombatAnimation(
     const workingPAGuardHealth = initialGuardHealthMap(paGuards)
     const workingGuardDamageKeys: Record<string, number> = {}
     const workingGuardDodgeKeys:  Record<string, number> = {}
+    const workingGuardCooldown = initialGuardCooldownMap(guards)
+    let workingGunCooldown = initialGunCooldown
 
     setState(s => ({
       ...s,
@@ -114,6 +125,8 @@ export function useCombatAnimation(
       displayAmmo: initialAmmo,
       displayGuardHealth: { ...workingGuardHealth },
       displayPAGuardHealth: { ...workingPAGuardHealth },
+      displayGunCooldown: workingGunCooldown,
+      displayGuardCooldown: { ...workingGuardCooldown },
       displayMountHealth: initialMountHealth,
       initialMountHealth,
       mountFireKey: 0,
@@ -148,12 +161,17 @@ export function useCombatAnimation(
         const t1 = offset
         if (step.by === 'player') workingAmmo = Math.max(0, workingAmmo - 1)
         const ammoAtShot = workingAmmo
+        if (step.shooterCooldownRemaining !== undefined) {
+          if (shooterId === null) workingGunCooldown = step.shooterCooldownRemaining
+          else workingGuardCooldown[shooterId] = step.shooterCooldownRemaining
+        }
+        const gunCooldownAtShot = workingGunCooldown
         timersRef.current.push(setTimeout(() => {
           if (shooterId === null) {
-            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: gunCooldownAtShot }))
           } else {
             workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
-            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys }, displayGuardCooldown: { ...workingGuardCooldown } }))
           }
         }, t1))
 
@@ -373,14 +391,19 @@ export function useCombatAnimation(
           workingAmmo = Math.max(0, workingAmmo - 1)
         }
         const ammoAtShot = workingAmmo
+        if (step.shooterCooldownRemaining !== undefined) {
+          if (shooterId === null) workingGunCooldown = step.shooterCooldownRemaining
+          else workingGuardCooldown[shooterId] = step.shooterCooldownRemaining
+        }
+        const gunCooldownAtShot = workingGunCooldown
 
         // Shooter fires — player (ammo + player glow) or a guard (fire-glow, no ammo)
         timersRef.current.push(setTimeout(() => {
           if (shooterId === null) {
-            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot }))
+            setState(s => ({ ...s, activeShooterId: null, activeTargetId: null, playerFireKey: s.playerFireKey + 1, displayAmmo: ammoAtShot, displayGunCooldown: gunCooldownAtShot }))
           } else {
             workingFireKeys[shooterId] = (workingFireKeys[shooterId] ?? 0) + 1
-            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
+            setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys }, displayGuardCooldown: { ...workingGuardCooldown } }))
           }
         }, offset))
 
