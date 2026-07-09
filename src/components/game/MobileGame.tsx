@@ -26,6 +26,7 @@ import { DoctorPanel } from './service-panels/DoctorPanel'
 import { LoansharkPanel } from './service-panels/LoansharkPanel'
 import { ArmoryPanel } from './service-panels/ArmoryPanel'
 import { FollowersPanel } from './service-panels/FollowersPanel'
+import { VERSION_STRING, DEPLOY_CONTEXT } from '../../version'
 
 type MobileTab = 'player' | 'market' | 'travel' | 'settlement' | 'dossier'
 
@@ -334,6 +335,11 @@ export default function MobileGame() {
               )
             })
           )}
+        </div>
+
+        {/* Build stamp — confirms a fresh deploy without checking Netlify's dashboard */}
+        <div className="text-center text-[10px] font-mono text-pip-green-dim opacity-50" title={`Deploy context: ${DEPLOY_CONTEXT}`}>
+          {VERSION_STRING}
         </div>
       </div>
     )

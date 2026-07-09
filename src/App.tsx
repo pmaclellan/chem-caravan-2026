@@ -6,6 +6,7 @@ import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
 import HowToPlayPage from './pages/HowToPlay'
 import SetPasswordModal from './components/auth/SetPasswordModal'
+import { VersionFooter } from './components/ui/VersionFooter'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore()
@@ -28,6 +29,7 @@ export default function App() {
     <>
       <RouterProvider router={router} />
       <SetPasswordModal />
+      <VersionFooter />
     </>
   )
 }
