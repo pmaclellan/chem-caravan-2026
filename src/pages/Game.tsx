@@ -118,7 +118,7 @@ export default function Game() {
         </div>
 
         {/* Center: Main action */}
-        <div className="flex-1 flex flex-col gap-2 min-w-0 relative">
+        <div className="flex-1 flex flex-col gap-2 min-w-0 min-h-0 relative">
           {/* Settlement background image — behind all panels */}
           {!isActionBlocked && settlement.imageUrl && (
             <>
@@ -176,7 +176,7 @@ export default function Game() {
             return (
               <div className={`pip-panel relative ${
                 fillHeight
-                  ? 'flex-1 min-h-0 overflow-hidden flex flex-col'
+                  ? `flex-1 min-h-0 flex flex-col ${phase === 'combat' ? 'overflow-y-auto' : 'overflow-hidden'}`
                   : 'overflow-y-auto'
               }`}>
                 {mainContent()}
