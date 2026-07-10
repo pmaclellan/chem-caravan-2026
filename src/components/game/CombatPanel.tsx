@@ -372,6 +372,7 @@ export default function CombatPanel({ player, combat }: Props) {
               <div className="flex gap-2 flex-wrap">
                 {player.paGuards.map(g => {
                   const displayGuardHp = anim.isAnimating ? (anim.displayPAGuardHealth[g.id] ?? g.health) : g.health
+                  const displayGuardAp = anim.isAnimating ? (anim.displayPAGuardArmor[g.id] ?? g.armorPoints) : g.armorPoints
                   const displayUnit = { ...g, health: displayGuardHp, dead: g.dead || displayGuardHp <= 0 }
                   const selectable = isValidChemTarget('pa_guard', g.id)
                   return (
@@ -385,6 +386,8 @@ export default function CombatPanel({ player, combat }: Props) {
                       damageFlashKey={anim.guardDamageKeys[g.id] ?? 0}
                       dodgeFlashKey={anim.guardDodgeKeys[g.id] ?? 0}
                       buff={findBuff(combat.activeBuffs, 'pa_guard', g.id)}
+                      armorPoints={displayGuardAp}
+                      maxArmorPoints={g.maxArmorPoints}
                       selectable={selectable}
                       selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
                       onSelect={() => applyArmedChemTo('pa_guard', g.id)}

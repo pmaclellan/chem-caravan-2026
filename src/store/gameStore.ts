@@ -277,11 +277,21 @@ function normalizeState(state: GameState): GameState {
         dead: false,
       }))
   const paGuards: PlayerState['paGuards'] = Array.isArray(legacyPlayer.paGuards)
-    ? (legacyPlayer.paGuards as PlayerState['paGuards'])
+    // Pre-armor saves stored PAGuardUnit without armorPoints/maxArmorPoints — default them in.
+    ? (legacyPlayer.paGuards as Array<Partial<PlayerState['paGuards'][number]>>).map(g => ({
+        id: g.id!,
+        health: g.health!,
+        maxHealth: g.maxHealth!,
+        armorPoints: g.armorPoints ?? mc.powerArmorGuardArmorPoints,
+        maxArmorPoints: g.maxArmorPoints ?? mc.powerArmorGuardArmorPoints,
+        dead: g.dead ?? false,
+      }))
     : Array.from({ length: typeof legacyPlayer.powerArmorGuards === 'number' ? legacyPlayer.powerArmorGuards : 0 }, (_, i) => ({
         id: `pa_guard_legacy_${i}`,
         health: mc.powerArmorGuardHealth,
         maxHealth: mc.powerArmorGuardHealth,
+        armorPoints: mc.powerArmorGuardArmorPoints,
+        maxArmorPoints: mc.powerArmorGuardArmorPoints,
         dead: false,
       }))
   const nextGuardId = legacyPlayer.nextGuardId ?? (guards.length + paGuards.length)
@@ -1138,7 +1148,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     purchasePowerArmorGuard: (count) => {
       mutate(state => {
         const mc = GAME_MODES[state.mode]
-        const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.powerArmorGuardHealth, mc.maxPowerArmorGuards)
+        const { player, error } = buyPowerArmorGuard(state.player, count, mc.powerArmorGuardCost, mc.powerArmorGuardHealth, mc.powerArmorGuardArmorPoints, mc.maxPowerArmorGuards)
         if (error) { set({ toast: error }); return state }
         const log = [...state.log, { turn: state.world.turn, message: `Fitted ${count} guard${count > 1 ? 's' : ''} with power armor.`, type: 'info' as const }]
         return { ...state, player, log }

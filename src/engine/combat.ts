@@ -179,12 +179,14 @@ export function resolveSingleAttack(
 
   if (target.kind === 'pa_guard') {
     let targetHealthAfter = 0
+    let paGuardArmorAbsorbed = 0
     const newPAGuards = paGuards.map(g => {
       if (g.id !== target.id) return g
-      targetHealthAfter = Math.max(0, g.health - damage)
-      return { ...g, health: targetHealthAfter, dead: targetHealthAfter <= 0 }
+      paGuardArmorAbsorbed = Math.min(g.armorPoints, damage)
+      targetHealthAfter = Math.max(0, g.health - (damage - paGuardArmorAbsorbed))
+      return { ...g, health: targetHealthAfter, armorPoints: g.armorPoints - paGuardArmorAbsorbed, dead: targetHealthAfter <= 0 }
     })
-    return { health, guards, paGuards: newPAGuards, mount, armor, targetHealthAfter, targetDied: targetHealthAfter <= 0, armorAbsorbed: 0 }
+    return { health, guards, paGuards: newPAGuards, mount, armor, targetHealthAfter, targetDied: targetHealthAfter <= 0, armorAbsorbed: paGuardArmorAbsorbed }
   }
 
   // mount
@@ -504,9 +506,11 @@ export function resolveFight(
           ? (result.armorAbsorbed > 0
               ? `${enemy.name} fires at you. Hit! Armor absorbs ${result.armorAbsorbed}, you take ${dmg - result.armorAbsorbed} damage.`
               : `${enemy.name} fires at you. Hit! (${dmg} damage)`)
-          : result.targetDied
-            ? `${enemy.name} fires at ${label}. Hit! (${dmg} damage) — ${label} is down!`
-            : `${enemy.name} fires at ${label}. Hit! (${dmg} damage)`
+          : target.kind === 'pa_guard' && result.armorAbsorbed > 0
+            ? `${enemy.name} fires at ${label}. Hit! Armor absorbs ${result.armorAbsorbed}, ${label} takes ${dmg - result.armorAbsorbed} damage.${result.targetDied ? ` — ${label} is down!` : ''}`
+            : result.targetDied
+              ? `${enemy.name} fires at ${label}. Hit! (${dmg} damage) — ${label} is down!`
+              : `${enemy.name} fires at ${label}. Hit! (${dmg} damage)`
         log.push(logLine)
 
         animSteps.push({
@@ -518,7 +522,7 @@ export function resolveFight(
           targetId: target.id,
           targetHealthAfter: result.targetHealthAfter,
           targetDied: result.targetDied,
-          armorAbsorbed: target.kind === 'player' ? result.armorAbsorbed : undefined,
+          armorAbsorbed: (target.kind === 'player' || target.kind === 'pa_guard') ? result.armorAbsorbed : undefined,
           logLine,
         })
 

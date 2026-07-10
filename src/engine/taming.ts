@@ -91,6 +91,10 @@ export function resolveFailedTame(
       logLines.push(armorAbsorbed > 0
         ? `Armor absorbed ${armorAbsorbed}. You take ${finalDamage} damage.`
         : `You take ${finalDamage} damage.`)
+    } else if (target.kind === 'pa_guard' && armorAbsorbed > 0) {
+      logLines.push(targetDied
+        ? `Armor absorbs ${armorAbsorbed}. ${label} takes the rest — down!`
+        : `Armor absorbs ${armorAbsorbed}. ${label} takes the rest.`)
     } else {
       logLines.push(targetDied ? `${label} takes the blow — down!` : `${label} takes the blow.`)
     }
@@ -107,7 +111,7 @@ export function resolveFailedTame(
     targetId: target?.id ?? 'player',
     targetHealthAfter: target?.kind === 'player' || !target ? health : (target.kind === 'guard' ? (guards.find(g => g.id === target.id)?.health ?? 0) : target.kind === 'pa_guard' ? (paGuards.find(g => g.id === target.id)?.health ?? 0) : (player.mount?.health ?? 0)),
     targetDied,
-    armorAbsorbed: target?.kind === 'player' ? armorAbsorbed : undefined,
+    armorAbsorbed: (target?.kind === 'player' || target?.kind === 'pa_guard') ? armorAbsorbed : undefined,
     logLine: logLines[logLines.length - 1],
   }
 
