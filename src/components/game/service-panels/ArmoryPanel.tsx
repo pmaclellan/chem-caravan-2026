@@ -71,18 +71,18 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                       <span className="font-display text-sm text-pip-green leading-tight truncate">
                         {def.name}
                       </span>
-                      {def.requiresPowerArmor && !hasPA && (
-                        <span
-                          className="text-[9px] font-mono flex-shrink-0 text-pip-red"
-                          title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
-                        >
-                          Needs Power Armor
-                        </span>
-                      )}
                     </div>
                     <div className="text-[10px] font-mono text-pip-green-dim leading-tight mt-0.5">
                       {statsStr}
                     </div>
+                    {def.requiresPowerArmor && !hasPA && (
+                      <div
+                        className="text-[9px] font-mono text-pip-red leading-tight mt-0.5"
+                        title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
+                      >
+                        Needs Power Armor
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* Unowned: single compact line — name · stats inline */
@@ -92,15 +92,15 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                     </span>
                     <span className="text-[10px] font-mono text-pip-border leading-tight">
                       {statsStr}
-                      {def.requiresPowerArmor && !hasPA && (
-                        <span
-                          className="ml-1 text-pip-red"
-                          title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
-                        >
-                          Needs Power Armor
-                        </span>
-                      )}
                     </span>
+                    {def.requiresPowerArmor && !hasPA && (
+                      <span
+                        className="text-[10px] font-mono text-pip-red block w-full"
+                        title="You must personally wear Power Armor to fire this — separate from hiring power armor guards"
+                      >
+                        Needs Power Armor
+                      </span>
+                    )}
                   </div>
                 )}
 
