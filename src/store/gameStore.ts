@@ -547,7 +547,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
 
       if (modeId) query = query.eq('mode', modeId)
