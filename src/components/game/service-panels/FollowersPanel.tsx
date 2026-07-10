@@ -1,12 +1,20 @@
+import { useState } from 'react'
 import type { PlayerState } from '../../../types/game'
 import { GAME_MODES } from '../../../data/modes'
 import { GUARD_CLASSES, GUARD_CLASS_IDS } from '../../../data/guardClasses'
 import { useGameStore } from '../../../store/gameStore'
 import { totalGuardSalary, inventoryBaseValue } from '../../../engine/economy'
+import { ConfirmDialog } from '../../ui/ConfirmDialog'
+
+type PendingConfirm =
+  | { kind: 'guard'; guardId: string; label: string }
+  | { kind: 'paGuard'; guardId: string; label: string }
+  | { kind: 'brahmin'; count: number; refund: number }
 
 export function FollowersPanel({ player }: { player: PlayerState }) {
   const mc   = useGameStore(s => s.gameState ? GAME_MODES[s.gameState.mode] : GAME_MODES['commonwealth'])
   const store = useGameStore()
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
   const aliveGuardCount = player.guards.filter(g => !g.dead).length
   const alivePAGuardCount = player.paGuards.filter(g => !g.dead).length
   const rosterFull = aliveGuardCount >= mc.maxGuards
@@ -117,7 +125,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
                   </span>
                   <button
                     className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
-                    onClick={() => store.dismissGuard(g.id)}
+                    onClick={() => setPendingConfirm({ kind: 'guard', guardId: g.id, label: `${def.name} Guard #${i + 1}` })}
                     title="No refund — they keep their sign-on pay"
                   >
                     DISMISS
@@ -165,7 +173,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
                 </span>
                 <button
                   className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
-                  onClick={() => store.dismissPAGuard(g.id)}
+                  onClick={() => setPendingConfirm({ kind: 'paGuard', guardId: g.id, label: `PA Guard #${i + 1}` })}
                   title="No refund — they keep their sign-on pay"
                 >
                   DISMISS
@@ -198,7 +206,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
               key={n}
               className="pip-btn-danger text-xs"
               disabled={player.brahmin < n}
-              onClick={() => store.dismissBrahmin(n)}
+              onClick={() => setPendingConfirm({ kind: 'brahmin', count: n, refund: n * Math.floor(mc.brahminCost / 2) })}
               title="Sold at half price — a liability late-game when danger rises and you need to flee"
             >
               SELL {n} (+{(n * Math.floor(mc.brahminCost / 2)).toLocaleString()} ¤)
@@ -209,6 +217,27 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
           <div className="text-xs text-pip-green-dim">Brahmin pen is full.</div>
         )}
       </div>
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.kind === 'brahmin' ? 'SELL BRAHMIN' : 'DISMISS GUARD'}
+          message={
+            pendingConfirm.kind === 'guard'
+              ? `Dismiss ${pendingConfirm.label}? No refund — they keep their sign-on pay.`
+              : pendingConfirm.kind === 'paGuard'
+                ? `Dismiss ${pendingConfirm.label}? No refund — they keep their sign-on pay.`
+                : `Sell ${pendingConfirm.count} brahmin for ${pendingConfirm.refund.toLocaleString()} ¤? Pack capacity drops by ${pendingConfirm.count * mc.capacityPerBrahmin} — anything over the new limit gets dropped.`
+          }
+          confirmLabel={pendingConfirm.kind === 'brahmin' ? 'SELL' : 'DISMISS'}
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => {
+            if (pendingConfirm.kind === 'guard') store.dismissGuard(pendingConfirm.guardId)
+            else if (pendingConfirm.kind === 'paGuard') store.dismissPAGuard(pendingConfirm.guardId)
+            else store.dismissBrahmin(pendingConfirm.count)
+            setPendingConfirm(null)
+          }}
+        />
+      )}
     </div>
   )
 }

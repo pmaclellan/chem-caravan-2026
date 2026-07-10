@@ -3,12 +3,19 @@ import type { PlayerState } from '../../../types/game'
 import { GAME_MODES } from '../../../data/modes'
 import { useGameStore } from '../../../store/gameStore'
 import { TAMING_TOOLS, TAMING_TOOL_IDS, SADDLE_PRICE } from '../../../data/mounts'
+import { ConfirmDialog } from '../../ui/ConfirmDialog'
+
+type PendingConfirm =
+  | { kind: 'gun'; gunId: string; label: string; refund: number }
+  | { kind: 'armor'; label: string; refund: number }
+  | { kind: 'mount'; label: string }
 
 export function ArmoryPanel({ player }: { player: PlayerState }) {
   const mode     = useGameStore(s => s.gameState?.mode ?? 'commonwealth')
   const gameType = useGameStore(s => s.gameState?.gameType ?? 'standard')
   const mc       = GAME_MODES[mode]
   const store    = useGameStore()
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
 
   const [ammoQty, setAmmoQty] = useState<Record<string, number>>({})
   const getQty = (id: string) => ammoQty[id] ?? 10
@@ -123,7 +130,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                   {owned && (
                     <button
                       className="pip-btn-danger text-[10px] px-2 py-0.5 whitespace-nowrap"
-                      onClick={() => store.sellGun(gunId)}
+                      onClick={() => setPendingConfirm({ kind: 'gun', gunId, label: def.name, refund: Math.floor(def.price / 2) })}
                       title="Sold at half price — remaining ammo is not refunded"
                     >
                       SELL (+{Math.floor(def.price / 2).toLocaleString()} ¤)
@@ -186,7 +193,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                   <span className="text-[10px] font-mono text-pip-green opacity-50 tracking-widest px-1">EQUIPPED</span>
                   <button
                     className="pip-btn-danger text-xs"
-                    onClick={() => store.sellArmor()}
+                    onClick={() => setPendingConfirm({ kind: 'armor', label: armor.name, refund: Math.floor(armor.price / 2) })}
                     title="Sold at half price, regardless of current damage"
                   >
                     SELL (+{Math.floor(armor.price / 2).toLocaleString()} ¤)
@@ -275,7 +282,7 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
                 <div className="text-xs text-pip-amber font-display">MOUNT: {player.mount.name}</div>
                 <button
                   className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"
-                  onClick={() => store.dismissMount()}
+                  onClick={() => setPendingConfirm({ kind: 'mount', label: player.mount!.name })}
                   title="No refund — tamed, not bought"
                 >
                   RELEASE
@@ -287,6 +294,27 @@ export function ArmoryPanel({ player }: { player: PlayerState }) {
             </div>
           )}
         </div>
+      )}
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.kind === 'mount' ? 'RELEASE MOUNT' : 'SELL ' + pendingConfirm.kind.toUpperCase()}
+          message={
+            pendingConfirm.kind === 'gun'
+              ? `Sell ${pendingConfirm.label} for ${pendingConfirm.refund.toLocaleString()} ¤?${player.gun?.id === pendingConfirm.gunId ? ' This will unequip it.' : ''} Remaining ammo is not refunded.`
+              : pendingConfirm.kind === 'armor'
+                ? `Sell ${pendingConfirm.label} for ${pendingConfirm.refund.toLocaleString()} ¤? You'll have no armor equipped afterward.`
+                : `Release ${pendingConfirm.label}? No refund — tamed, not bought.`
+          }
+          confirmLabel={pendingConfirm.kind === 'mount' ? 'RELEASE' : 'SELL'}
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => {
+            if (pendingConfirm.kind === 'gun') store.sellGun(pendingConfirm.gunId)
+            else if (pendingConfirm.kind === 'armor') store.sellArmor()
+            else store.dismissMount()
+            setPendingConfirm(null)
+          }}
+        />
       )}
     </div>
   )
