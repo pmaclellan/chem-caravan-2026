@@ -2,17 +2,6 @@ import type { GunDefinition } from '../commonwealth/guns'
 export type { GunDefinition }
 
 export const GUNS: Record<string, GunDefinition> = {
-  pipe_pistol: {
-    id: 'pipe_pistol',
-    name: 'Pipe Pistol',
-    price: 200,
-    accuracy: 0.55,
-    damage: 25,
-    ammoPerShot: 1,
-    ammoPrice: 3,
-    ammoWithPurchase: 30,
-    description: "Cheapest thing that shoots. Better than nothing.",
-  },
   pistol_10mm: {
     id: 'pistol_10mm',
     name: '10mm Pistol',
