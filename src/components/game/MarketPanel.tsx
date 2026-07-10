@@ -34,7 +34,7 @@ export default function MarketPanel({ player, market }: Props) {
               <th className="text-left py-1 pr-2 w-6"></th>
               <th className="text-left py-1 pr-2">Chem</th>
               <th className="text-right py-1 pr-2">Price</th>
-              <th className="text-right py-1 pr-2 w-32">Stock</th>
+              <th className="text-right py-1 pr-2">Stock</th>
               <th className="text-right py-1 pr-2">Own</th>
               <th className="text-right py-1 pr-2">P/L</th>
               <th className="py-1 pl-1" colSpan={2}></th>
@@ -62,7 +62,10 @@ export default function MarketPanel({ player, market }: Props) {
               const canBuyMax = maxQty > 0
 
               return (
-                <tr key={chemId} className="border-b border-pip-border-dim hover:bg-pip-border-dim transition-colors">
+                <tr
+                  key={chemId}
+                  className={`border-b border-pip-border-dim hover:bg-pip-border-dim transition-colors ${recoverTurns > 0 ? 'bg-pip-red/5' : ''}`}
+                >
                   <td className="py-1 pr-1">
                     {chem.imageUrl ? (
                       <img src={chem.imageUrl} alt={chem.name} className="w-6 h-6 object-contain" />
@@ -72,13 +75,13 @@ export default function MarketPanel({ player, market }: Props) {
                   </td>
                   <td className="py-1 pr-2">
                     <span className="text-pip-green font-display text-base">{chem.name}</span>
+                    {recoverTurns > 0 && (
+                      <div className="text-[10px] text-pip-amber opacity-70 leading-tight">recovering ~{recoverTurns}t</div>
+                    )}
                   </td>
                   <td className="py-1 pr-2 text-right font-display"
                     style={priceColor(price, chem.basePrice, chem.priceVariance)}>{price}</td>
-                  <td className="py-1 pr-2 text-right text-pip-green-dim whitespace-nowrap w-32">
-                    {recoverTurns > 0 && (
-                      <span className="text-[10px] text-pip-amber opacity-70">(recovering ~{recoverTurns}t) </span>
-                    )}
+                  <td className="py-1 pr-2 text-right text-pip-green-dim whitespace-nowrap">
                     {stock}
                   </td>
                   <td className="py-1 pr-2 text-right text-pip-green-dim">{owned > 0 ? owned : '—'}</td>

@@ -385,7 +385,11 @@ export default function MobileGame() {
             <div
               key={chemId}
               className="rounded-lg border border-pip-border overflow-hidden relative"
-              style={{ backgroundColor: 'color-mix(in srgb, var(--pip-bg-light) 98%, transparent)' }}
+              style={{
+                backgroundColor: recoverTurns > 0
+                  ? 'color-mix(in srgb, var(--pip-red) 7%, var(--pip-bg-light) 93%)'
+                  : 'color-mix(in srgb, var(--pip-bg-light) 98%, transparent)',
+              }}
             >
               <FlashOverlay flashKey={flash?.key ?? 0} variant={flashVariant} />
               <div className="flex items-center gap-2 px-3 pt-3 pb-1">
@@ -394,12 +398,17 @@ export default function MobileGame() {
                 ) : (
                   <div className="w-8 h-8 flex items-center justify-center text-pip-green-dim text-xs flex-shrink-0">?</div>
                 )}
-                <span className="font-display text-pip-green text-lg flex-1 leading-tight">{chem.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-pip-green text-lg leading-tight truncate">{chem.name}</div>
+                  {recoverTurns > 0 && (
+                    <div className="text-pip-amber text-[10px] opacity-70 leading-tight">recovering ~{recoverTurns}t</div>
+                  )}
+                </div>
                 <span className="font-display text-base" style={pStyle}>{price} <CapsIcon size={13} /></span>
               </div>
 
               <div className="px-3 pb-1 text-xs text-pip-green-dim flex gap-2">
-                <span>Stk {stock}{recoverTurns > 0 && <span className="text-pip-amber opacity-70"> (recovering ~{recoverTurns}t)</span>}</span>
+                <span>Stk {stock}</span>
                 {owned > 0 && (
                   <span>
                     Own {owned}
