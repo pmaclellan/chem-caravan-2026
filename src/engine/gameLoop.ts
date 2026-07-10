@@ -286,6 +286,16 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     if (anyWoundedGuard) log.push(makeLog(turn, `${settlement.name}'s doctor patches up your guards, free of charge.`, 'info'))
   }
 
+  // Armory auto-repairs PA guard armor for free — split from HP healing, gated on a different service
+  if (settlement?.hasArmory) {
+    const anyDamagedArmor = player.paGuards.some(g => g.armorPoints < g.maxArmorPoints)
+    player = {
+      ...player,
+      paGuards: player.paGuards.map(g => ({ ...g, armorPoints: g.maxArmorPoints })),
+    }
+    if (anyDamagedArmor) log.push(makeLog(turn, `${settlement.name}'s armory repairs your power armor guards' plating, free of charge.`, 'info'))
+  }
+
   const destName = settlement?.name ?? destinationId
   log.push(makeLog(turn, `Arrived at ${destName}.`, 'info'))
 

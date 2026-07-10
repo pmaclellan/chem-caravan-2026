@@ -55,6 +55,7 @@ export interface GameModeConfig {
   powerArmorGuardCost: number
   powerArmorGuardSalaryPerTurn: number
   powerArmorGuardHealth: number
+  powerArmorGuardArmorPoints: number  // absorbs damage before health; repairs free at any settlement with an armory
   powerArmorGuardDamage: [number, number]
   powerArmorGuardAccuracy: number
   powerArmorGuardShotsPerTurn: number
@@ -117,7 +118,8 @@ const COMMONWEALTH_MODE: GameModeConfig = {
   maxGuards: 5,
   powerArmorGuardCost: 800,
   powerArmorGuardSalaryPerTurn: 100,
-  powerArmorGuardHealth: 150,
+  powerArmorGuardHealth: 50,
+  powerArmorGuardArmorPoints: 100,
   powerArmorGuardDamage: [15, 25],
   powerArmorGuardAccuracy: 0.65,
   powerArmorGuardShotsPerTurn: 4,

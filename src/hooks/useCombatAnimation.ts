@@ -21,6 +21,7 @@ export interface CombatAnimState {
   displayAmmo: number
   displayGuardHealth: Record<string, number>     // keyed by GuardUnit.id
   displayPAGuardHealth: Record<string, number>   // keyed by PAGuardUnit.id
+  displayPAGuardArmor: Record<string, number>    // keyed by PAGuardUnit.id
   displayGunCooldown: number
   displayGuardCooldown: Record<string, number>   // keyed by GuardUnit.id
   displayMountHealth: number
@@ -41,6 +42,10 @@ export interface CombatAnimState {
 
 function initialGuardHealthMap(guards: GuardUnit[] | PAGuardUnit[]): Record<string, number> {
   return Object.fromEntries(guards.map(g => [g.id, g.health]))
+}
+
+function initialPAGuardArmorMap(paGuards: PAGuardUnit[]): Record<string, number> {
+  return Object.fromEntries(paGuards.map(g => [g.id, g.armorPoints]))
 }
 
 function initialGuardCooldownMap(guards: GuardUnit[]): Record<string, number> {
@@ -70,6 +75,7 @@ export function useCombatAnimation(
     displayAmmo: initialAmmo,
     displayGuardHealth: initialGuardHealthMap(guards),
     displayPAGuardHealth: initialGuardHealthMap(paGuards),
+    displayPAGuardArmor: initialPAGuardArmorMap(paGuards),
     displayGunCooldown: initialGunCooldown,
     displayGuardCooldown: initialGuardCooldownMap(guards),
     displayMountHealth: initialMountHealth,
@@ -109,6 +115,7 @@ export function useCombatAnimation(
     const workingAnimInfo: Record<string, EnemyAnimEntry>  = {}
     const workingGuardHealth   = initialGuardHealthMap(guards)
     const workingPAGuardHealth = initialGuardHealthMap(paGuards)
+    const workingPAGuardArmor  = initialPAGuardArmorMap(paGuards)
     const workingGuardDamageKeys: Record<string, number> = {}
     const workingGuardDodgeKeys:  Record<string, number> = {}
     const workingGuardCooldown = initialGuardCooldownMap(guards)
@@ -125,6 +132,7 @@ export function useCombatAnimation(
       displayAmmo: initialAmmo,
       displayGuardHealth: { ...workingGuardHealth },
       displayPAGuardHealth: { ...workingPAGuardHealth },
+      displayPAGuardArmor: { ...workingPAGuardArmor },
       displayGunCooldown: workingGunCooldown,
       displayGuardCooldown: { ...workingGuardCooldown },
       displayMountHealth: initialMountHealth,
@@ -270,9 +278,11 @@ export function useCombatAnimation(
               workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
               setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
             } else if (step.targetKind === 'pa_guard') {
+              const apLoss = step.armorAbsorbed ?? 0
+              workingPAGuardArmor[step.targetId] = Math.max(0, (workingPAGuardArmor[step.targetId] ?? 0) - apLoss)
               workingPAGuardHealth[step.targetId] = step.targetHealthAfter
               workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
-              setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+              setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, displayPAGuardArmor: { ...workingPAGuardArmor }, guardDamageKeys: { ...workingGuardDamageKeys } }))
             } else {
               workingMountHealth = step.targetHealthAfter
               setState(s => ({ ...s, displayMountHealth: workingMountHealth, mountDamageKey: s.mountDamageKey + 1, mountDied: step.targetDied || s.mountDied }))

@@ -69,6 +69,8 @@ export interface PAGuardUnit {
   id: string             // "pa_guard_3" — same id counter as GuardUnit, no classId (PA stays unclassed)
   health: number
   maxHealth: number
+  armorPoints: number     // absorbs damage before health, mirrors the player's own ArmorState
+  maxArmorPoints: number
   dead: boolean
 }
 
@@ -215,7 +217,7 @@ export type AnimStep =
       targetId: string
       targetHealthAfter: number   // health for player/mount; unit.health for guard/pa_guard
       targetDied: boolean
-      armorAbsorbed?: number      // only set when targetKind === 'player'
+      armorAbsorbed?: number      // set when targetKind === 'player' or 'pa_guard'
       logLine: string
       venomApplied?: boolean
       venomDotDamage?: number

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initializeGame, afterCombat } from '../gameLoop'
+import { initializeGame, afterCombat, completeTravel } from '../gameLoop'
 import { shouldEscalateWave } from '../tuning'
 import * as rngModule from '../rng'
 import type { CombatState, GameState, PlayerState, TravelEvent } from '../../types/game'
@@ -175,5 +175,34 @@ describe('afterCombat — reload cooldown clearing', () => {
     expect(result.phase).toBe('event')
     expect(result.player.gun!.cooldownRemaining).toBe(2)
     expect(result.player.guards[0].cooldownRemaining).toBe(1)
+  })
+})
+
+// ── completeTravel — PA guard HP (doctor) vs AP (armory) auto-repair ───────
+
+describe('completeTravel — PA guard healing/repair', () => {
+  function woundedPAGuardPlayer(basePlayer: PlayerState): PlayerState {
+    return {
+      ...basePlayer,
+      paGuards: [{ id: 'pa_0', health: 20, maxHealth: 50, armorPoints: 10, maxArmorPoints: 100, dead: false }],
+    }
+  }
+
+  it('repairs armor but not HP at a settlement with an armory but no doctor', () => {
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = woundedPAGuardPlayer(state.player)
+    // park_street_station: hasDoctor: false, hasArmory: true
+    const result = completeTravel({ ...state, player }, 'park_street_station')
+    expect(result.player.paGuards[0].armorPoints).toBe(100)
+    expect(result.player.paGuards[0].health).toBe(20)
+  })
+
+  it('heals HP and repairs armor at a settlement with both a doctor and an armory', () => {
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = woundedPAGuardPlayer(state.player)
+    // diamond_city: hasDoctor: true, hasArmory: true
+    const result = completeTravel({ ...state, player }, 'diamond_city')
+    expect(result.player.paGuards[0].armorPoints).toBe(100)
+    expect(result.player.paGuards[0].health).toBe(50)
   })
 })

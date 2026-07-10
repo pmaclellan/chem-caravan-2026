@@ -155,6 +155,7 @@ export function buyPowerArmorGuard(
   count: number,
   paGuardCost: number,
   paGuardHealth: number,
+  paGuardArmorPoints: number,
   maxPAGuards: number,
 ): { player: PlayerState; error?: string } {
   const aliveCount = player.paGuards.filter(g => !g.dead).length
@@ -166,7 +167,7 @@ export function buyPowerArmorGuard(
   let nextId = player.nextGuardId
   const newPAGuards: PAGuardUnit[] = []
   for (let i = 0; i < actual; i++) {
-    newPAGuards.push({ id: `pa_guard_${nextId}`, health: paGuardHealth, maxHealth: paGuardHealth, dead: false })
+    newPAGuards.push({ id: `pa_guard_${nextId}`, health: paGuardHealth, maxHealth: paGuardHealth, armorPoints: paGuardArmorPoints, maxArmorPoints: paGuardArmorPoints, dead: false })
     nextId++
   }
   return { player: { ...player, caps: player.caps - cost, paGuards: [...player.paGuards, ...newPAGuards], nextGuardId: nextId } }

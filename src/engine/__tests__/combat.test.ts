@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount, applyAccuracyBuff, tickActiveBuffs, chemUseCap } from '../combat'
+import { initiateCombat, resolveFight, resolveRun, aliveEnemyCount, applyAccuracyBuff, tickActiveBuffs, chemUseCap, resolveSingleAttack } from '../combat'
 import * as rngModule from '../rng'
-import type { ActiveBuff, GuardUnit, PlayerState } from '../../types/game'
+import type { ActiveBuff, GuardUnit, PAGuardUnit, PlayerState } from '../../types/game'
 import type { GameModeConfig } from '../../data/modes'
 
 function makeGuards(n: number): GuardUnit[] {
@@ -329,6 +329,50 @@ describe('resolveRun', () => {
     const { player: result } = resolveRun(player, combat, harderMode)
     // Flee damage is ~half of enemy's damage range
     expect(result.health).toBeLessThan(200)
+  })
+})
+
+// ── resolveSingleAttack — PA guard armor absorption ────────────────────────────
+
+describe('resolveSingleAttack — pa_guard armor', () => {
+  function makePAGuard(overrides: Partial<PAGuardUnit> = {}): PAGuardUnit {
+    return { id: 'pa_0', health: 50, maxHealth: 50, armorPoints: 100, maxArmorPoints: 100, dead: false, ...overrides }
+  }
+
+  it('absorbs damage fully into armor when armor exceeds the hit, leaving health untouched', () => {
+    const paGuards = [makePAGuard()]
+    const result = resolveSingleAttack({ kind: 'pa_guard', id: 'pa_0', weight: 4 }, 30, 100, [], paGuards, null, null)
+    expect(result.armorAbsorbed).toBe(30)
+    expect(result.paGuards[0].armorPoints).toBe(70)
+    expect(result.paGuards[0].health).toBe(50)
+    expect(result.targetHealthAfter).toBe(50)
+    expect(result.targetDied).toBe(false)
+  })
+
+  it('overflow damage past depleted armor comes out of health', () => {
+    const paGuards = [makePAGuard({ armorPoints: 20 })]
+    const result = resolveSingleAttack({ kind: 'pa_guard', id: 'pa_0', weight: 4 }, 50, 100, [], paGuards, null, null)
+    expect(result.armorAbsorbed).toBe(20)
+    expect(result.paGuards[0].armorPoints).toBe(0)
+    expect(result.paGuards[0].health).toBe(20) // 50 - (50 - 20)
+    expect(result.targetHealthAfter).toBe(20)
+    expect(result.targetDied).toBe(false)
+  })
+
+  it('a hit that exceeds armor + health kills the PA guard', () => {
+    const paGuards = [makePAGuard({ health: 10, armorPoints: 5 })]
+    const result = resolveSingleAttack({ kind: 'pa_guard', id: 'pa_0', weight: 4 }, 30, 100, [], paGuards, null, null)
+    expect(result.paGuards[0].armorPoints).toBe(0)
+    expect(result.paGuards[0].health).toBe(0)
+    expect(result.paGuards[0].dead).toBe(true)
+    expect(result.targetDied).toBe(true)
+  })
+
+  it('does not touch armor on guards not being targeted', () => {
+    const paGuards = [makePAGuard({ id: 'pa_0' }), makePAGuard({ id: 'pa_1' })]
+    const result = resolveSingleAttack({ kind: 'pa_guard', id: 'pa_1', weight: 4 }, 30, 100, [], paGuards, null, null)
+    expect(result.paGuards.find(g => g.id === 'pa_0')!.armorPoints).toBe(100)
+    expect(result.paGuards.find(g => g.id === 'pa_1')!.armorPoints).toBe(70)
   })
 })
 

@@ -34,16 +34,19 @@ interface Props {
   dodgeFlashKey: number       // this unit dodged an attack
   buff?: BuffInfo | null      // active Jet/Ultrajet accuracy buff, if any
   reloadRoundsRemaining?: number  // sniper cooldown — rounds left before next shot, 0/undefined = ready
+  armorPoints?: number         // PA guards only — current armor, absorbs damage before health
+  maxArmorPoints?: number      // PA guards only
   selectable?: boolean         // true while a chem is armed and this unit is a valid target
   selectColor?: string         // ring color while selectable — the armed chem's color
   onSelect?: () => void        // click handler, only wired up while selectable
 }
 
-export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff, reloadRoundsRemaining, selectable, selectColor, onSelect }: Props) {
+export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff, reloadRoundsRemaining, armorPoints, maxArmorPoints, selectable, selectColor, onSelect }: Props) {
   const dead = unit.dead
   const reloading = !dead && (reloadRoundsRemaining ?? 0) > 0
   const hpPct = unit.maxHealth > 0 ? Math.max(0, Math.round((unit.health / unit.maxHealth) * 100)) : 0
   const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
+  const apPct = maxArmorPoints && maxArmorPoints > 0 ? Math.max(0, Math.round((armorPoints! / maxArmorPoints) * 100)) : null
 
   return (
     <div
@@ -86,6 +89,11 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         {!dead && <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />}
       </div>
+      {apPct !== null && (
+        <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
+          {!dead && <div className="h-full transition-all duration-500" style={{ width: `${apPct}%`, backgroundColor: 'var(--pip-blue)' }} />}
+        </div>
+      )}
       <div className="text-center leading-tight" style={{ fontSize: '0.55rem', color: reloading ? 'var(--pip-amber)' : color, opacity: 0.7 }}>
         {reloading ? `RELOAD ${reloadRoundsRemaining}t` : label}
       </div>

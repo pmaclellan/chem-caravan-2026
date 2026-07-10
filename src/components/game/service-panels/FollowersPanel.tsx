@@ -146,7 +146,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
           </div>
         </div>
         <div className="text-xs text-pip-green-dim">
-          {alivePAGuardCount} / {mc.maxPowerArmorGuards} · {mc.powerArmorGuardHealth} HP each — elite protection
+          {alivePAGuardCount} / {mc.maxPowerArmorGuards} · {mc.powerArmorGuardHealth} HP + {mc.powerArmorGuardArmorPoints} AP each — elite protection
         </div>
         <div className="flex gap-2 flex-wrap">
           {[1, 2].map(n => (
@@ -169,7 +169,7 @@ export function FollowersPanel({ player }: { player: PlayerState }) {
             {player.paGuards.filter(g => !g.dead).map((g, i) => (
               <div key={g.id} className="flex items-center justify-between gap-2 text-xs border border-pip-border-dim rounded px-2 py-1">
                 <span className="text-pip-green-dim">
-                  PA Guard #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP)</span>
+                  PA Guard #{i + 1} <span style={{ opacity: 0.6 }}>({g.health}/{g.maxHealth} HP · {g.armorPoints}/{g.maxArmorPoints} AP)</span>
                 </span>
                 <button
                   className="pip-btn-danger text-[10px] px-1.5 py-0.5 shrink-0"

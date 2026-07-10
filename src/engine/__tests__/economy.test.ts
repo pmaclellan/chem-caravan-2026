@@ -266,8 +266,8 @@ describe('dismissGuard', () => {
 describe('dismissPAGuard', () => {
   it('removes the specified PA guard and leaves the rest', () => {
     const paGuards: PAGuardUnit[] = [
-      { id: 'pa_0', health: 150, maxHealth: 150, dead: false },
-      { id: 'pa_1', health: 150, maxHealth: 150, dead: false },
+      { id: 'pa_0', health: 150, maxHealth: 150, armorPoints: 100, maxArmorPoints: 100, dead: false },
+      { id: 'pa_1', health: 150, maxHealth: 150, armorPoints: 100, maxArmorPoints: 100, dead: false },
     ]
     const player = makePlayer({ paGuards })
     const { player: result, error } = dismissPAGuard(player, 'pa_0')
