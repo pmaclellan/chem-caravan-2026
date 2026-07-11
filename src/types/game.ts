@@ -184,6 +184,49 @@ export interface CombatState {
   playerVenomed?: boolean      // cazador venom active: -30% accuracy, +5 HP DoT per round
   activeBuffs: ActiveBuff[]        // combat-scoped, cleared with the rest of `combat` when combat ends
   chemUsesThisRound: number        // manual Field Medicine uses so far this round — capped by chemUseCap() (1 base + 1 per living Medic guard)
+  initialRoster?: CombatReplayRoster  // snapshot of the roster entering this encounter/wave — set by startCombat(), consumed when the replay is flushed in afterCombat()
+  replaySteps: AnimStep[]             // AnimSteps accumulated across every round of this encounter/wave, for post-hoc replay
+}
+
+// Roster snapshot captured the moment an encounter (or wave) begins — lets a replay viewer
+// seed starting health/ammo for units that only ever appear as deltas inside AnimStep.
+export interface CombatReplayRoster {
+  enemies: EnemyUnit[]
+  guards: GuardUnit[]
+  paGuards: PAGuardUnit[]
+  mount: MountState | null
+  startAmmo: number | null   // player.gun?.ammo at the moment this encounter/wave began
+  playerHealth: number       // player.health at the moment this encounter/wave began
+  playerArmorPoints: number  // player.armor?.armorPoints at the moment this encounter/wave began
+}
+
+// A fully-resolved combat encounter (or one wave of a multi-wave encounter), persisted so it can
+// be stepped through later outside the live game. Appended to GameState.combatReplays on every
+// terminal resolution (won/fled/lost) — see afterCombat() in engine/gameLoop.ts.
+export interface CombatReplay {
+  id: string
+  turn: number
+  waveNumber: number
+  isCheckpointFight: boolean
+  outcome: 'won' | 'fled' | 'lost'
+  initialRoster: CombatReplayRoster
+  steps: AnimStep[]
+  capsLooted: number
+  xpGained: number
+  totalDamageDealt: number
+  totalDamageTaken: number
+}
+
+// One snapshot per turn advance, appended to GameState.history — the only per-turn numeric
+// time series persisted (everything else is derivable only as of the run's final state).
+export interface TurnSnapshot {
+  turn: number
+  location: string
+  caps: number
+  debt: number
+  xp: number
+  ownedGunAmmo: Record<string, number>  // gunId -> ammo on hand; gun count = Object.keys(...).length
+  tradeProfitToDate: number             // cumulative sum of stats.chemsSold[*].profitEarned as of this turn
 }
 
 export type AnimStep =
@@ -323,6 +366,8 @@ export interface GameState {
   pendingDiscovery: { settlementId: string; xpGained: number } | null  // first-visit reward splash
   stats: import('./stats').RunStats
   earnedAchievements: import('./achievement').EarnedAchievement[]
+  combatReplays: CombatReplay[]  // append-only, one entry per terminal combat resolution (see CombatReplay)
+  history: TurnSnapshot[]        // append-only, one entry per turn advance (see TurnSnapshot)
 }
 
 // Shape of a row in the Supabase games table (subset of columns we care about client-side)

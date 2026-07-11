@@ -104,6 +104,7 @@ export function initiateCombat(
     priorWaveEnemyLoot: {},
     activeBuffs: [],
     chemUsesThisRound: 0,
+    replaySteps: [],
   }
 }
 
@@ -615,6 +616,7 @@ export function resolveFight(
       playerVenomed,
       activeBuffs: tickActiveBuffs(combat.activeBuffs),
       chemUsesThisRound: 0,
+      replaySteps: [...combat.replaySteps, ...animSteps],
     },
     animSteps,
   }
@@ -691,6 +693,7 @@ export function resolveRun(
       log: [...combat.log, ...log],
       activeBuffs: tickActiveBuffs(combat.activeBuffs),
       chemUsesThisRound: 0,
+      replaySteps: [...combat.replaySteps, ...animSteps],
     },
     animSteps,
   }

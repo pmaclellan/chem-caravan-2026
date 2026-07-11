@@ -28,6 +28,13 @@ export function initStats(): RunStats {
   }
 }
 
+// Sums profit across every chem sold so far — used both for the per-turn tradeProfitToDate
+// snapshot and for the run-history browser's fallback KPI view on runs recorded before
+// per-turn tracking existed.
+export function cumulativeTradeProfit(stats: RunStats): number {
+  return Object.values(stats.chemsSold).reduce((sum, s) => sum + s.profitEarned, 0)
+}
+
 type GameEvent = {
   [K in keyof GameEventMap]: { type: K } & GameEventMap[K]
 }[keyof GameEventMap]

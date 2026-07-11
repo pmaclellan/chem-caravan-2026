@@ -17,7 +17,9 @@ import {
   afterCombat,
   dismissCombatSummary,
   retireGame as retireGameFn,
+  buildTurnSnapshot,
 } from '../engine/gameLoop'
+import { normalizeState } from '../engine/normalizeState'
 import { resolveFight, resolveRun, chemUseCap } from '../engine/combat'
 import { canAttemptTame, resolveTameSuccess, resolveFailedTame } from '../engine/taming'
 import { loseBrahmin } from '../engine/travel'
@@ -49,7 +51,7 @@ import {
   resolveGameStatus,
 } from '../engine/economy'
 import { gameBus } from '../engine/eventBus'
-import { initStats, updateStats } from '../engine/statsReducer'
+import { updateStats } from '../engine/statsReducer'
 import { checkNewAchievements, checkProfitAchievements } from '../engine/achievementChecker'
 import { ACHIEVEMENT_MAP } from '../data/achievements'
 import { TAMING_TOOLS, SADDLE_PRICE } from '../data/mounts'
@@ -257,92 +259,6 @@ interface GameStore {
   _setToast: (msg: string | null) => void
 }
 
-const VALID_MODES = new Set<GameModeId>(['commonwealth', 'capital_wasteland', 'mojave_wasteland'])
-
-// Coerce missing or invalid fields for backward compatibility with old saves.
-function normalizeState(state: GameState): GameState {
-  const mode = VALID_MODES.has(state.mode) ? state.mode : 'commonwealth'
-  const mc = GAME_MODES[mode]
-
-  // Pre-overhaul saves stored guards/powerArmorGuards as plain counts. Migrate them to
-  // full-HP unit arrays — legacy guards all become 'standard' class, the only one that existed.
-  const legacyPlayer = state.player as unknown as { guards?: unknown; powerArmorGuards?: unknown; paGuards?: unknown; nextGuardId?: number }
-  const guards: PlayerState['guards'] = Array.isArray(legacyPlayer.guards)
-    ? (legacyPlayer.guards as PlayerState['guards'])
-    : Array.from({ length: typeof legacyPlayer.guards === 'number' ? legacyPlayer.guards : 0 }, (_, i) => ({
-        id: `guard_legacy_${i}`,
-        classId: 'standard' as const,
-        health: GUARD_CLASSES.standard.health,
-        maxHealth: GUARD_CLASSES.standard.health,
-        dead: false,
-      }))
-  const paGuards: PlayerState['paGuards'] = Array.isArray(legacyPlayer.paGuards)
-    // Pre-armor saves stored PAGuardUnit without armorPoints/maxArmorPoints — default them in.
-    ? (legacyPlayer.paGuards as Array<Partial<PlayerState['paGuards'][number]>>).map(g => ({
-        id: g.id!,
-        health: g.health!,
-        maxHealth: g.maxHealth!,
-        armorPoints: g.armorPoints ?? mc.powerArmorGuardArmorPoints,
-        maxArmorPoints: g.maxArmorPoints ?? mc.powerArmorGuardArmorPoints,
-        dead: g.dead ?? false,
-      }))
-    : Array.from({ length: typeof legacyPlayer.powerArmorGuards === 'number' ? legacyPlayer.powerArmorGuards : 0 }, (_, i) => ({
-        id: `pa_guard_legacy_${i}`,
-        health: mc.powerArmorGuardHealth,
-        maxHealth: mc.powerArmorGuardHealth,
-        armorPoints: mc.powerArmorGuardArmorPoints,
-        maxArmorPoints: mc.powerArmorGuardArmorPoints,
-        dead: false,
-      }))
-  const nextGuardId = legacyPlayer.nextGuardId ?? (guards.length + paGuards.length)
-
-  return {
-    ...state,
-    mode,
-    gameType: state.gameType ?? 'standard',
-    player: {
-      ...state.player,
-      guards,
-      paGuards,
-      nextGuardId,
-      armor: state.player.armor ?? null,
-      xp: state.player.xp ?? 0,
-      visitedSettlements: state.player.visitedSettlements ?? [],
-      tamingTool: state.player.tamingTool ?? null,
-      hasSaddle: state.player.hasSaddle ?? false,
-      mount: state.player.mount ?? null,
-      conditions: state.player.conditions ?? [],
-      gun: state.player.gun ? { ...state.player.gun, ammoPrice: state.player.gun.ammoPrice ?? 5 } : null,
-      ownedGuns: (() => {
-        const owned = state.player.ownedGuns ?? {}
-        // Migrate saves that predate ownedGuns: if player has a gun, register it
-        if (state.player.gun && !owned[state.player.gun.id]) {
-          const gun = state.player.gun
-          return { ...owned, [gun.id]: { ...gun, ammoPrice: gun.ammoPrice ?? 5 } }
-        }
-        return Object.fromEntries(
-          Object.entries(owned).map(([id, g]) => [id, { ...g, ammoPrice: g.ammoPrice ?? 5 }])
-        )
-      })(),
-    },
-    combat: state.combat ? (() => {
-      // Pre-medic-rework saves stored a boolean chemUsedThisRound instead of a count.
-      const legacyCombat = state.combat as unknown as { chemUsedThisRound?: boolean; chemUsesThisRound?: number }
-      return {
-        ...state.combat,
-        activeBuffs: state.combat.activeBuffs ?? [],
-        chemUsesThisRound: typeof legacyCombat.chemUsesThisRound === 'number'
-          ? legacyCombat.chemUsesThisRound
-          : (legacyCombat.chemUsedThisRound ? 1 : 0),
-      }
-    })() : state.combat,
-    pendingDebtFreedom: state.pendingDebtFreedom ?? null,
-    pendingDiscovery: state.pendingDiscovery ?? null,
-    stats: state.stats ? { ...initStats(), ...state.stats } : initStats(),
-    earnedAchievements: state.earnedAchievements ?? [],
-  }
-}
-
 function resolveEndStatus(state: GameState): 'won' | 'dead' | 'bankrupt' {
   if (!state.gameOverReason) return 'won'
   return resolveGameStatus(state.player, state.gameOverReason)
@@ -465,7 +381,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'TAME_COMPLETED', ...payload }) }))
   })
   gameBus.on('TURN_COMPLETED', payload => {
-    mutate(s => ({ ...s, stats: updateStats(s.stats, { type: 'TURN_COMPLETED', ...payload }) }))
+    mutate(s => ({
+      ...s,
+      stats: updateStats(s.stats, { type: 'TURN_COMPLETED', ...payload }),
+      history: [...s.history, buildTurnSnapshot(s)],
+    }))
   })
 
   // --- Current market for the player's location, with active events applied ---

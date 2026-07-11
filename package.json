@@ -9,13 +9,16 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "admin:dev": "vite --config admin/vite.config.ts",
+    "admin:typecheck": "tsc -p admin/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.106.2",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-router-dom": "7.16.0",
+    "recharts": "^3.9.2",
     "zustand": "5.0.14"
   },
   "devDependencies": {
