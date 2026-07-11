@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initializeGame, afterCombat, completeTravel } from '../gameLoop'
+import { initializeGame, afterCombat, completeTravel, continueTravel } from '../gameLoop'
 import { shouldEscalateWave } from '../tuning'
 import * as rngModule from '../rng'
 import type { CombatState, GameState, PlayerState, TravelEvent } from '../../types/game'
@@ -175,6 +175,73 @@ describe('afterCombat — reload cooldown clearing', () => {
     expect(result.phase).toBe('event')
     expect(result.player.gun!.cooldownRemaining).toBe(2)
     expect(result.player.guards[0].cooldownRemaining).toBe(1)
+  })
+})
+
+// ── continueTravel — debt payment window ────────────────────────────────────
+
+describe('continueTravel — debt payment window', () => {
+  function playerMidWindow(basePlayer: PlayerState, overrides: Partial<PlayerState> = {}): PlayerState {
+    return {
+      ...basePlayer,
+      debt: 1000,
+      ageOfDebt: 10,               // commonwealth grace period is 10
+      debtWindowStartAge: 10,
+      debtWindowMinPayment: 150,   // locked target: 15% of 1000
+      debtWindowCapsPaid: 0,
+      caps: 5000,
+      ...overrides,
+    }
+  }
+
+  it('satisfies the window against the LOCKED target, not a fresh recompute off post-interest debt', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99) // no ambush/random event this tick
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = playerMidWindow(state.player, { debtPaidThisCycle: 150 }) // pays exactly the locked target
+    const result = continueTravel({ ...state, player, pendingDestination: 'park_street_station' })
+
+    // Post-interest debt is 1050 (5% interest) — a fresh 15% recompute would demand 158,
+    // which this payment doesn't cover. The window must still reset off the locked 150.
+    expect(result.player.debt).toBe(1050)
+    expect(result.player.debtWindowCapsPaid).toBe(0)
+    expect(result.player.debtWindowStartAge).toBe(result.player.ageOfDebt)
+  })
+
+  it('does not satisfy the window when the locked target is unmet', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = playerMidWindow(state.player, { debtPaidThisCycle: 100 })
+    const result = continueTravel({ ...state, player, pendingDestination: 'park_street_station' })
+
+    expect(result.player.debtWindowCapsPaid).toBe(100)
+    expect(result.player.debtWindowStartAge).toBe(10) // unchanged — window still open
+  })
+
+  it('de-escalates debtWarnings by 1 when a window is satisfied', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = playerMidWindow(state.player, { debtPaidThisCycle: 150, debtWarnings: 2 })
+    const result = continueTravel({ ...state, player, pendingDestination: 'park_street_station' })
+
+    expect(result.player.debtWarnings).toBe(1)
+  })
+
+  it('does not decrement debtWarnings below 0', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = playerMidWindow(state.player, { debtPaidThisCycle: 150, debtWarnings: 0 })
+    const result = continueTravel({ ...state, player, pendingDestination: 'park_street_station' })
+
+    expect(result.player.debtWarnings).toBe(0)
+  })
+
+  it('leaves debtWarnings untouched when the window is not satisfied', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0.99)
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const player = playerMidWindow(state.player, { debtPaidThisCycle: 0, debtWarnings: 2 })
+    const result = continueTravel({ ...state, player, pendingDestination: 'park_street_station' })
+
+    expect(result.player.debtWarnings).toBe(2)
   })
 })
 
