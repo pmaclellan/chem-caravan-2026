@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.1',
+    date: 'Jul 11, 2026',
+    items: [
+      'Fixed the debt collector payment window: the caps you were told to pay could quietly fall short as interest compounded, occasionally leading to a fatal visit right after paying up — the target now stays fixed for the window it was shown for',
+      'A payment that clears the window now eases the collector\'s temper (one warning walked back), instead of leaving you one hit from death forever after two prior visits',
+    ],
+  },
+  {
     version: '1.2.0',
     date: 'Jul 9, 2026',
     items: [
