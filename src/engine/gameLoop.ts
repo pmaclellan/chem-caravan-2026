@@ -1,10 +1,10 @@
 import { GAME_MODES } from '../data/modes'
 import type { GameModeConfig } from '../data/modes'
-import type { GameModeId, GameState, GameType, LogEntry, MarketEvent, PlayerState, TravelEvent, WorldState } from '../types/game'
+import type { CombatReplay, CombatState, GameModeId, GameState, GameType, LogEntry, MarketEvent, PlayerState, TravelEvent, TurnSnapshot, WorldState } from '../types/game'
 import { initializeMarket, refreshMarket, applyMarketEvents, updateWorldMarkets, generateMarketEvent } from './market'
 import { getAdjacentRoads, getRoadDestination, selectTravelEvent } from './travel'
 import { applyTurnInterest, addChemStash, payBrotherhoodToll, calculateFinalScore, applyGuardSalary } from './economy'
-import { initStats } from './statsReducer'
+import { initStats, cumulativeTradeProfit } from './statsReducer'
 import { initiateCombat } from './combat'
 import { awardXp, getScaleFactor, XpEventType } from './xp'
 import { rng } from './rng'
@@ -96,7 +96,7 @@ export function initializeGame(
 
   const log = buildStartLog(characterName, mc, events, gameType)
 
-  return {
+  const state: GameState = {
     mode: modeId,
     gameType,
     player,
@@ -113,6 +113,23 @@ export function initializeGame(
     pendingDiscovery: null,
     stats: initStats(),
     earnedAchievements: [],
+    combatReplays: [],
+    history: [],
+  }
+  return { ...state, history: [buildTurnSnapshot(state)] }
+}
+
+// One snapshot of wealth/ammo/location per turn advance — the time series behind the run-history
+// browser's analytics charts. Called from the TURN_COMPLETED listener in store/gameStore.ts.
+export function buildTurnSnapshot(state: GameState): TurnSnapshot {
+  return {
+    turn: state.world.turn,
+    location: state.player.location,
+    caps: state.player.caps,
+    debt: state.player.debt,
+    xp: state.player.xp,
+    ownedGunAmmo: Object.fromEntries(Object.entries(state.player.ownedGuns).map(([id, g]) => [id, g.ammo])),
+    tradeProfitToDate: cumulativeTradeProfit(state.stats),
   }
 }
 
@@ -494,6 +511,18 @@ export function startCombat(state: GameState): GameState {
       priorWaveEnemyLoot:  payload?.priorWaveLoot  ?? {},
     }
   }
+  combat = {
+    ...combat,
+    initialRoster: {
+      enemies: combat.enemies,
+      guards: state.player.guards,
+      paGuards: state.player.paGuards,
+      mount: state.player.mount,
+      startAmmo: state.player.gun?.ammo ?? null,
+      playerHealth: state.player.health,
+      playerArmorPoints: state.player.armor?.armorPoints ?? 0,
+    },
+  }
   return {
     ...state,
     phase: 'combat',
@@ -502,11 +531,34 @@ export function startCombat(state: GameState): GameState {
   }
 }
 
-export function afterCombat(state: GameState, result: { player: PlayerState; combat: import('../types/game').CombatState }): GameState {
+// Flushes one wave/encounter's accumulated replay steps into a persistable CombatReplay record —
+// called from afterCombat() whenever a round resolves the fight (won/fled/lost).
+function buildCombatReplay(state: GameState, combat: CombatState): CombatReplay {
+  return {
+    id: `combat_${state.world.turn}_w${combat.waveNumber}_${state.combatReplays.length}`,
+    turn: state.world.turn,
+    waveNumber: combat.waveNumber,
+    isCheckpointFight: combat.isCheckpointFight,
+    outcome: combat.phase as 'won' | 'fled' | 'lost',
+    initialRoster: combat.initialRoster!,
+    steps: combat.replaySteps,
+    capsLooted: combat.capsLooted,
+    xpGained: combat.xpGained,
+    totalDamageDealt: combat.totalDamageDealt,
+    totalDamageTaken: combat.totalDamageTaken,
+  }
+}
+
+export function afterCombat(state: GameState, result: { player: PlayerState; combat: CombatState }): GameState {
   let { player, combat } = result
   const dest = state.pendingDestination
   const turn = state.world.turn
   const newLogs = combat.log.slice(state.combat?.log.length ?? 0).map(m => makeLog(turn, m, 'danger'))
+
+  const isTerminal = combat.phase === 'won' || combat.phase === 'fled' || combat.phase === 'lost'
+  const combatReplays = isTerminal && combat.initialRoster
+    ? [...state.combatReplays, buildCombatReplay(state, combat)]
+    : state.combatReplays
 
   if (combat.phase === 'lost') {
     const mc = GAME_MODES[state.mode]
@@ -518,6 +570,7 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
       ...state,
       player,
       combat,
+      combatReplays,
       phase: 'game_over',
       gameOverReason: 'combat',
       endReason: `Killed by ${killerNamePlural} on the road`,
@@ -558,7 +611,7 @@ export function afterCombat(state: GameState, result: { player: PlayerState; com
     (player.armor?.armorPoints ?? 0) === 0
   if (isCloseCall) combat = { ...combat, closeCall: true }
 
-  const resolvedState = { ...state, player, combat, stats: combatStats, log: [...state.log, ...newLogs] }
+  const resolvedState = { ...state, player, combat, combatReplays, stats: combatStats, log: [...state.log, ...newLogs] }
 
   if ((combat.phase === 'won' || combat.phase === 'fled') && dest) {
     const mc = GAME_MODES[state.mode]

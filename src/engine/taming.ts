@@ -125,6 +125,7 @@ export function resolveFailedTame(
     totalDamageTaken: combat.totalDamageTaken + finalDamage + armorAbsorbed,
     phase,
     log: [...combat.log, ...logLines],
+    replaySteps: [...combat.replaySteps, animStep],
   }
 
   return { player: updatedPlayer, combat: updatedCombat, animStep }
