@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { CHEMS } from '../../data/chems'
+import { GUARD_CLASSES } from '../../data/guardClasses'
+import GuardUnitCard from './GuardUnitCard'
+import GuardClassIcon from './guardClassIcons'
+import PlayerCaravanCard from './PlayerCaravanCard'
+import MountCaravanCard from './MountCaravanCard'
+import BrahminCounter from './BrahminCounter'
+import { PA_GUARD_ICON } from './CombatPanel'
 
 const KEYFRAMES = `
   @keyframes stampIn {
@@ -183,6 +190,56 @@ export default function CombatSummaryPanel({ combat, player }: Props) {
           <div className="text-pip-green-dim text-xs mt-2">You escaped — no loot collected.</div>
         </div>
       )}
+
+      {/* ── Caravan snapshot — how you're exiting the fight: dead members greyed
+             out, survivors at their final HP. Same shooting-order layout as the
+             live combat panel's Caravan row, just static. ──────────────────── */}
+      <div className="mt-4" style={{ animation: 'riseIn 0.4s ease 500ms both', opacity: 0 }}>
+        <div className="pip-label text-xs tracking-widest mb-2">Caravan — after the fight</div>
+        <div className="flex gap-2 flex-wrap">
+          <PlayerCaravanCard
+            health={player.health}
+            maxHealth={player.maxHealth}
+            armorPoints={player.armor?.armorPoints}
+            maxArmorPoints={player.armor?.maxArmorPoints}
+          />
+          {player.guards.map(g => (
+            <GuardUnitCard
+              key={g.id}
+              unit={g}
+              label={GUARD_CLASSES[g.classId].name.toUpperCase()}
+              color="var(--pip-green)"
+              icon={<GuardClassIcon classId={g.classId} color="var(--pip-green)" />}
+              fireFlashKey={0}
+              damageFlashKey={0}
+              dodgeFlashKey={0}
+            />
+          ))}
+          {player.paGuards.map(g => (
+            <GuardUnitCard
+              key={g.id}
+              unit={g}
+              label="PA"
+              color="var(--pip-blue)"
+              icon={PA_GUARD_ICON}
+              fireFlashKey={0}
+              damageFlashKey={0}
+              dodgeFlashKey={0}
+              armorPoints={g.armorPoints}
+              maxArmorPoints={g.maxArmorPoints}
+            />
+          ))}
+          {player.mount && (
+            <MountCaravanCard
+              creatureTypeId={player.mount.creatureTypeId}
+              health={player.mount.health}
+              maxHealth={player.mount.maxHealth}
+              dead={player.mount.health <= 0}
+            />
+          )}
+          <BrahminCounter count={player.brahmin} />
+        </div>
+      </div>
 
       {/* ── XP box ────────────────────────────────────────────── */}
       {won && totalXp > 0 && (
