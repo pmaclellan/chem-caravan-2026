@@ -388,7 +388,7 @@ export default function Leaderboard() {
             className={gameTypeFilter === 'standard'
               ? 'pip-btn bg-pip-green text-pip-bg-light px-4 py-1'
               : 'pip-btn px-4 py-1'}
-            onClick={() => { setGameTypeFilter('standard'); setTab('global') }}
+            onClick={() => setGameTypeFilter('standard')}
           >
             STANDARD
           </button>
@@ -396,7 +396,7 @@ export default function Leaderboard() {
             className={gameTypeFilter === 'free_play'
               ? 'pip-btn bg-pip-amber text-pip-bg-light px-4 py-1'
               : 'pip-btn px-4 py-1'}
-            onClick={() => { setGameTypeFilter('free_play'); setTab('global') }}
+            onClick={() => setGameTypeFilter('free_play')}
           >
             FREE PLAY
           </button>
