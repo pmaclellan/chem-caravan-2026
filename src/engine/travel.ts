@@ -38,7 +38,9 @@ export function selectTravelEvent(
     const windowOverdue   = turnsElapsed >= modeConfig.debtWindowSize
     const netPaidThisCycle = Math.max(0, (player.debtPaidThisCycle ?? 0) - (player.debtBorrowedThisCycle ?? 0))
     const windowPaid      = (player.debtWindowCapsPaid ?? 0) + netPaidThisCycle
-    const minWindowPayment = Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
+    // Same locked threshold gameLoop's window check uses — not a fresh recompute
+    // against current (post-interest) debt, which would silently raise the bar.
+    const minWindowPayment = player.debtWindowMinPayment ?? Math.ceil(player.debt * modeConfig.debtMinPaymentRate)
     const windowUnsatisfied = windowPaid < minWindowPayment
 
     if (windowOverdue && windowUnsatisfied && rng() < modeConfig.debtCollectorProb) {

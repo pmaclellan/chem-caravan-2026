@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   getAdjacentRoads,
   getRoadDestination,
@@ -6,9 +6,15 @@ import {
   totalInventoryItems,
   dropExcessInventory,
   loseBrahmin,
+  selectTravelEvent,
 } from '../travel'
+import * as rngModule from '../rng'
 import { GAME_MODES } from '../../data/modes'
 import type { PlayerState } from '../../types/game'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 const cwMode = GAME_MODES['commonwealth']
 
@@ -129,6 +135,36 @@ describe('dropExcessInventory', () => {
     })
     const result = dropExcessInventory(player)
     expect(result.inventory['radx']).toBeUndefined()
+  })
+})
+
+describe('selectTravelEvent — debt collector window threshold', () => {
+  it('does not fire once the LOCKED window target is met, even though a fresh recompute against current debt would be higher', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0) // would guarantee a fire if the collector check were reached
+    const road = getAdjacentRoads(cwMode, 'diamond_city')[0]
+    const player = makePlayer({
+      debt: 1050, // debt has grown since the window opened (was 1000 when target was locked)
+      ageOfDebt: cwMode.debtGracePeriod,
+      debtWindowStartAge: cwMode.debtGracePeriod - cwMode.debtWindowSize, // window is at its deadline
+      debtWindowMinPayment: 150, // locked target from when debt was 1000 (15%)
+      debtWindowCapsPaid: 150,   // player paid exactly the locked target
+    })
+    const event = selectTravelEvent(road, player, cwMode, 1, 1, 'standard')
+    expect(event?.type).not.toBe('debt_collector')
+  })
+
+  it('still fires when the locked target is unmet', () => {
+    vi.spyOn(rngModule, 'rng').mockReturnValue(0)
+    const road = getAdjacentRoads(cwMode, 'diamond_city')[0]
+    const player = makePlayer({
+      debt: 1050,
+      ageOfDebt: cwMode.debtGracePeriod,
+      debtWindowStartAge: cwMode.debtGracePeriod - cwMode.debtWindowSize,
+      debtWindowMinPayment: 150,
+      debtWindowCapsPaid: 100, // short of the locked target
+    })
+    const event = selectTravelEvent(road, player, cwMode, 1, 1, 'standard')
+    expect(event?.type).toBe('debt_collector')
   })
 })
 

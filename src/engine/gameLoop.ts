@@ -160,18 +160,22 @@ export function continueTravel(state: GameState): GameState {
   // Apply interest tick (grows debt, increments ageOfDebt, resets debtPaidThisCycle)
   player = applyTurnInterest(player, mc.interestRate)
 
-  // Update payment window using post-interest debt as the threshold baseline.
-  // If cumulative window payment meets 15% of current debt, open a fresh window.
+  // Check against the LOCKED threshold from when this window opened — not debt's
+  // current (post-interest) value. Debt compounds every turn a window is open, so
+  // re-deriving the target each tick would make it a moving goalpost that drifts
+  // above what the player was ever shown. A satisfied window opens a fresh one
+  // (target re-locked to today's debt) and eases off the collector's temper.
   if (player.debt > 0) {
     const netPaidThisCycle = Math.max(0, debtPaidThisCycle - (player.debtBorrowedThisCycle ?? 0))
     const windowCapsPaid = (player.debtWindowCapsPaid ?? 0) + netPaidThisCycle
-    const minWindowPayment = Math.ceil(player.debt * mc.debtMinPaymentRate)
-    const windowSatisfied = windowCapsPaid >= minWindowPayment
+    const lockedMinPayment = player.debtWindowMinPayment ?? Math.ceil(player.debt * mc.debtMinPaymentRate)
+    const windowSatisfied = windowCapsPaid >= lockedMinPayment
     player = {
       ...player,
       debtWindowCapsPaid:   windowSatisfied ? 0 : windowCapsPaid,
       debtWindowStartAge:   windowSatisfied ? player.ageOfDebt : (player.debtWindowStartAge ?? player.ageOfDebt),
-      debtWindowMinPayment: windowSatisfied ? minWindowPayment : (player.debtWindowMinPayment ?? minWindowPayment),
+      debtWindowMinPayment: windowSatisfied ? Math.ceil(player.debt * mc.debtMinPaymentRate) : lockedMinPayment,
+      debtWarnings:         windowSatisfied ? Math.max(0, (player.debtWarnings ?? 0) - 1) : player.debtWarnings,
     }
   }
 
