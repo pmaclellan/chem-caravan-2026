@@ -61,15 +61,6 @@ export default function Home() {
     checkUnlock()
   }, [user])
 
-  // When switching to free play, snap to first mode that has a run (if any)
-  useEffect(() => {
-    if (gameType === 'free_play' && freePlaySummaries) {
-      const activeMode = (['commonwealth', 'capital_wasteland', 'mojave_wasteland'] as const)
-        .find(m => freePlaySummaries[m])
-      if (activeMode) setSelectedMode(activeMode)
-    }
-  }, [gameType, freePlaySummaries])
-
   // Reset action state when switching game type
   useEffect(() => {
     setShowNewGame(false)
