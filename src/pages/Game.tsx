@@ -75,7 +75,7 @@ export default function Game() {
       return <TravelSplash quote={pendingQuote} destination={pendingDestination} />
     }
     if (phase === 'combat' && combat) return <CombatPanel player={player} combat={combat} />
-    if (phase === 'combat_summary' && combat) return <CombatSummaryPanel combat={combat} />
+    if (phase === 'combat_summary' && combat) return <CombatSummaryPanel combat={combat} player={player} />
     if (phase === 'event' && pendingEvent) return <EventPanel event={pendingEvent} player={player} />
     switch (tab) {
       case 'market':   return <MarketPanel player={player} market={market} />
