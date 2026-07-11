@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { CombatState } from '../../types/game'
+import type { CombatState, PlayerState } from '../../types/game'
 import { useGameStore } from '../../store/gameStore'
 import { CHEMS } from '../../data/chems'
 
@@ -79,15 +79,21 @@ function StatRow({ label, value, colorClass, delay, format }: StatRowProps) {
   )
 }
 
-interface Props { combat: CombatState }
+interface Props { combat: CombatState; player: PlayerState }
 
-export default function CombatSummaryPanel({ combat }: Props) {
+export default function CombatSummaryPanel({ combat, player }: Props) {
   const { dismissCombatSummary } = useGameStore()
 
   const won         = combat.phase === 'won'
   const fled        = combat.phase === 'fled'
   const killedCount = combat.enemies.filter(e => e.dead).length
   const totalCount  = combat.enemies.length
+
+  // Dead guards/PA guards are still in these arrays at this point — pruning happens
+  // later, on arrival at the next settlement (completeTravel), not here.
+  const guardsLost   = player.guards.filter(g => g.dead).length
+  const paGuardsLost = player.paGuards.filter(g => g.dead).length
+  const protectorsLost = guardsLost + paGuardsLost
 
   const isMultiWave = (combat.priorWaveCapsLooted ?? 0) > 0 || (combat.priorWaveXpGained ?? 0) > 0
 
@@ -139,17 +145,24 @@ export default function CombatSummaryPanel({ combat }: Props) {
             delay={320}
           />
           <StatRow
+            label="PROTECTORS LOST"
+            value={protectorsLost}
+            colorClass={protectorsLost > 0 ? 'text-pip-red' : 'text-pip-green'}
+            delay={460}
+            format={n => paGuardsLost > 0 ? `${n} (${paGuardsLost} PA)` : `${n}`}
+          />
+          <StatRow
             label="ENEMIES KILLED"
             value={killedCount}
             colorClass="text-pip-green"
-            delay={460}
+            delay={600}
             format={n => `${n} / ${totalCount}`}
           />
           <StatRow
             label={isMultiWave ? 'CAPS LOOTED (BOTH WAVES)' : 'CAPS LOOTED'}
             value={totalCaps}
             colorClass="text-pip-amber"
-            delay={600}
+            delay={740}
             format={n => `${n} ¤`}
           />
         </>
@@ -160,6 +173,12 @@ export default function CombatSummaryPanel({ combat }: Props) {
           <div className="flex items-baseline justify-between py-2.5 border-b border-pip-border-dim">
             <span className="pip-label text-xs tracking-widest opacity-80">DAMAGE TAKEN</span>
             <span className="font-display text-2xl text-pip-red">{combat.totalDamageTaken}</span>
+          </div>
+          <div className="flex items-baseline justify-between py-2.5 border-b border-pip-border-dim">
+            <span className="pip-label text-xs tracking-widest opacity-80">PROTECTORS LOST</span>
+            <span className={`font-display text-2xl ${protectorsLost > 0 ? 'text-pip-red' : 'text-pip-green'}`}>
+              {paGuardsLost > 0 ? `${protectorsLost} (${paGuardsLost} PA)` : protectorsLost}
+            </span>
           </div>
           <div className="text-pip-green-dim text-xs mt-2">You escaped — no loot collected.</div>
         </div>

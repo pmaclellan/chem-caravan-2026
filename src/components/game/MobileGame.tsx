@@ -638,7 +638,7 @@ export default function MobileGame() {
                 <CombatPanel player={player} combat={combat} />
               )}
               {phase === 'combat_summary' && combat && (
-                <CombatSummaryPanel combat={combat} />
+                <CombatSummaryPanel combat={combat} player={player} />
               )}
               {phase === 'event' && pendingEvent && (
                 <EventPanel event={pendingEvent} player={player} />
