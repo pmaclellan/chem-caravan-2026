@@ -93,7 +93,7 @@ export default function CombatSummaryPanel({ combat, player }: Props) {
   // later, on arrival at the next settlement (completeTravel), not here.
   const guardsLost   = player.guards.filter(g => g.dead).length
   const paGuardsLost = player.paGuards.filter(g => g.dead).length
-  const protectorsLost = guardsLost + paGuardsLost
+  const membersLost = guardsLost + paGuardsLost
 
   const isMultiWave = (combat.priorWaveCapsLooted ?? 0) > 0 || (combat.priorWaveXpGained ?? 0) > 0
 
@@ -145,9 +145,9 @@ export default function CombatSummaryPanel({ combat, player }: Props) {
             delay={320}
           />
           <StatRow
-            label="PROTECTORS LOST"
-            value={protectorsLost}
-            colorClass={protectorsLost > 0 ? 'text-pip-red' : 'text-pip-green'}
+            label="CARAVAN MEMBERS LOST"
+            value={membersLost}
+            colorClass={membersLost > 0 ? 'text-pip-red' : 'text-pip-green'}
             delay={460}
             format={n => paGuardsLost > 0 ? `${n} (${paGuardsLost} PA)` : `${n}`}
           />
@@ -175,9 +175,9 @@ export default function CombatSummaryPanel({ combat, player }: Props) {
             <span className="font-display text-2xl text-pip-red">{combat.totalDamageTaken}</span>
           </div>
           <div className="flex items-baseline justify-between py-2.5 border-b border-pip-border-dim">
-            <span className="pip-label text-xs tracking-widest opacity-80">PROTECTORS LOST</span>
-            <span className={`font-display text-2xl ${protectorsLost > 0 ? 'text-pip-red' : 'text-pip-green'}`}>
-              {paGuardsLost > 0 ? `${protectorsLost} (${paGuardsLost} PA)` : protectorsLost}
+            <span className="pip-label text-xs tracking-widest opacity-80">CARAVAN MEMBERS LOST</span>
+            <span className={`font-display text-2xl ${membersLost > 0 ? 'text-pip-red' : 'text-pip-green'}`}>
+              {paGuardsLost > 0 ? `${membersLost} (${paGuardsLost} PA)` : membersLost}
             </span>
           </div>
           <div className="text-pip-green-dim text-xs mt-2">You escaped — no loot collected.</div>

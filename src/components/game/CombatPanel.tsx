@@ -300,7 +300,7 @@ export default function CombatPanel({ player, combat }: Props) {
   // firing sequence: player -> guards -> PA guards -> mount), brahmin trailing since
   // they never fight. Note this is NOT the same as who draws enemy fire — see the
   // combat-details popover for the actual (weighted-random) targeting rule.
-  const renderProtectors = () => (
+  const renderCaravan = () => (
     <div className="flex gap-2 flex-wrap">
       {/* Player card */}
       {(() => {
@@ -499,7 +499,7 @@ export default function CombatPanel({ player, combat }: Props) {
             onClick={e => e.stopPropagation()}
           >
             <div className="pip-section-title">Combat Details</div>
-            <div><span className="font-bold text-pip-green-dim">Shooting Order:</span> You → Guards → PA Guards → Mount (left to right in Protectors), then surviving enemies retaliate.</div>
+            <div><span className="font-bold text-pip-green-dim">Shooting Order:</span> You → Guards → PA Guards → Mount (left to right in Caravan), then surviving enemies retaliate.</div>
             <div><span className="font-bold text-pip-green-dim">Targeting:</span> enemies pick a random target each attack, weighted toward whoever draws more fire — PA guards and your mount draw the most attention, guards draw more than you.</div>
             <div style={{ color: 'var(--pip-green)' }}><span className="font-bold">Guards:</span> take partial damage per hit and carry wounds into future rounds — heal free at a settlement doctor.</div>
             <div style={{ color: 'var(--pip-blue)' }}><span className="font-bold">PA Guards:</span> also carry Armor Points that absorb damage before health — repaired free at a settlement armory.</div>
@@ -582,11 +582,11 @@ export default function CombatPanel({ player, combat }: Props) {
 
       {!isResolved && <ChemTray player={player} combat={combat} armedChem={armedChem} setArmedChem={setArmedChem} />}
 
-      {/* Protectors — flat row in shooting order (you, guards, PA guards, mount, brahmin) */}
+      {/* Caravan — flat row in shooting order (you, guards, PA guards, mount, brahmin) */}
       {(player.guards.length > 0 || player.paGuards.length > 0 || player.brahmin > 0) && (
         <div className="border border-pip-border rounded p-3" style={{ backgroundColor: 'color-mix(in srgb, var(--pip-green) 5%, transparent)' }}>
-          <div className="pip-label mb-2">Protectors</div>
-          {renderProtectors()}
+          <div className="pip-label mb-2">Caravan</div>
+          {renderCaravan()}
         </div>
       )}
 
