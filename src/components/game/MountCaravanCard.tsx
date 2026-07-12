@@ -65,7 +65,7 @@ export default function MountCaravanCard({ creatureTypeId, health, maxHealth, de
           />
         )}
       </div>
-      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} placement="below" />
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
       </div>

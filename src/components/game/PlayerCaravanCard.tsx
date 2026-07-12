@@ -91,7 +91,7 @@ export default function PlayerCaravanCard({
         {buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />}
         {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={reloadRoundsRemaining} label="Reloading" />}
       </div>
-      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} placement="below" />
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
       </div>

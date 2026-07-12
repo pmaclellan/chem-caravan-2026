@@ -24,9 +24,16 @@ interface Props {
   flashKey: number
   lines: FloatLine[]
   duration?: number   // ms, default 1275 (850 * 1.5 — preview-only slowdown, doesn't touch combat step timing yet)
+  placement?: 'default' | 'below'   // 'below' for tightly-packed rows (Caravan) where the default
+                                     // up-and-right offset overlaps the next card
 }
 
-export function FloatingCombatText({ flashKey, lines, duration = 1275 }: Props) {
+const PLACEMENT_STYLE: Record<'default' | 'below', { top: string; left: string; transform: string }> = {
+  default: { top: 'calc(8% - 10px)', left: 'calc(50% + 40px)', transform: 'translateX(-50%)' },
+  below:   { top: '100%',            left: '50%',              transform: 'translateX(-50%)' },
+}
+
+export function FloatingCombatText({ flashKey, lines, duration = 1275, placement = 'default' }: Props) {
   if (flashKey === 0 || lines.length === 0) return null
   return (
     <>
@@ -35,9 +42,7 @@ export function FloatingCombatText({ flashKey, lines, duration = 1275 }: Props) 
         key={flashKey}
         style={{
           position:      'absolute',
-          top:           'calc(8% - 10px)',
-          left:          'calc(50% + 40px)',
-          transform:     'translateX(-50%)',
+          ...PLACEMENT_STYLE[placement],
           pointerEvents: 'none',
           userSelect:    'none',
           whiteSpace:    'nowrap',
