@@ -260,6 +260,8 @@ export default function CombatPanel({ player, combat }: Props) {
         selectable={isValidChemTarget('player', 'player')}
         selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
         onSelect={() => applyArmedChemTo('player', 'player')}
+        floatKey={anim.playerFloatText.key}
+        floatLines={anim.playerFloatText.lines}
       />
 
       {player.guards.map(g => {
@@ -284,6 +286,8 @@ export default function CombatPanel({ player, combat }: Props) {
             selectable={selectable}
             selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
             onSelect={() => applyArmedChemTo('guard', g.id)}
+            floatKey={anim.guardFloatText[g.id]?.key ?? 0}
+            floatLines={anim.guardFloatText[g.id]?.lines ?? []}
           />
         )
       })}
@@ -309,6 +313,8 @@ export default function CombatPanel({ player, combat }: Props) {
             selectable={selectable}
             selectColor={armedChem ? CHEM_COLOR[armedChem] : undefined}
             onSelect={() => applyArmedChemTo('pa_guard', g.id)}
+            floatKey={anim.guardFloatText[g.id]?.key ?? 0}
+            floatLines={anim.guardFloatText[g.id]?.lines ?? []}
           />
         )
       })}
@@ -323,6 +329,8 @@ export default function CombatPanel({ player, combat }: Props) {
           fireFlashKey={anim.mountFireKey}
           damageFlashKey={anim.mountDamageKey}
           dodgeFlashKey={anim.mountDodgeKey}
+          floatKey={anim.mountFloatText.key}
+          floatLines={anim.mountFloatText.lines}
         />
       )}
 
@@ -392,6 +400,8 @@ export default function CombatPanel({ player, combat }: Props) {
                 isHit={anim.isAnimating && animEntry?.type === 'hit'}
                 isDodge={anim.isAnimating && animEntry?.type === 'miss'}
                 isAttacking={anim.isAnimating && animEntry?.type === 'attack'}
+                floatKey={anim.enemyFloatText[unit.id]?.key ?? 0}
+                floatLines={anim.enemyFloatText[unit.id]?.lines ?? []}
               />
             )
           })}

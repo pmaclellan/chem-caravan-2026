@@ -1,4 +1,5 @@
 import { FlashOverlay } from '../ui/FlashOverlay'
+import { FloatingCombatText, type FloatLine } from '../ui/FloatingCombatText'
 import { ENEMY_SVGS, MOUNT_ICONS } from './enemySvgs'
 
 // Self-contained like PlayerCaravanCard/GuardUnitCard — only injected when actually needed.
@@ -26,11 +27,13 @@ interface Props {
   fireFlashKey?: number
   damageFlashKey?: number
   dodgeFlashKey?: number
+  floatKey?: number     // "-X HP" / "MISS" popup
+  floatLines?: FloatLine[]
 }
 
 // The tamed mount's mini-card in the Caravan row — used both live (CombatPanel)
 // and as a static post-combat snapshot (CombatSummaryPanel).
-export default function MountCaravanCard({ creatureTypeId, health, maxHealth, dead, fireFlashKey = 0, damageFlashKey = 0, dodgeFlashKey = 0 }: Props) {
+export default function MountCaravanCard({ creatureTypeId, health, maxHealth, dead, fireFlashKey = 0, damageFlashKey = 0, dodgeFlashKey = 0, floatKey = 0, floatLines = [] }: Props) {
   const hpPct = maxHealth > 0 ? Math.max(0, Math.round((health / maxHealth) * 100)) : 0
   const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
   const mountIconFile = MOUNT_ICONS[creatureTypeId]
@@ -54,6 +57,7 @@ export default function MountCaravanCard({ creatureTypeId, health, maxHealth, de
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
+        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         {mountIconFile ? (
           <img src={mountIconFile} alt="" className="w-7 h-7" style={{ opacity: 0.85 }} />
         ) : (

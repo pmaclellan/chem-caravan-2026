@@ -1,5 +1,6 @@
 import type { EnemyUnit } from '../../types/game'
 import { FlashOverlay } from '../ui/FlashOverlay'
+import { FloatingCombatText, type FloatLine } from '../ui/FloatingCombatText'
 import { ENEMY_SVGS, ENEMY_FALLBACK_SVG } from './enemySvgs'
 
 const ENEMY_ANIM_CSS = `
@@ -32,9 +33,11 @@ interface Props {
   isHit?: boolean        // quick left-right stagger
   isDodge?: boolean      // smooth slide right
   isAttacking?: boolean  // brief scale-up lunge
+  floatKey?: number       // "-X HP" / "MISS" popup
+  floatLines?: FloatLine[]
 }
 
-export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttacking }: Props) {
+export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttacking, floatKey = 0, floatLines = [] }: Props) {
   const hpPct = unit.maxHealth > 0
     ? Math.max(0, Math.round((unit.health / unit.maxHealth) * 100))
     : 0
@@ -60,6 +63,7 @@ export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttack
         {/* Icon + flash */}
         <div className="relative w-12 h-12 flex items-center justify-center">
           <FlashOverlay flashKey={flashKey} variant="damage" duration={400} />
+          <FloatingCombatText flashKey={floatKey} lines={floatLines} />
           <svg
             viewBox="0 0 48 48"
             className="w-10 h-10"
