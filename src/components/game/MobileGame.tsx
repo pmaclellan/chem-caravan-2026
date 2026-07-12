@@ -210,7 +210,7 @@ export default function MobileGame() {
               <div className="pip-label">Caps on hand</div>
               <div className="font-display text-pip-blue text-xl">
                 <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="text-pip-blue">
-                  {player.caps.toLocaleString()} <CapsIcon size={16} />
+                  {(player.caps ?? 0).toLocaleString()} <CapsIcon size={16} />
                 </FlashText>
               </div>
             </div>
@@ -662,7 +662,7 @@ export default function MobileGame() {
             </div>
             <div className="flex items-center gap-2">
               <FlashText flashKey={capsFlash} variant={capsDir === 'up' ? 'green' : 'amber'} className="font-display text-pip-blue text-sm">
-                {player.caps.toLocaleString()} <CapsIcon size={13} />
+                {(player.caps ?? 0).toLocaleString()} <CapsIcon size={13} />
               </FlashText>
               <button className="pip-btn text-xs px-2 py-1" onClick={() => navigate('/')}>MENU</button>
             </div>

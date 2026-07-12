@@ -76,7 +76,7 @@ export default function RunStatsView({ stats, mc }: Props) {
             <StatRow label="2nd waves">{stats.secondWavesDefeated}</StatRow>
           )}
           <StatRow label="Damage dealt">{stats.totalDamageDealt.toLocaleString()}</StatRow>
-          <StatRow label="Damage taken">{stats.totalDamageTaken.toLocaleString()}</StatRow>
+          <StatRow label="Damage taken">{(stats.totalDamageTaken ?? 0).toLocaleString()}</StatRow>
           {stats.capsFromCombat > 0 && (
             <StatRow label="Caps from combat">{stats.capsFromCombat.toLocaleString()} ¤</StatRow>
           )}
@@ -99,7 +99,7 @@ export default function RunStatsView({ stats, mc }: Props) {
               <StatRow label="Top chem (profit)">{topChem[0]}</StatRow>
             )}
             {(stats.totalPayrollPaid ?? 0) > 0 && (
-              <StatRow label="Payroll paid">{(stats.totalPayrollPaid).toLocaleString()} ¤</StatRow>
+              <StatRow label="Payroll paid">{(stats.totalPayrollPaid ?? 0).toLocaleString()} ¤</StatRow>
             )}
             {stats.hasSoldToMerchant && (
               <StatRow label="Road deals">Yes</StatRow>

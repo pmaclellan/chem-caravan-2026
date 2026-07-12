@@ -71,7 +71,7 @@ export default function PlayerStats({ player, turn, maxTurns }: Props) {
         <div className="pip-label">Caps on Hand</div>
         <div className="pip-value flex items-center gap-1.5">
           <FlashText flashKey={capsFlash} variant={capsVariant} className="text-pip-blue flex items-center gap-1.5">
-            {player.caps.toLocaleString()} <CapsIcon size={16} />
+            {(player.caps ?? 0).toLocaleString()} <CapsIcon size={16} />
           </FlashText>
         </div>
         {packValue > 0 && (
