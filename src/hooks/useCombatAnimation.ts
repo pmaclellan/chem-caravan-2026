@@ -2,13 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import type { AnimStep, EnemyUnit, GuardUnit, PAGuardUnit } from '../types/game'
 import type { FloatLine } from '../components/ui/FloatingCombatText'
 
-const INTER_SHOT_MS         = 620   // gap between each player/guard shot starting
-const BURST_INTER_MS        = 130   // gap between shots within a burst (rapid fire)
-const SHOOTER_FLASH_MS      = 280   // how long the shooter glows before the bullet lands
-const TARGET_FLASH_DELAY    = 220   // after shooter flash, when the enemy reacts (hit or dodge)
-const RETALIATION_PAUSE     = 900   // extra pause before enemies strike back
-const ATTACK_LAND_DELAY     = 360   // after enemy lunge, when damage/dodge registers on its target
-const INTER_ENEMY_ATTACK_MS = 480   // gap between individual enemy attacks — quicker than player/guard shots
+// All timings scaled 1.5x from their original values (620/130/280/220/900/360/480) to give
+// FloatingCombatText's longer hold+fade (1275ms) room to play out between hits on the same
+// unit without getting cut off by the next event landing. Revert the multiplier if this ends
+// up feeling too sluggish rather than re-deriving each value by hand.
+const INTER_SHOT_MS         = 930   // gap between each player/guard shot starting
+const BURST_INTER_MS        = 195   // gap between shots within a burst (rapid fire)
+const SHOOTER_FLASH_MS      = 420   // how long the shooter glows before the bullet lands
+const TARGET_FLASH_DELAY    = 330   // after shooter flash, when the enemy reacts (hit or dodge)
+const RETALIATION_PAUSE     = 1350  // extra pause before enemies strike back
+const ATTACK_LAND_DELAY     = 540   // after enemy lunge, when damage/dodge registers on its target
+const INTER_ENEMY_ATTACK_MS = 720   // gap between individual enemy attacks — quicker than player/guard shots
 
 export interface EnemyAnimEntry { key: number; type: 'hit' | 'miss' | 'attack' }
 
@@ -140,7 +144,7 @@ export function useCombatAnimation(
     // Enemies/mount have no armor concept — a hit is always a flat "-X HP", a miss is "MISS".
     const setEnemyFloat = (targetId: string, hit: boolean, damage: number) => {
       workingEnemyFloatText[targetId] = nextFloatEntry(
-        hit ? [{ text: `-${damage} HP`, color: 'var(--pip-red)' }] : [{ text: 'MISS', color: 'var(--pip-amber)' }],
+        hit ? [{ text: `-${damage} HP`, color: 'var(--pip-red)' }] : [{ text: 'MISS', color: 'var(--pip-purple)' }],
       )
     }
     // Player/PA guards can have armor absorb part of a hit — up to two stacked lines,
@@ -156,6 +160,16 @@ export function useCombatAnimation(
     // per-shot landing/timing behavior; only who's doing the shooting differs (see call sites).
     type BurstShot = Extract<AnimStep, { kind: 'burst' }>['shots'][number]
     const scheduleBurstShots = (shots: BurstShot[], baseOffset: number) => {
+      // Running per-target damage total across this burst — each landed hit's popup shows the
+      // accumulated total so far (-20, then -40, then -60), not just that one shot's damage, so
+      // rapid-fire shots read as one growing number instead of a blur of tiny replacements.
+      // Snapshotted per-shot up front (not read inside the timeout) since all shots are known
+      // synchronously here, before any of their staggered timers actually fire.
+      const runningTotal: Record<string, number> = {}
+      const totalAtShot: number[] = shots.map(shot => {
+        if (shot.hit && shot.targetId) runningTotal[shot.targetId] = (runningTotal[shot.targetId] ?? 0) + shot.damage
+        return shot.targetId ? (runningTotal[shot.targetId] ?? 0) : 0
+      })
       shots.forEach((shot, si) => {
         const tHit = baseOffset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
         timersRef.current.push(setTimeout(() => {
@@ -166,7 +180,11 @@ export function useCombatAnimation(
           } else if (!shot.hit && shot.targetId) {
             workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
           }
-          if (shot.targetId) setEnemyFloat(shot.targetId, shot.hit, shot.damage)
+          if (shot.targetId) {
+            workingEnemyFloatText[shot.targetId] = nextFloatEntry(
+              shot.hit ? [{ text: `-${totalAtShot[si]} HP`, color: 'var(--pip-red)' }] : [{ text: 'MISS', color: 'var(--pip-purple)' }],
+            )
+          }
           setState(s => ({
             ...s,
             activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
@@ -360,7 +378,7 @@ export function useCombatAnimation(
               setState(s => ({ ...s, displayMountHealth: workingMountHealth, mountDamageKey: s.mountDamageKey + 1, mountDied: step.targetDied || s.mountDied, mountFloatText: nextFloatEntry([{ text: `-${step.damage} HP`, color: 'var(--pip-red)' }]) }))
             }
           } else {
-            const missLines: FloatLine[] = [{ text: 'MISS', color: 'var(--pip-amber)' }]
+            const missLines: FloatLine[] = [{ text: 'MISS', color: 'var(--pip-purple)' }]
             if (step.targetKind === 'player') {
               setState(s => ({ ...s, playerDodgeKey: s.playerDodgeKey + 1, playerFloatText: nextFloatEntry(missLines) }))
             } else if (step.targetKind === 'guard') {

@@ -53,7 +53,7 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+      className={`relative flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
       style={{ width: '3rem', opacity: dead ? 0.35 : reloading ? 0.55 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
       onClick={selectable ? onSelect : undefined}
       role={selectable ? 'button' : undefined}
@@ -82,7 +82,6 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
-        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         {icon}
         {dead && (
           <span className="absolute inset-0 flex items-center justify-center text-xl" style={{ color: 'var(--pip-red)' }} title="Down">☠</span>
@@ -90,6 +89,7 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
         {!dead && buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />}
         {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={reloadRoundsRemaining!} label="Reloading" />}
       </div>
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         {!dead && <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />}
       </div>

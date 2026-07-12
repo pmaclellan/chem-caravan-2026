@@ -61,7 +61,7 @@ export default function PlayerCaravanCard({
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+      className={`relative flex flex-col items-center gap-1 ${selectable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
       style={{ width: '3rem', opacity: reloading ? 0.55 : 1, transition: 'opacity 400ms' }}
       onClick={selectable ? onSelect : undefined}
       role={selectable ? 'button' : undefined}
@@ -85,13 +85,13 @@ export default function PlayerCaravanCard({
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
-        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
           <path d={PLAYER_ICON_PATH} />
         </svg>
         {buff && <BuffBadge color={buff.color} roundsRemaining={buff.roundsRemaining} label={buff.label} />}
         {reloading && <BuffBadge kind="reload" color="var(--pip-amber)" roundsRemaining={reloadRoundsRemaining} label="Reloading" />}
       </div>
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
       </div>
