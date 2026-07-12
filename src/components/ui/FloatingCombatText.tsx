@@ -30,7 +30,7 @@ interface Props {
 
 const PLACEMENT_STYLE: Record<'default' | 'below', { top: string; left: string; transform: string }> = {
   default: { top: 'calc(8% - 10px)', left: 'calc(50% + 40px)', transform: 'translateX(-50%)' },
-  below:   { top: '100%',            left: '50%',              transform: 'translateX(-50%)' },
+  below:   { top: 'calc(100% - 7px)', left: '50%',              transform: 'translateX(-50%)' },
 }
 
 export function FloatingCombatText({ flashKey, lines, duration = 1275, placement = 'default' }: Props) {
