@@ -49,9 +49,13 @@ export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttack
                   : 'none'
 
   return (
-    <>
+    <div className="relative flex flex-col items-center gap-1 min-w-0">
       {(isHit || isDodge || isAttacking) && <style>{ENEMY_ANIM_CSS}</style>}
+      {/* key'd on floatKey (fires on every hit AND miss) so the shake/dodge/attack CSS
+          animation restarts each event, without remounting FloatingCombatText below —
+          that needs to survive across events so a burst's popups can stack. */}
       <div
+        key={`anim-${floatKey}`}
         className="flex flex-col items-center gap-1 min-w-0"
         style={{
           filter: unit.dead ? 'grayscale(1)' : 'none',
@@ -63,7 +67,6 @@ export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttack
         {/* Icon + flash */}
         <div className="relative w-12 h-12 flex items-center justify-center">
           <FlashOverlay flashKey={flashKey} variant="damage" duration={400} />
-          <FloatingCombatText flashKey={floatKey} lines={floatLines} />
           <svg
             viewBox="0 0 48 48"
             className="w-10 h-10"
@@ -97,6 +100,8 @@ export default function EnemyUnitCard({ unit, flashKey, isHit, isDodge, isAttack
           {unit.name}
         </div>
       </div>
-    </>
+
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
+    </div>
   )
 }

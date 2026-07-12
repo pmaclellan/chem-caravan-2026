@@ -388,13 +388,11 @@ export default function CombatPanel({ player, combat }: Props) {
         <div className="flex gap-3 flex-wrap">
           {displayEnemies.map(unit => {
             const animEntry = anim.enemyAnimInfo[unit.id]
-            // Key change causes EnemyUnitCard to remount → CSS animation restarts cleanly
-            const cardKey = anim.isAnimating && animEntry
-              ? `${unit.id}-${animEntry.key}`
-              : unit.id
+            // Stable key — EnemyUnitCard now restarts its own shake/dodge animation
+            // internally (keyed on floatKey), so FloatingCombatText survives across hits.
             return (
               <EnemyUnitCard
-                key={cardKey}
+                key={unit.id}
                 unit={unit}
                 flashKey={anim.enemyHitKeys[unit.id] ?? 0}
                 isHit={anim.isAnimating && animEntry?.type === 'hit'}

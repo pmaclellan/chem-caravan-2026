@@ -16,6 +16,7 @@
   --pip-border:      #8a6020;
   --pip-border-dim:  #cdb070;
   --pip-blue:        #2a5a8a;
+  --pip-purple:      #9c3090;   /* same hue as Mojave's --pip-amber — fixed across all modes so MISS reads consistently everywhere */
 }
 
 [data-mode="capital_wasteland"] {

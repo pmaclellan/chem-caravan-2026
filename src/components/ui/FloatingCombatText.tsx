@@ -1,7 +1,9 @@
 /**
  * Absolutely-positioned "damage number" popup inside a `position: relative` container,
- * sibling to FlashOverlay. Mounting a new element (via key increment) restarts the CSS
- * animation cleanly. Rendered above the icon, drifts up, fades out.
+ * sibling to FlashOverlay. No movement — appears quickly, holds, then fades. Mounting a new
+ * element (via key increment) restarts the animation cleanly. For a rapid burst, the caller
+ * is expected to pass an accumulating running total per event (not per-shot damage), so the
+ * number counts up (-20, -40, -60) and the final total is what sticks and fades out.
  */
 
 export interface FloatLine {
@@ -11,19 +13,20 @@ export interface FloatLine {
 
 const FLOAT_CSS = `
   @keyframes pip-float-combat-text {
-    0%   { transform: translate(-50%, 4px);   opacity: 0; }
-    12%  { opacity: 1; }
-    100% { transform: translate(-50%, -16px); opacity: 0; }
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 `
 
 interface Props {
   flashKey: number
   lines: FloatLine[]
-  duration?: number   // ms, default 850
+  duration?: number   // ms, default 1275 (850 * 1.5 — preview-only slowdown, doesn't touch combat step timing yet)
 }
 
-export function FloatingCombatText({ flashKey, lines, duration = 850 }: Props) {
+export function FloatingCombatText({ flashKey, lines, duration = 1275 }: Props) {
   if (flashKey === 0 || lines.length === 0) return null
   return (
     <>
@@ -32,12 +35,13 @@ export function FloatingCombatText({ flashKey, lines, duration = 850 }: Props) {
         key={flashKey}
         style={{
           position:      'absolute',
-          top:           '8%',
-          left:          '50%',
+          top:           'calc(8% - 10px)',
+          left:          'calc(50% + 40px)',
+          transform:     'translateX(-50%)',
           pointerEvents: 'none',
           userSelect:    'none',
           whiteSpace:    'nowrap',
-          animation:     `pip-float-combat-text ${duration}ms ease-out forwards`,
+          animation:     `pip-float-combat-text ${duration}ms linear forwards`,
           zIndex:        6,
         }}
       >
@@ -45,7 +49,7 @@ export function FloatingCombatText({ flashKey, lines, duration = 850 }: Props) {
           <div
             key={i}
             className="font-display font-bold text-center leading-tight"
-            style={{ fontSize: '0.7rem', color: line.color, textShadow: '0 1px 2px rgba(0,0,0,0.7)' }}
+            style={{ fontSize: '0.7rem', color: line.color }}
           >
             {line.text}
           </div>

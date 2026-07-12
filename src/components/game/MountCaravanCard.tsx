@@ -41,7 +41,7 @@ export default function MountCaravanCard({ creatureTypeId, health, maxHealth, de
 
   return (
     <div
-      className="flex flex-col items-center gap-1"
+      className="relative flex flex-col items-center gap-1"
       style={{ width: '3rem', opacity: dead ? 0.35 : 1, filter: dead ? 'grayscale(1)' : 'none', transition: 'opacity 400ms, filter 400ms' }}
     >
       {(fireFlashKey > 0 || dodgeFlashKey > 0) && <style>{MOUNT_CARD_CSS}</style>}
@@ -57,7 +57,6 @@ export default function MountCaravanCard({ creatureTypeId, health, maxHealth, de
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
-        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         {mountIconFile ? (
           <img src={mountIconFile} alt="" className="w-7 h-7" style={{ opacity: 0.85 }} />
         ) : (
@@ -66,6 +65,7 @@ export default function MountCaravanCard({ creatureTypeId, health, maxHealth, de
           />
         )}
       </div>
+      <FloatingCombatText flashKey={floatKey} lines={floatLines} />
       <div className="h-1 w-full rounded overflow-hidden" style={{ backgroundColor: 'var(--pip-border-dim)' }}>
         <div className="h-full transition-all duration-500" style={{ width: `${hpPct}%`, backgroundColor: hpColor }} />
       </div>
