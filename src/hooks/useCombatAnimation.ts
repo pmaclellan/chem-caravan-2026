@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AnimStep, EnemyUnit, GuardUnit, PAGuardUnit } from '../types/game'
+import type { FloatLine } from '../components/ui/FloatingCombatText'
 
 const INTER_SHOT_MS         = 620   // gap between each player/guard shot starting
 const BURST_INTER_MS        = 130   // gap between shots within a burst (rapid fire)
@@ -10,6 +11,10 @@ const ATTACK_LAND_DELAY     = 360   // after enemy lunge, when damage/dodge regi
 const INTER_ENEMY_ATTACK_MS = 480   // gap between individual enemy attacks — quicker than player/guard shots
 
 export interface EnemyAnimEntry { key: number; type: 'hit' | 'miss' | 'attack' }
+
+export interface FloatTextEntry { key: number; lines: FloatLine[] }
+
+const NO_FLOAT: FloatTextEntry = { key: 0, lines: [] }
 
 export interface CombatAnimState {
   isAnimating: boolean
@@ -38,6 +43,10 @@ export interface CombatAnimState {
   guardDodgeKeys: Record<string, number>
   enemyHitKeys: Record<string, number>
   enemyAnimInfo: Record<string, EnemyAnimEntry>
+  enemyFloatText: Record<string, FloatTextEntry>
+  guardFloatText: Record<string, FloatTextEntry>   // shared guard + pa_guard, keyed by unit id
+  playerFloatText: FloatTextEntry
+  mountFloatText: FloatTextEntry
 }
 
 function initialGuardHealthMap(guards: GuardUnit[] | PAGuardUnit[]): Record<string, number> {
@@ -92,6 +101,10 @@ export function useCombatAnimation(
     guardDodgeKeys: {},
     enemyHitKeys: {},
     enemyAnimInfo: {},
+    enemyFloatText: {},
+    guardFloatText: {},
+    playerFloatText: NO_FLOAT,
+    mountFloatText: NO_FLOAT,
   })
 
   const timersRef     = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -120,6 +133,52 @@ export function useCombatAnimation(
     const workingGuardDodgeKeys:  Record<string, number> = {}
     const workingGuardCooldown = initialGuardCooldownMap(guards)
     let workingGunCooldown = initialGunCooldown
+    const workingEnemyFloatText: Record<string, FloatTextEntry> = {}
+    const workingGuardFloatText: Record<string, FloatTextEntry> = {}
+    let floatKeySeq = 0
+    const nextFloatEntry = (lines: FloatLine[]): FloatTextEntry => ({ key: ++floatKeySeq, lines })
+    // Enemies/mount have no armor concept — a hit is always a flat "-X HP", a miss is "MISS".
+    const setEnemyFloat = (targetId: string, hit: boolean, damage: number) => {
+      workingEnemyFloatText[targetId] = nextFloatEntry(
+        hit ? [{ text: `-${damage} HP`, color: 'var(--pip-red)' }] : [{ text: 'MISS', color: 'var(--pip-amber)' }],
+      )
+    }
+    // Player/PA guards can have armor absorb part of a hit — up to two stacked lines,
+    // mirroring the "Armor absorbs X, you take Y damage" text log wording.
+    const armorSplitLines = (damage: number, armorAbsorbed: number): FloatLine[] => {
+      const lines: FloatLine[] = []
+      if (armorAbsorbed > 0) lines.push({ text: `-${armorAbsorbed} AP`, color: 'var(--pip-blue)' })
+      const hpLoss = damage - armorAbsorbed
+      if (hpLoss > 0) lines.push({ text: `-${hpLoss} HP`, color: 'var(--pip-red)' })
+      return lines
+    }
+    // Shared by 'burst' and 'pa_burst' — both fire a volley of shots at enemies with identical
+    // per-shot landing/timing behavior; only who's doing the shooting differs (see call sites).
+    type BurstShot = Extract<AnimStep, { kind: 'burst' }>['shots'][number]
+    const scheduleBurstShots = (shots: BurstShot[], baseOffset: number) => {
+      shots.forEach((shot, si) => {
+        const tHit = baseOffset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
+        timersRef.current.push(setTimeout(() => {
+          if (shot.hit && shot.targetId) {
+            workingHealth[shot.targetId]  = shot.targetHealthAfter
+            workingHitKeys[shot.targetId] = (workingHitKeys[shot.targetId] ?? 0) + 1
+            workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'hit' }
+          } else if (!shot.hit && shot.targetId) {
+            workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
+          }
+          if (shot.targetId) setEnemyFloat(shot.targetId, shot.hit, shot.damage)
+          setState(s => ({
+            ...s,
+            activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
+            displayEnemyHealth: shot.hit ? { ...workingHealth } : s.displayEnemyHealth,
+            enemyHitKeys:       shot.hit ? { ...workingHitKeys } : s.enemyHitKeys,
+            enemyAnimInfo:      { ...workingAnimInfo },
+            enemyFloatText:     { ...workingEnemyFloatText },
+          }))
+          onLogLineRef.current?.(shot.logLine)
+        }, tHit))
+      })
+    }
 
     setState(s => ({
       ...s,
@@ -149,6 +208,10 @@ export function useCombatAnimation(
       guardDodgeKeys: {},
       enemyHitKeys: {},
       enemyAnimInfo: {},
+      enemyFloatText: {},
+      guardFloatText: {},
+      playerFloatText: NO_FLOAT,
+      mountFloatText: NO_FLOAT,
     }))
 
     let offset = 80
@@ -193,12 +256,14 @@ export function useCombatAnimation(
               key:  (workingAnimInfo[targetId]?.key ?? 0) + 1,
               type: hit ? 'hit' : 'miss',
             }
+            setEnemyFloat(targetId, hit, step.damage)
             setState(s => ({
               ...s,
               activeTargetId:     hit ? targetId : null,
               displayEnemyHealth: hit ? { ...workingHealth } : s.displayEnemyHealth,
               enemyHitKeys:       hit ? { ...workingHitKeys } : s.enemyHitKeys,
               enemyAnimInfo:      { ...workingAnimInfo },
+              enemyFloatText:     { ...workingEnemyFloatText },
             }))
             onLogLineRef.current?.(step.logLine)
           }, t2))
@@ -229,12 +294,14 @@ export function useCombatAnimation(
               key:  (workingAnimInfo[targetId]?.key ?? 0) + 1,
               type: hit ? 'hit' : 'miss',
             }
+            setEnemyFloat(targetId, hit, step.damage)
             setState(s => ({
               ...s,
               activeTargetId:     hit ? targetId : null,
               displayEnemyHealth: hit ? { ...workingHealth } : s.displayEnemyHealth,
               enemyHitKeys:       hit ? { ...workingHitKeys } : s.enemyHitKeys,
               enemyAnimInfo:      { ...workingAnimInfo },
+              enemyFloatText:     { ...workingEnemyFloatText },
             }))
             onLogLineRef.current?.(step.logLine)
           }, t2))
@@ -266,38 +333,46 @@ export function useCombatAnimation(
               const hpLoss = step.damage - apLoss
               workingPlayerAP     = Math.max(0, workingPlayerAP - apLoss)
               workingPlayerHealth = Math.max(0, workingPlayerHealth - hpLoss)
+              const lines = armorSplitLines(step.damage, apLoss)
+              if (step.venomDotDamage) lines.push({ text: `-${step.venomDotDamage} HP (venom)`, color: 'var(--pip-red)' })
               if (step.venomDotDamage) workingPlayerHealth = Math.max(0, workingPlayerHealth - step.venomDotDamage)
               setState(s => ({
                 ...s,
                 displayPlayerHealth: workingPlayerHealth,
                 displayPlayerAP:     workingPlayerAP,
                 playerDamageKey:     s.playerDamageKey + 1,
+                playerFloatText:     nextFloatEntry(lines),
               }))
             } else if (step.targetKind === 'guard') {
               workingGuardHealth[step.targetId] = step.targetHealthAfter
               workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
-              setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+              workingGuardFloatText[step.targetId] = nextFloatEntry([{ text: `-${step.damage} HP`, color: 'var(--pip-red)' }])
+              setState(s => ({ ...s, displayGuardHealth: { ...workingGuardHealth }, guardDamageKeys: { ...workingGuardDamageKeys }, guardFloatText: { ...workingGuardFloatText } }))
             } else if (step.targetKind === 'pa_guard') {
               const apLoss = step.armorAbsorbed ?? 0
               workingPAGuardArmor[step.targetId] = Math.max(0, (workingPAGuardArmor[step.targetId] ?? 0) - apLoss)
               workingPAGuardHealth[step.targetId] = step.targetHealthAfter
               workingGuardDamageKeys[step.targetId] = (workingGuardDamageKeys[step.targetId] ?? 0) + 1
-              setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, displayPAGuardArmor: { ...workingPAGuardArmor }, guardDamageKeys: { ...workingGuardDamageKeys } }))
+              workingGuardFloatText[step.targetId] = nextFloatEntry(armorSplitLines(step.damage, apLoss))
+              setState(s => ({ ...s, displayPAGuardHealth: { ...workingPAGuardHealth }, displayPAGuardArmor: { ...workingPAGuardArmor }, guardDamageKeys: { ...workingGuardDamageKeys }, guardFloatText: { ...workingGuardFloatText } }))
             } else {
               workingMountHealth = step.targetHealthAfter
-              setState(s => ({ ...s, displayMountHealth: workingMountHealth, mountDamageKey: s.mountDamageKey + 1, mountDied: step.targetDied || s.mountDied }))
+              setState(s => ({ ...s, displayMountHealth: workingMountHealth, mountDamageKey: s.mountDamageKey + 1, mountDied: step.targetDied || s.mountDied, mountFloatText: nextFloatEntry([{ text: `-${step.damage} HP`, color: 'var(--pip-red)' }]) }))
             }
           } else {
+            const missLines: FloatLine[] = [{ text: 'MISS', color: 'var(--pip-amber)' }]
             if (step.targetKind === 'player') {
-              setState(s => ({ ...s, playerDodgeKey: s.playerDodgeKey + 1 }))
+              setState(s => ({ ...s, playerDodgeKey: s.playerDodgeKey + 1, playerFloatText: nextFloatEntry(missLines) }))
             } else if (step.targetKind === 'guard') {
               workingGuardDodgeKeys[step.targetId] = (workingGuardDodgeKeys[step.targetId] ?? 0) + 1
-              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys } }))
+              workingGuardFloatText[step.targetId] = nextFloatEntry(missLines)
+              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys }, guardFloatText: { ...workingGuardFloatText } }))
             } else if (step.targetKind === 'pa_guard') {
               workingGuardDodgeKeys[step.targetId] = (workingGuardDodgeKeys[step.targetId] ?? 0) + 1
-              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys } }))
+              workingGuardFloatText[step.targetId] = nextFloatEntry(missLines)
+              setState(s => ({ ...s, guardDodgeKeys: { ...workingGuardDodgeKeys }, guardFloatText: { ...workingGuardFloatText } }))
             } else {
-              setState(s => ({ ...s, mountDodgeKey: s.mountDodgeKey + 1 }))
+              setState(s => ({ ...s, mountDodgeKey: s.mountDodgeKey + 1, mountFloatText: nextFloatEntry(missLines) }))
             }
           }
           onLogLineRef.current?.(step.logLine)
@@ -319,26 +394,7 @@ export function useCombatAnimation(
         }, offset))
 
         // Each shot in the burst lands BURST_INTER_MS apart
-        step.shots.forEach((shot, si) => {
-          const tHit = offset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
-          timersRef.current.push(setTimeout(() => {
-            if (shot.hit && shot.targetId) {
-              workingHealth[shot.targetId]  = shot.targetHealthAfter
-              workingHitKeys[shot.targetId] = (workingHitKeys[shot.targetId] ?? 0) + 1
-              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'hit' }
-            } else if (!shot.hit && shot.targetId) {
-              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
-            }
-            setState(s => ({
-              ...s,
-              activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
-              displayEnemyHealth: shot.hit ? { ...workingHealth } : s.displayEnemyHealth,
-              enemyHitKeys:       shot.hit ? { ...workingHitKeys } : s.enemyHitKeys,
-              enemyAnimInfo:      { ...workingAnimInfo },
-            }))
-            onLogLineRef.current?.(shot.logLine)
-          }, tHit))
-        })
+        scheduleBurstShots(step.shots, offset)
 
         // Advance offset past the entire burst duration
         offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
@@ -351,26 +407,7 @@ export function useCombatAnimation(
           setState(s => ({ ...s, activeShooterId: shooterId, activeTargetId: null, guardFireKeys: { ...workingFireKeys } }))
         }, offset))
 
-        step.shots.forEach((shot, si) => {
-          const tHit = offset + TARGET_FLASH_DELAY + si * BURST_INTER_MS
-          timersRef.current.push(setTimeout(() => {
-            if (shot.hit && shot.targetId) {
-              workingHealth[shot.targetId]  = shot.targetHealthAfter
-              workingHitKeys[shot.targetId] = (workingHitKeys[shot.targetId] ?? 0) + 1
-              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'hit' }
-            } else if (!shot.hit && shot.targetId) {
-              workingAnimInfo[shot.targetId] = { key: (workingAnimInfo[shot.targetId]?.key ?? 0) + 1, type: 'miss' }
-            }
-            setState(s => ({
-              ...s,
-              activeTargetId:     shot.hit && shot.targetId ? shot.targetId : null,
-              displayEnemyHealth: shot.hit ? { ...workingHealth } : s.displayEnemyHealth,
-              enemyHitKeys:       shot.hit ? { ...workingHitKeys } : s.enemyHitKeys,
-              enemyAnimInfo:      { ...workingAnimInfo },
-            }))
-            onLogLineRef.current?.(shot.logLine)
-          }, tHit))
-        })
+        scheduleBurstShots(step.shots, offset)
 
         offset += TARGET_FLASH_DELAY + step.shots.length * BURST_INTER_MS + INTER_SHOT_MS
 
@@ -400,10 +437,12 @@ export function useCombatAnimation(
           workingHealth[step.primaryTargetId] = step.primaryHealthAfter
           workingHitKeys[step.primaryTargetId] = (workingHitKeys[step.primaryTargetId] ?? 0) + 1
           workingAnimInfo[step.primaryTargetId] = { key: (workingAnimInfo[step.primaryTargetId]?.key ?? 0) + 1, type: 'hit' }
+          setEnemyFloat(step.primaryTargetId, true, step.primaryDamage)
           for (const sh of step.splashHits) {
             workingHealth[sh.targetId] = sh.healthAfter
             workingHitKeys[sh.targetId] = (workingHitKeys[sh.targetId] ?? 0) + 1
             workingAnimInfo[sh.targetId] = { key: (workingAnimInfo[sh.targetId]?.key ?? 0) + 1, type: 'hit' }
+            setEnemyFloat(sh.targetId, true, sh.damage)
           }
           setState(s => ({
             ...s,
@@ -411,6 +450,7 @@ export function useCombatAnimation(
             displayEnemyHealth: { ...workingHealth },
             enemyHitKeys:       { ...workingHitKeys },
             enemyAnimInfo:      { ...workingAnimInfo },
+            enemyFloatText:     { ...workingEnemyFloatText },
           }))
           onLogLineRef.current?.(step.logLine)
           for (const sh of step.splashHits) onLogLineRef.current?.(sh.logLine)
@@ -425,10 +465,18 @@ export function useCombatAnimation(
       setState(s => ({ ...s, activeShooterId: null, activeTargetId: null }))
     }, offset))
 
-    // Signal completion — reset hit keys to 0 so FlashOverlay is null when
-    // EnemyUnitCard remounts on the key change from animated-key → unit.id
+    // Signal completion — reset hit keys and float text to 0 so FlashOverlay/FloatingCombatText
+    // are null when cards remount on the key change from animated-key → unit.id
     timersRef.current.push(setTimeout(() => {
-      setState(s => ({ ...s, isAnimating: false, enemyHitKeys: {} }))
+      setState(s => ({
+        ...s,
+        isAnimating: false,
+        enemyHitKeys: {},
+        enemyFloatText: {},
+        guardFloatText: {},
+        playerFloatText: NO_FLOAT,
+        mountFloatText: NO_FLOAT,
+      }))
       onCompleteRef.current()
     }, offset + SHOOTER_FLASH_MS))
 

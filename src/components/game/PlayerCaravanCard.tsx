@@ -1,4 +1,5 @@
 import { FlashOverlay } from '../ui/FlashOverlay'
+import { FloatingCombatText, type FloatLine } from '../ui/FloatingCombatText'
 import BuffBadge from './BuffBadge'
 import type { BuffInfo } from './buffInfo'
 
@@ -40,6 +41,8 @@ interface Props {
   selectable?: boolean        // true while a chem is armed and the player is a valid target
   selectColor?: string
   onSelect?: () => void
+  floatKey?: number            // "-X AP" / "-X HP" / "MISS" popup
+  floatLines?: FloatLine[]
 }
 
 // The player's own mini-card in the Caravan row — used both live (CombatPanel, with
@@ -48,6 +51,7 @@ export default function PlayerCaravanCard({
   health, maxHealth, armorPoints, maxArmorPoints,
   fireFlashKey = 0, damageFlashKey = 0, dodgeFlashKey = 0,
   buff, reloadRoundsRemaining = 0, selectable, selectColor, onSelect,
+  floatKey = 0, floatLines = [],
 }: Props) {
   const hpPct = maxHealth > 0 ? Math.max(0, Math.round((health / maxHealth) * 100)) : 0
   const hpColor = hpPct > 50 ? 'var(--pip-green)' : hpPct > 25 ? 'var(--pip-amber)' : 'var(--pip-red)'
@@ -81,6 +85,7 @@ export default function PlayerCaravanCard({
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
+        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor" style={{ color: 'var(--pip-amber)' }}>
           <path d={PLAYER_ICON_PATH} />
         </svg>

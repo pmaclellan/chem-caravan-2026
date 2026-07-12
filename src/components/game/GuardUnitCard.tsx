@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { GuardUnit, PAGuardUnit } from '../../types/game'
 import { FlashOverlay } from '../ui/FlashOverlay'
+import { FloatingCombatText, type FloatLine } from '../ui/FloatingCombatText'
 import BuffBadge from './BuffBadge'
 import type { BuffInfo } from './buffInfo'
 
@@ -39,9 +40,11 @@ interface Props {
   selectable?: boolean         // true while a chem is armed and this unit is a valid target
   selectColor?: string         // ring color while selectable — the armed chem's color
   onSelect?: () => void        // click handler, only wired up while selectable
+  floatKey?: number             // "-X HP" / "-X AP" / "MISS" popup
+  floatLines?: FloatLine[]
 }
 
-export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff, reloadRoundsRemaining, armorPoints, maxArmorPoints, selectable, selectColor, onSelect }: Props) {
+export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, damageFlashKey, dodgeFlashKey, buff, reloadRoundsRemaining, armorPoints, maxArmorPoints, selectable, selectColor, onSelect, floatKey = 0, floatLines = [] }: Props) {
   const dead = unit.dead
   const reloading = !dead && (reloadRoundsRemaining ?? 0) > 0
   const hpPct = unit.maxHealth > 0 ? Math.max(0, Math.round((unit.health / unit.maxHealth) * 100)) : 0
@@ -79,6 +82,7 @@ export default function GuardUnitCard({ unit, label, color, icon, fireFlashKey, 
           />
         )}
         <FlashOverlay flashKey={damageFlashKey} variant="damage" />
+        <FloatingCombatText flashKey={floatKey} lines={floatLines} />
         {icon}
         {dead && (
           <span className="absolute inset-0 flex items-center justify-center text-xl" style={{ color: 'var(--pip-red)' }} title="Down">☠</span>
