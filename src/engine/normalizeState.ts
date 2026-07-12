@@ -44,12 +44,20 @@ export function normalizeState(state: GameState): GameState {
       }))
   const nextGuardId = legacyPlayer.nextGuardId ?? (guards.length + paGuards.length)
 
+  // Defends against a save corrupted by a since-fixed bug that could write NaN/null into
+  // core numeric player fields (NaN round-trips through JSON as null) — coerce back to a
+  // safe, non-crashing value rather than leaving null for every .toLocaleString() call site.
+  const caps = Number.isFinite(state.player.caps) ? state.player.caps : 0
+  const health = Number.isFinite(state.player.health) ? state.player.health : (state.player.maxHealth ?? mc.startingHealth)
+
   return {
     ...state,
     mode,
     gameType: state.gameType ?? 'standard',
     player: {
       ...state.player,
+      caps,
+      health,
       guards,
       paGuards,
       nextGuardId,
@@ -87,7 +95,11 @@ export function normalizeState(state: GameState): GameState {
     })() : state.combat,
     pendingDebtFreedom: state.pendingDebtFreedom ?? null,
     pendingDiscovery: state.pendingDiscovery ?? null,
-    stats: state.stats ? { ...initStats(), ...state.stats } : initStats(),
+    // Drop explicit nulls (same NaN-through-JSON corruption as above) before merging onto
+    // defaults — a plain spread would let a null survive and overwrite initStats()'s 0.
+    stats: state.stats
+      ? { ...initStats(), ...Object.fromEntries(Object.entries(state.stats).filter(([, v]) => v !== null)) }
+      : initStats(),
     earnedAchievements: state.earnedAchievements ?? [],
     combatReplays: state.combatReplays ?? [],
     history: state.history ?? [],

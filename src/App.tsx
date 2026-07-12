@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import Home from './pages/Home'
 import Game from './pages/Game'
@@ -7,6 +7,7 @@ import Leaderboard from './pages/Leaderboard'
 import HowToPlayPage from './pages/HowToPlay'
 import SetPasswordModal from './components/auth/SetPasswordModal'
 import { VersionFooter } from './components/ui/VersionFooter'
+import RouteErrorBoundary from './components/ui/RouteErrorBoundary'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore()
@@ -16,10 +17,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const router = createBrowserRouter([
-  { path: '/', element: <Home /> },
-  { path: '/game', element: <ProtectedRoute><Game /></ProtectedRoute> },
-  { path: '/leaderboard', element: <Leaderboard /> },
-  { path: '/how-to-play', element: <HowToPlayPage /> },
+  {
+    element: <Outlet />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/game', element: <ProtectedRoute><Game /></ProtectedRoute> },
+      { path: '/leaderboard', element: <Leaderboard /> },
+      { path: '/how-to-play', element: <HowToPlayPage /> },
+    ],
+  },
 ])
 
 export default function App() {

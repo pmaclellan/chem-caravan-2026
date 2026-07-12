@@ -202,7 +202,7 @@ export default function EventPanel({ event, player }: Props) {
         return (
           <div className="flex flex-col gap-3">
             <div className="flex gap-4 text-xs border border-pip-border-dim rounded px-3 py-1.5">
-              <span className="text-pip-green-dim">Caps: <span className="text-pip-amber font-display">{player.caps.toLocaleString()} ¤</span></span>
+              <span className="text-pip-green-dim">Caps: <span className="text-pip-amber font-display">{(player.caps ?? 0).toLocaleString()} ¤</span></span>
               <span className="text-pip-green-dim">Pack: <span className="text-pip-green font-display">{used}/{capacity}</span></span>
             </div>
             <div className="text-pip-green-dim text-xs">
