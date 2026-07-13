@@ -3,7 +3,7 @@ import type { GameRow } from '@main/types/game'
 import { normalizeState } from '@main/engine/normalizeState'
 import { supabaseAdmin } from './lib/supabaseAdmin'
 import RunPicker from './components/RunPicker'
-import RunDetailTabs from './components/RunDetailTabs'
+import RunDetailTabs, { type Tab } from './components/RunDetailTabs'
 import MapHeatmap from './components/MapHeatmap'
 
 type TopView = 'runs' | 'heatmap'
@@ -11,6 +11,9 @@ type TopView = 'runs' | 'heatmap'
 export default function App() {
   const [topView, setTopView] = useState<TopView>('runs')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Lives here, not inside RunDetailTabs, so it survives switching between runs — see the note
+  // on RunDetailTabs' Tab prop for why a local useState there gets reset on every switch.
+  const [tab, setTab] = useState<Tab>('turns')
   const [row, setRow] = useState<GameRow | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -69,7 +72,7 @@ export default function App() {
             {!selectedId && <div className="pip-panel text-sm text-pip-green-dim">Select a run on the left.</div>}
             {selectedId && loadError && <div className="pip-panel text-sm text-pip-red">Failed to load run: {loadError}</div>}
             {selectedId && !row && !loadError && <div className="pip-panel text-sm text-pip-green-dim">Loading run…</div>}
-            {row && normalized && <RunDetailTabs row={row} gameState={normalized} />}
+            {row && normalized && <RunDetailTabs row={row} gameState={normalized} tab={tab} onTabChange={setTab} />}
           </div>
         </div>
       )}

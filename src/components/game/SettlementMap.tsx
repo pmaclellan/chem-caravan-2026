@@ -8,7 +8,7 @@ const DANGER_THRESHOLDS: Record<string, { red: number; amber: number }> = {
   mojave_wasteland:  { red: 0.70, amber: 0.45 },
 }
 
-function dangerColor(danger: number, modeId: string): string {
+export function dangerColor(danger: number, modeId: string): string {
   const t = DANGER_THRESHOLDS[modeId] ?? { red: 0.50, amber: 0.33 }
   if (danger >= t.red)   return '#8c1c1c'
   if (danger >= t.amber) return '#c47810'
