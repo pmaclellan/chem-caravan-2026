@@ -49,6 +49,10 @@ export function normalizeState(state: GameState): GameState {
   // safe, non-crashing value rather than leaving null for every .toLocaleString() call site.
   const caps = Number.isFinite(state.player.caps) ? state.player.caps : 0
   const health = Number.isFinite(state.player.health) ? state.player.health : (state.player.maxHealth ?? mc.startingHealth)
+  // brahmin never got this same coercion — a missing/non-finite value here silently poisons
+  // runEscapeChance() (brahmin * RUN_BRAHMIN_PENALTY -> NaN), and since `Math.random() < NaN`
+  // is always false, every flee attempt then fails deterministically instead of at normal odds.
+  const brahmin = Number.isFinite(state.player.brahmin) ? state.player.brahmin : 0
 
   return {
     ...state,
@@ -58,6 +62,7 @@ export function normalizeState(state: GameState): GameState {
       ...state.player,
       caps,
       health,
+      brahmin,
       guards,
       paGuards,
       nextGuardId,

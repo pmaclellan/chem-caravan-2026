@@ -6,11 +6,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.2',
+    date: 'Jul 13, 2026',
+    items: [
+      'Fixed a corrupted-save edge case where a missing brahmin count could make every attempt to flee combat fail, instead of the normal odds-based chance',
+    ],
+  },
+  {
     version: '1.2.1',
     date: 'Jul 11, 2026',
     items: [
       'Fixed the debt collector payment window: the caps you were told to pay could quietly fall short as interest compounded, occasionally leading to a fatal visit right after paying up — the target now stays fixed for the window it was shown for',
       'A payment that clears the window now eases the collector\'s temper (one warning walked back), instead of leaving you one hit from death forever after two prior visits',
+      'Confirm dialog before dismissing guards, Power Armor guards, or selling brahmin — no more accidental clicks',
+      'Renamed Protectors to Caravan throughout',
+      'Combat summary screen now shows a full caravan snapshot, including any protectors lost in the fight',
+      'Combat panel redesigned — bordered sections, shooting-order protector cards, and a tap-friendly help modal',
+      'Combat panel no longer requires scrolling to reach FIGHT/RUN on mobile',
+      'Power Armor guards gain 100 armor points, repaired free at armories',
+      'Auto-resume now picks the game you last played, not the one you last started',
+      'Toggling Standard/Free Play no longer resets your selected mode',
+      'Removed the Pipe Pistol from Commonwealth and Capital Wasteland\'s arsenals — not accurate to either region\'s Fallout lore',
+      'Lore pass on Mojave pistols, plus a new Plasma Rifle for Capital Wasteland',
+      'Double-Barrel Shotgun rebalanced — added a damage range and cut its price after it proved overtuned',
+      'Laser Musket and Sniper Rifle reload-cooldown fixes',
+      'Market "recovering" caption repositioned near the chem name; Power Armor badge line-break fixed',
     ],
   },
   {
