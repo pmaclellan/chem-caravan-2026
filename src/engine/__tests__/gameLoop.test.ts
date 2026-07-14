@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initializeGame, afterCombat, completeTravel, continueTravel, startCombat } from '../gameLoop'
+import { initializeGame, afterCombat, completeTravel, continueTravel, startCombat, startTravel } from '../gameLoop'
 import { shouldEscalateWave } from '../tuning'
 import * as rngModule from '../rng'
 import type { CombatState, GameState, PlayerState, TravelEvent } from '../../types/game'
@@ -222,6 +222,34 @@ describe('afterCombat — reload cooldown clearing', () => {
     expect(result.phase).toBe('event')
     expect(result.player.gun!.cooldownRemaining).toBe(2)
     expect(result.player.guards[0].cooldownRemaining).toBe(1)
+  })
+})
+
+// ── startTravel — turn-limit gate ───────────────────────────────────────────
+
+describe('startTravel — turn-limit gate', () => {
+  it('ends the run at turn === maxTurns instead of letting the player travel one turn past it', () => {
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const atLimit: GameState = { ...state, world: { ...state.world, turn: state.world.maxTurns! } }
+    const result = startTravel(atLimit, 'park_street_station')
+    expect(result.phase).toBe('game_over')
+    expect(result.gameOverReason).toBe('turns')
+    expect(result.world.turn).toBe(state.world.maxTurns)  // never increments past the advertised limit
+  })
+
+  it('still travels normally one turn before the limit', () => {
+    const state = initializeGame('Test', 'commonwealth', 'standard')
+    const oneBeforeLimit: GameState = { ...state, world: { ...state.world, turn: state.world.maxTurns! - 1 } }
+    const result = startTravel(oneBeforeLimit, 'park_street_station')
+    expect(result.phase).toBe('traveling')
+    expect(result.pendingDestination).toBe('park_street_station')
+  })
+
+  it('never gates free play, which has no turn limit', () => {
+    const state = initializeGame('Test', 'commonwealth', 'free_play')
+    const wayPastCommonwealthsStandardLimit: GameState = { ...state, world: { ...state.world, turn: 500 } }
+    const result = startTravel(wayPastCommonwealthsStandardLimit, 'park_street_station')
+    expect(result.phase).toBe('traveling')
   })
 })
 
