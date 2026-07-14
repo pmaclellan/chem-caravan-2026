@@ -121,6 +121,12 @@ export default async (req: Request, _context: Context): Promise<Response> => {
         max_tokens: 400,
         system: RECAP_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: buildRecapUserPrompt(runDigest, baseline) }],
+        // Explicit off, not just omitted: models that default to adaptive thinking (Sonnet 5+)
+        // would otherwise burn extra latency reasoning about a task this short and well-scoped,
+        // for no real quality benefit here. Haiku doesn't support thinking either way, so this
+        // should be a no-op there — keeps ANTHROPIC_MODEL safe to A/B between models via the env
+        // var alone, no code change needed either way.
+        thinking: { type: 'disabled' },
       },
       { timeout: 7500 },
     )
