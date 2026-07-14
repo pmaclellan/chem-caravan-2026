@@ -14,14 +14,18 @@ Explicitly distinguish luck from strategy using these signals when present in th
 - Checkpoint wins (checkpointCombatsWon) and second-wave wins (secondWavesDefeated) are earned — they only happen against tougher-than-normal encounters.
 Call out at least one instance of luck vs. strategy if the data supports it; don't force it if it doesn't fit.
 
-If road-danger data is available (roadTrendNote is not "insufficient_data"), note whether the player got bolder or more cautious as the run progressed, and connect it to the outcome.
+travelPhases (when non-empty) splits the run into early/mid/late thirds, each with its own topRoute (the settlements traveled between most in that phase) and tradeProfitDuring (what that phase specifically earned in trade profit — not the running total). This is about connecting WHERE they went to WHAT IT ACCOMPLISHED, phase by phase, not just naming a route:
+- If a phase's topRoute has a notableModifier, that settlement has a real price/stock/availability edge — call this out as a deliberate tactic (e.g. "you spent the early game farming X's price modifier, and it paid for your first guards") rather than a vague "you traveled a lot."
+- If the top route SHIFTS between phases (different settlements early vs. late), that's a strategy change worth naming — e.g. moving off a farmed route once it stopped being worth it, or venturing further out once better equipped.
+- Connect route choice to tradeProfitDuring explicitly where it tells a story — a phase with a repeated route AND high profit during it is a tactic that worked; a repeated route with flat profit is treading water.
+- roadTrendNote ("bolder"/"more_cautious"/"steady") is a quick summary of how avgRoadDanger moved from the first phase to the last — use it as a starting point, but the phase-by-phase detail is more interesting than the one-word label alone.
+- Don't force all three phases in if only one or two have something worth saying.
 
-Three "key moment" signals are also included, when present — turning points worth calling out by turn number or place name if they fit the story:
+Two more "key moment" signals are also included, when present — turning points worth calling out by turn number if they fit the story:
 - worstCombatRound: the single fight with the worst hit rate among the player's own shots (a bad-luck stretch, not a skill issue — call it out as rotten dice, not a mistake).
 - biggestProfitSwing: the single biggest jump in trade profit in one turn (a market event paying off big).
-- mostTraveledRoute: the road segment traveled most often this run, naming both settlements. If notableModifier is present, that settlement has a real price/stock/availability edge — call this out specifically as a deliberate tactic (e.g. "you were farming X's price modifier" or "running the Y-Z route to cash in on cheap stock at Z"), not a vague "you traveled a lot." If notableModifier is null, only mention the route if it's otherwise notable (very high timesTraveled) — a route with no economic edge and unremarkable frequency isn't interesting.
 
-Don't force every signal in — you have luck-vs-strategy, road-danger trend, and these three key moments to draw from, plus the required closing tip. Pick whichever ones tell the most interesting story about THIS run and weave them together naturally; a paragraph that name-checks every single field reads like a checklist, not a recap.
+Don't force every signal in — you have luck-vs-strategy, the travel-phases narrative, and these two key moments to draw from, plus the required closing tip. Pick whichever ones tell the most interesting story about THIS run and weave them together naturally; a paragraph that name-checks every single field reads like a checklist, not a recap.
 
 End with one concrete, actionable tip for their NEXT run — specific to what this run's data actually shows went wrong or worked (e.g. "build a trade cycle before your first serious fight" is good; "play more carefully" is not, it's not actionable). This is the single most useful sentence in the recap, not an afterthought — make sure it lands.
 
