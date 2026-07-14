@@ -71,6 +71,21 @@ export interface RunPlaystyleDigest {
   biggestProfitSwing: { turn: number; amount: number } | null
   worstCombatRound: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null
 
+  // The specific combat that ended the run (last combatReplay with outcome 'lost'), present
+  // whenever outcome is 'dead'. Unlike worstCombatRound, this has NO minimum-shots threshold —
+  // a fast, decisive death may only have 1-2 shots fired total, and that's exactly the case where
+  // the model otherwise has nothing concrete about the fatal fight and risks inventing an economic
+  // narrative to fill the gap instead. hitRatePercent fields are null when that side fired zero
+  // shots (e.g. killed before acting).
+  fatalCombat: {
+    turn: number
+    enemyCount: number
+    playerSideCount: number  // 1 (player) + alive guards + alive PA guards at the start of this fight
+    ownShotsFired: number
+    ownHitRatePercent: number | null
+    enemyHitRatePercent: number | null
+  } | null
+
   // The single biggest "sold this chem here, then saw a better price for it later in the run"
   // instance — derived from history[].localPrices + history[].chemsSoldToDate (added alongside
   // this feature; older saves simply have empty {} for both on every snapshot, so this comes back
@@ -256,6 +271,42 @@ function computeWorstCombatRound(state: GameState): RunPlaystyleDigest['worstCom
   return worst
 }
 
+// The combat that actually ended the run (the last combatReplay with outcome 'lost' — a run only
+// ever has one, since a lost fight always ends the game immediately). Deliberately has no
+// minimum-shots floor unlike computeWorstCombatRound: a fast, decisive death might only have 1-2
+// shots fired total, and that's exactly the case where the model would otherwise have nothing
+// concrete about the fight that killed the player.
+function computeFatalCombat(state: GameState): RunPlaystyleDigest['fatalCombat'] {
+  const fatal = [...(state.combatReplays ?? [])].reverse().find(r => r.outcome === 'lost')
+  if (!fatal) return null
+
+  let ownFired = 0, ownHit = 0
+  let enemyFired = 0, enemyHit = 0
+  for (const step of fatal.steps) {
+    if (step.kind === 'shot' && (step.by === 'player' || step.by === 'guard' || step.by === 'pa_guard')) {
+      ownFired++
+      if (step.hit) ownHit++
+    } else if (step.kind === 'burst' || step.kind === 'pa_burst') {
+      for (const s of step.shots) {
+        ownFired++
+        if (s.hit) ownHit++
+      }
+    } else if (step.kind === 'enemy_attack') {
+      enemyFired++
+      if (step.hit) enemyHit++
+    }
+  }
+
+  return {
+    turn: fatal.turn,
+    enemyCount: fatal.initialRoster.enemies.length,
+    playerSideCount: 1 + fatal.initialRoster.guards.length + fatal.initialRoster.paGuards.length,
+    ownShotsFired: ownFired,
+    ownHitRatePercent: ownFired > 0 ? Math.round((ownHit / ownFired) * 100) : null,
+    enemyHitRatePercent: enemyFired > 0 ? Math.round((enemyHit / enemyFired) * 100) : null,
+  }
+}
+
 // Gates computeMissedSale so it only fires for a genuinely large miss — not the routine ±35-65%
 // per-visit price variance every chem already rolls (see CHEMS[*].priceVariance), which would
 // otherwise surface "held 3 more turns for 25 caps" as if it were a real lesson. A real shortage
@@ -366,6 +417,7 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
 
     biggestProfitSwing: computeBiggestProfitSwing(state),
     worstCombatRound: computeWorstCombatRound(state),
+    fatalCombat: computeFatalCombat(state),
     missedSale: computeMissedSale(state, mc),
   }
 }
