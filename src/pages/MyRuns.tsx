@@ -7,6 +7,7 @@ import { GAME_MODES } from '../data/modes'
 import { inventoryBaseValue, calculateNetWorth } from '../engine/economy'
 import type { GameModeId, GameState, GameType } from '../types/game'
 import { useWastelandRecap } from '../hooks/useWastelandRecap'
+import { RecapMarkdown } from '../components/ui/RecapMarkdown'
 
 interface RunListItem {
   id: string
@@ -121,12 +122,7 @@ function RunDetail({ item, gameState, onClose }: { item: RunListItem; gameState:
             {recapState === 'loading' && (
               <button className="pip-btn w-full text-sm" disabled>ANALYZING YOUR RUN...</button>
             )}
-            {recapState === 'ready' && recapText && (
-              <>
-                <div className="pip-label mb-1.5">WASTELAND RECAP</div>
-                <p className="text-sm text-pip-green leading-relaxed">{recapText}</p>
-              </>
-            )}
+            {recapState === 'ready' && recapText && <RecapMarkdown text={recapText} />}
             {recapState === 'unavailable' && (
               <div className="text-xs text-pip-green-dim text-center">Recap unavailable for this run.</div>
             )}

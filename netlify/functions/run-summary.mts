@@ -118,7 +118,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const response = await client.messages.create(
       {
         model: ANTHROPIC_MODEL,
-        max_tokens: 400,
+        max_tokens: 550, // moniker + 2-4 superlative bullets + prose needs more room than the old single paragraph
         system: RECAP_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: buildRecapUserPrompt(runDigest, baseline) }],
         // Explicit off, not just omitted: models that default to adaptive thinking (Sonnet 5+)

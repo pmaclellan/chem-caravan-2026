@@ -6,6 +6,7 @@ import type { RunStats, XpBySource } from '../../types/stats'
 import { ACHIEVEMENT_MAP } from '../../data/achievements'
 import { useGameStore } from '../../store/gameStore'
 import { useWastelandRecap } from '../../hooks/useWastelandRecap'
+import { RecapMarkdown } from '../ui/RecapMarkdown'
 
 const KEYFRAMES = `
   @keyframes gosFadeUp {
@@ -354,12 +355,7 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
             {recapState === 'loading' && (
               <button className="pip-btn w-full text-sm" disabled>ANALYZING YOUR RUN...</button>
             )}
-            {recapState === 'ready' && recapText && (
-              <>
-                <div className="pip-label mb-1.5">WASTELAND RECAP</div>
-                <p className="text-sm text-pip-green leading-relaxed">{recapText}</p>
-              </>
-            )}
+            {recapState === 'ready' && recapText && <RecapMarkdown text={recapText} />}
           </div>
         )}
 
