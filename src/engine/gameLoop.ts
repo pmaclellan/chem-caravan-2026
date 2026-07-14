@@ -142,6 +142,28 @@ export function buildTurnSnapshot(state: GameState): TurnSnapshot {
 // Debt and event resolution happen in continueTravel when the player clicks Continue.
 export function startTravel(state: GameState, destinationId: string): GameState {
   const mc = GAME_MODES[state.mode]
+
+  // Standard mode's turn limit is a count of turns survived, not a countdown the player can run
+  // past — once maxTurns is reached, the run is already over. Without this gate, traveling again
+  // from turn === maxTurns would roll a fresh ambush/debt-interest/venom tick in continueTravel
+  // (same as any other trip) just to make completeTravel's turn > maxTurns check finally trip,
+  // which could turn an already-secured win into a death and always displayed one turn past the
+  // advertised limit on the Game Over screen. Ending the run right here instead means the player's
+  // final settlement stop (at turn === maxTurns) still happens exactly as before — this only blocks
+  // the *next* trip out of it.
+  if (state.world.maxTurns !== null && state.world.turn >= state.world.maxTurns) {
+    const score = calculateFinalScore(state.player, mc)
+    return {
+      ...state,
+      phase: 'game_over',
+      gameOverReason: 'turns',
+      endReason: 'Turn limit reached',
+      pendingEvent: null,
+      pendingDestination: null,
+      log: [...state.log, makeLog(state.world.turn, `Time's up. Final score: ${score}.`, 'system')],
+    }
+  }
+
   const roads = getAdjacentRoads(mc, state.player.location)
   const road = roads.find(r => getRoadDestination(r, state.player.location) === destinationId)
   if (!road) return state
@@ -344,26 +366,8 @@ export function completeTravel(state: GameState, destinationId: string): GameSta
     log.push(makeLog(turn, `[MARKET] ${e.message} (${e.turnsRemaining} turn${e.turnsRemaining > 1 ? 's' : ''} remaining)`, 'danger'))
   }
 
-  // Check win condition (standard mode only — free play has no turn limit)
-  if (world.maxTurns !== null && turn > world.maxTurns) {
-    const score = calculateFinalScore(player, mc)
-    log.push(makeLog(turn, `Time's up. Final score: ${score}.`, 'system'))
-    return {
-      ...state,
-      player,
-      world,
-      stats,
-      phase: 'game_over',
-      gameOverReason: 'turns',
-      endReason: 'Turn limit reached',
-      pendingEvent: null,
-      pendingDestination: null,
-      combat: null,
-      log,
-      pendingDebtFreedom: null,
-      pendingDiscovery: null,
-    }
-  }
+  // No turn-limit check here: startTravel already refuses to initiate a trip once
+  // world.turn === maxTurns, so a trip landing in completeTravel can never arrive past it.
 
   return {
     ...state,
@@ -392,28 +396,14 @@ export function resolveChemStash(state: GameState): GameState {
 }
 
 // Consume a turn without changing location — used when travel is aborted mid-road.
-// Increments world.turn, ticks market events, and checks the turn-limit win condition.
+// Increments world.turn and ticks market events. No turn-limit check needed here: startTravel
+// already refuses to initiate a trip once world.turn === maxTurns, so this can never land past it.
 function consumeTurnInPlace(state: GameState, message: string, logType: LogEntry['type']): GameState {
   const mc = GAME_MODES[state.mode]
   const turn = state.world.turn + 1
   let world = { ...state.world, turn }
   world = updateWorldMarkets(world, mc)
   const log = [...state.log, makeLog(turn, message, logType)]
-
-  if (world.maxTurns !== null && turn > world.maxTurns) {
-    const score = calculateFinalScore(state.player, mc)
-    log.push(makeLog(turn, `Time's up. Final score: ${score}.`, 'system'))
-    return {
-      ...state,
-      world,
-      phase: 'game_over',
-      gameOverReason: 'turns',
-      endReason: 'Turn limit reached',
-      pendingEvent: null,
-      pendingDestination: null,
-      log,
-    }
-  }
 
   return {
     ...state,
