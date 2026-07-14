@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { initializeGame, afterCombat, completeTravel, continueTravel } from '../gameLoop'
+import { initializeGame, afterCombat, completeTravel, continueTravel, startCombat } from '../gameLoop'
 import { shouldEscalateWave } from '../tuning'
 import * as rngModule from '../rng'
 import type { CombatState, GameState, PlayerState, TravelEvent } from '../../types/game'
@@ -111,6 +111,48 @@ describe('afterCombat — wave escalation carries cumulative loot forward', () =
     }
     const result = afterCombat(stateAtNovac, { player: stateAtNovac.player, combat })
     expect(result.phase).toBe('combat_summary')
+  })
+})
+
+// ── startCombat — activeBuffs carry across wave escalation ──────────────────
+
+describe('startCombat — wave escalation carries activeBuffs forward', () => {
+  it('does not wipe a Jet/Ultrajet buff still in effect when a new wave starts', () => {
+    const base = initializeGame('Test', 'mojave_wasteland', 'free_play')
+    const priorBuff = { id: 'jet_guard_1_0_1', chemId: 'jet', targetKind: 'guard' as const, targetId: 'guard_1', accuracyBonus: 0.1125, roundsRemaining: 1 }
+    const priorCombat: CombatState = {
+      enemies: [], capsPool: 0, totalDamageDealt: 0, totalDamageTaken: 0, enemyLoot: {}, capsLooted: 0, xpGained: 0,
+      phase: 'won', log: [], waveNumber: 1, isCheckpointFight: false,
+      priorWaveCapsLooted: 0, priorWaveXpGained: 0, priorWaveEnemyLoot: {},
+      activeBuffs: [priorBuff], chemUsesThisRound: 0, replaySteps: [],
+    }
+    const state: GameState = {
+      ...base,
+      player: { ...base.player, location: 'novac' },
+      combat: priorCombat,
+      pendingDestination: 'nelson',
+      pendingEvent: {
+        type: 'raider_ambush',
+        title: 'SECOND WAVE!',
+        description: '',
+        payload: { nextWaveNumber: 2, enemyTypeId: 'viper', count: 1, priorWaveCaps: 0, priorWaveXp: 0, priorWaveLoot: {} },
+      },
+    }
+
+    const result = startCombat(state)
+
+    expect(result.combat!.waveNumber).toBe(2)
+    expect(result.combat!.activeBuffs).toEqual([priorBuff])
+  })
+
+  it('starts with no buffs for a fresh (non-escalated) combat', () => {
+    const base = initializeGame('Test', 'mojave_wasteland', 'free_play')
+    const state: GameState = { ...base, player: { ...base.player, location: 'novac' }, pendingDestination: 'nelson' }
+
+    const result = startCombat(state)
+
+    expect(result.combat!.waveNumber).toBe(1)
+    expect(result.combat!.activeBuffs).toEqual([])
   })
 })
 
