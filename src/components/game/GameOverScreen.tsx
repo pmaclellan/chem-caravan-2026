@@ -7,6 +7,7 @@ import { ACHIEVEMENT_MAP } from '../../data/achievements'
 import { useGameStore } from '../../store/gameStore'
 import { useWastelandRecap } from '../../hooks/useWastelandRecap'
 import { RecapMarkdown } from '../ui/RecapMarkdown'
+import AnalyzingIndicator from '../ui/AnalyzingIndicator'
 
 const KEYFRAMES = `
   @keyframes gosFadeUp {
@@ -353,7 +354,7 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
               <button className="pip-btn w-full text-sm" onClick={fetchRecap}>GET WASTELAND RECAP</button>
             )}
             {recapState === 'loading' && (
-              <button className="pip-btn w-full text-sm" disabled>ANALYZING YOUR RUN...</button>
+              <button className="pip-btn w-full text-sm" disabled><AnalyzingIndicator /></button>
             )}
             {recapState === 'ready' && recapText && <RecapMarkdown text={recapText} />}
           </div>
