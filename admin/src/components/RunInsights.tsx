@@ -3,6 +3,7 @@ import type { GameRow, GameState } from '@main/types/game'
 import { hasAnthropicKey, sendToClaude, type ChatMessage } from '../lib/anthropicClient'
 import { sendToOllama, checkOllamaStatus, OLLAMA_MODEL, type OllamaStatus } from '../lib/ollamaClient'
 import { ANALYSIS_SYSTEM_PROMPT, buildRunSummaryForAnalysis } from '../lib/runSummary'
+import { RecapMarkdown } from '@main/components/ui/RecapMarkdown'
 
 type Provider = 'anthropic' | 'ollama'
 
@@ -127,7 +128,7 @@ export default function RunInsights({ row, gameState }: Props) {
               {gameState.recap.model} · {new Date(gameState.recap.generatedAt).toLocaleString()} · baseline: {gameState.recap.baselineRunCount} runs
             </div>
           </div>
-          <p className="text-xs font-mono text-pip-green leading-relaxed">{gameState.recap.summary}</p>
+          <RecapMarkdown text={gameState.recap.summary} />
         </div>
       )}
 
