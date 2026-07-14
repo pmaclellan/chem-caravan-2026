@@ -256,6 +256,14 @@ function computeWorstCombatRound(state: GameState): RunPlaystyleDigest['worstCom
   return worst
 }
 
+// Gates computeMissedSale so it only fires for a genuinely large miss — not the routine ±35-65%
+// per-visit price variance every chem already rolls (see CHEMS[*].priceVariance), which would
+// otherwise surface "held 3 more turns for 25 caps" as if it were a real lesson. A real shortage
+// market event multiplies price by 2-4x (see modeConfig.shortageMultiplierMin/Max); requiring at
+// least 1.5x plus a meaningful absolute amount keeps this to swings actually worth citing.
+const MISSED_SALE_MIN_RATIO = 1.5
+const MISSED_SALE_MIN_PROFIT = 150
+
 // Finds the single biggest missed-sale regret: a chem sold on turn T, where a later turn's
 // snapshot (i.e. somewhere the player actually visited afterward) shows a higher local price for
 // the same chem. Per-turn sale qty/price is recovered by diffing consecutive chemsSoldToDate
@@ -290,9 +298,10 @@ function computeMissedSale(state: GameState, mc: GameModeConfig): RunPlaystyleDi
       const laterPrices = (pricesByChem.get(chemId) ?? []).filter(p => p.turn > saleTurn)
       if (laterPrices.length === 0) continue
       const better = laterPrices.reduce((a, b) => (b.price > a.price ? b : a))
-      if (better.price <= pricePerUnit) continue
+      if (pricePerUnit <= 0 || better.price < pricePerUnit * MISSED_SALE_MIN_RATIO) continue
 
       const missedProfit = (better.price - pricePerUnit) * qtyDelta
+      if (missedProfit < MISSED_SALE_MIN_PROFIT) continue
       if (!best || missedProfit > best.missedProfit) {
         best = {
           turn: saleTurn,
