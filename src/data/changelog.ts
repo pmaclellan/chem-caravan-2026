@@ -6,7 +6,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.3.0',
+    version: '1.2.3',
     date: 'Jul 14, 2026',
     items: [
       'Wasteland Recap — after a run ends, get an AI-written recap comparing this run to your history: a cheeky nickname, a handful of sharp callouts (closest calls, biggest paydays, notable trade routes), and a snarky writeup that ends with a concrete tip for next time',
