@@ -2,7 +2,7 @@ import type { GameModeId, GameState, GameType } from '@main/types/game'
 import type { RunStats } from '@main/types/stats'
 import { GAME_MODES, type GameModeConfig } from '@main/data/modes'
 import { cumulativeTradeProfit } from '@main/engine/statsReducer'
-import { calculateNetWorth } from '@main/engine/economy'
+import { calculateNetWorth, inventoryBaseValue } from '@main/engine/economy'
 
 // Compact, scalar/aggregate-only digest of a single run — deliberately tighter than even the
 // admin tool's local-LLM prompt trimming (see admin/src/lib/runSummary.ts), since this runs on
@@ -34,6 +34,10 @@ export interface RunPlaystyleDigest {
   tradeProfitTotal: number
   topChemByProfit: { id: string; profit: number } | null
   lifetimeCapsEarned: number
+  // Base-price value of whatever's still in the pack at run's end (same figure the in-game
+  // "Pack value" readout shows). Distinct from tradeProfitTotal (profit already banked in caps) —
+  // on a death or bankruptcy, this is capital that's now lost, not converted to anything.
+  unsoldInventoryValue: number
 
   // Derived from combatReplays[].steps (enemy_attack events targeting the player) — not a
   // tracked stat field today. Normalized against the run's FINAL player.maxHealth for every
@@ -411,6 +415,7 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
     tradeProfitTotal: cumulativeTradeProfit(stats),
     topChemByProfit,
     lifetimeCapsEarned: stats.lifetimeCapsEarned,
+    unsoldInventoryValue: inventoryBaseValue(state.player.inventory),
 
     closestCall: computeClosestCall(state),
     ...computeTravelPhases(state, mc),
