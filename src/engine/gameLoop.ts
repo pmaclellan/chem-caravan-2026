@@ -509,6 +509,12 @@ export function startCombat(state: GameState): GameState {
       priorWaveCapsLooted: payload?.priorWaveCaps ?? 0,
       priorWaveXpGained:   payload?.priorWaveXp   ?? 0,
       priorWaveEnemyLoot:  payload?.priorWaveLoot  ?? {},
+      // Jet/Ultrajet buffs (and any other combat-scoped buff) previously vanished at a wave
+      // escalation, since initiateCombat() always starts fresh with activeBuffs: []. state.combat
+      // still holds the prior wave's combat object at this point (already correctly ticked by
+      // tickActiveBuffs() when that wave resolved), so carry it forward the same way prior-wave
+      // loot/XP already are — the next wave arrives too fast for a buff to have actually worn off.
+      activeBuffs: state.combat?.activeBuffs ?? [],
     }
   }
   combat = {
