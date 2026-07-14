@@ -4,6 +4,8 @@ import { inventoryBaseValue, calculateNetWorth } from '../../engine/economy'
 import type { GameState } from '../../types/game'
 import type { RunStats, XpBySource } from '../../types/stats'
 import { ACHIEVEMENT_MAP } from '../../data/achievements'
+import { useAuthStore } from '../../store/authStore'
+import { useGameStore } from '../../store/gameStore'
 
 const KEYFRAMES = `
   @keyframes gosFadeUp {
@@ -141,6 +143,10 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   const [phase, setPhase] = useState<Phase>('header')
   const [logOpen, setLogOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(false)
+  const [recapState, setRecapState] = useState<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
+  const [recapText, setRecapText] = useState<string | null>(null)
+  const accessToken = useAuthStore(s => s.session?.access_token)
+  const gameId = useGameStore(s => s.gameId)
 
   useEffect(() => {
     const timers = [
@@ -153,6 +159,29 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   }, [])
 
   const skip = () => setPhase('buttons')
+
+  // Explicit opt-in rather than auto-fire: this is the game's first paid third-party API call,
+  // and many players leave this screen immediately without reading anything on it — auto-firing
+  // would spend money on impressions nobody sees. Only reachable once phase reaches 'buttons'
+  // (~3.8s in), which conveniently also clears the save-debounce race: the function re-fetches
+  // the row by id and needs it to already reflect status/state from this just-finished run.
+  const fetchRecap = async () => {
+    if (!accessToken || !gameId) { setRecapState('unavailable'); return }
+    setRecapState('loading')
+    try {
+      const res = await fetch('/.netlify/functions/run-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ gameId }),
+      })
+      const data = await res.json().catch(() => ({ available: false as const }))
+      if (!res.ok || !data.available) { setRecapState('unavailable'); return }
+      setRecapText(data.summary)
+      setRecapState('ready')
+    } catch {
+      setRecapState('unavailable')
+    }
+  }
 
   const subtitle = endReason ?? (
     isRetired                      ? 'You chose to hang up your pack.' :
@@ -327,6 +356,27 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
         {!isFreePlay && (player.xp ?? 0) > 0 && (
           <div style={fadeStyle(showFinal)}>
             <XpBreakdown xpBySource={gameState.stats?.xpBySource} totalXp={player.xp ?? 0} />
+          </div>
+        )}
+
+        {/* Wasteland Recap — AI-written comparison of this run to the player's history. Opt-in
+            button rather than auto-fire (see fetchRecap above); silently absent once a call
+            fails or comes back unavailable, since this is flavor, not a core feature — a visible
+            error here would be worse than just not offering it. */}
+        {showButtons && recapState !== 'unavailable' && (
+          <div className="border border-pip-border rounded p-3" style={fadeStyle(showButtons)}>
+            {recapState === 'idle' && (
+              <button className="pip-btn w-full text-sm" onClick={fetchRecap}>GET WASTELAND RECAP</button>
+            )}
+            {recapState === 'loading' && (
+              <button className="pip-btn w-full text-sm" disabled>ANALYZING YOUR RUN...</button>
+            )}
+            {recapState === 'ready' && recapText && (
+              <>
+                <div className="pip-label mb-1.5">WASTELAND RECAP</div>
+                <p className="text-sm text-pip-green leading-relaxed">{recapText}</p>
+              </>
+            )}
           </div>
         )}
 
