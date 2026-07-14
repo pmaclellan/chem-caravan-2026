@@ -131,6 +131,10 @@ export function buildTurnSnapshot(state: GameState): TurnSnapshot {
     xp: state.player.xp,
     ownedGunAmmo: Object.fromEntries(Object.entries(state.player.ownedGuns).map(([id, g]) => [id, g.ammo])),
     tradeProfitToDate: cumulativeTradeProfit(state.stats),
+    localPrices: { ...(state.world.settlements[state.player.location]?.prices ?? {}) },
+    chemsSoldToDate: Object.fromEntries(
+      Object.entries(state.stats.chemsSold).map(([id, s]) => [id, { qty: s.qty, capsEarned: s.capsEarned }]),
+    ),
   }
 }
 

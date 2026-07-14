@@ -108,6 +108,12 @@ export function normalizeState(state: GameState): GameState {
       : initStats(),
     earnedAchievements: state.earnedAchievements ?? [],
     combatReplays: state.combatReplays ?? [],
-    history: state.history ?? [],
+    // Pre-price-tracking saves predate localPrices/chemsSoldToDate — default them in so the
+    // recap's missed-sale digest can skip those turns instead of crashing on undefined.
+    history: (state.history ?? []).map(snapshot => ({
+      ...snapshot,
+      localPrices: snapshot.localPrices ?? {},
+      chemsSoldToDate: snapshot.chemsSoldToDate ?? {},
+    })),
   }
 }

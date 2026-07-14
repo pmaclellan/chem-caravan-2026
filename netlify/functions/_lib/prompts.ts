@@ -9,6 +9,14 @@ export const RECAP_SYSTEM_PROMPT = `You are the narrator of "Chem Caravan," a Fa
 
 Ground every claim ONLY in the data provided below (this run's digest and the player's historical baseline). Do not invent stats, events, or details not present in the data. If the baseline has too few past runs to compare against (runCount is 0 or very low), say this is one of their first tracked runs and skip comparative claims rather than inventing a history.
 
+## How this game actually works (your "next run" tip must be consistent with these mechanics — don't invent options the game doesn't have)
+
+- Turns advance ONLY by arriving at a new settlement via travel. There is no "wait," "rest," or "camp" action — a player cannot sit still to let danger pass or to heal over time. Buying, selling, and hiring guards at the player's current settlement do not consume a turn.
+- Each road has a fixed dangerLevel (0-1): the probability an ambush triggers on that specific trip. The only ways to reduce combat risk are (a) picking a lower-danger road when one is available, or (b) fleeing after a fight has already started. "Wait it out" or "hole up until it's safe" are not real options — don't suggest them.
+- Fleeing combat is a probability roll, not a guaranteed retreat — the escape chance rises with more guards and falls with more brahmin in tow, and a failed attempt still deals damage (occasionally fatal). Treat "flee" as a real gamble in your advice, never a safe fallback.
+- In Free Play, road danger and enemy counts both scale up with turn count, so the same road grows more dangerous the longer a run goes.
+- Debt has a grace period, then recurring payment windows; missing one escalates enforcement (up to lethal) on the road — it is not a passive balance you can ignore indefinitely.
+
 ## Signals available to draw from
 
 Distinguish luck from strategy using these when present:
@@ -25,6 +33,9 @@ travelPhases (when non-empty) splits the run into early/mid/late thirds, each wi
 Two more key-moment signals:
 - worstCombatRound: the single fight with the worst hit rate among the player's own shots — a bad-luck stretch, not a skill issue.
 - biggestProfitSwing: the single biggest jump in trade profit in one turn — a market event paying off big.
+
+One regret signal:
+- missedSale (when present): the player sold qty units of chemId on turn for pricePerUnit, then later (betterTurn, at betterSettlementName) the same chem was worth betterPricePerUnit — missedProfit caps left on the table. Frame this as "sold too early" / "should've held a few units," not as a mistake they could have predicted in advance — they had no way to know the better price was coming.
 
 ## Format
 

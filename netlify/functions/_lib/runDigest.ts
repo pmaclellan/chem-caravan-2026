@@ -70,6 +70,25 @@ export interface RunPlaystyleDigest {
   // Both derived from data already fetched for this run, no extra cost.
   biggestProfitSwing: { turn: number; amount: number } | null
   worstCombatRound: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null
+
+  // The single biggest "sold this chem here, then saw a better price for it later in the run"
+  // instance — derived from history[].localPrices + history[].chemsSoldToDate (added alongside
+  // this feature; older saves simply have empty {} for both on every snapshot, so this comes back
+  // null for them, same graceful-degradation as travelPhases on a too-short run). Deliberately
+  // scoped to prices the player actually saw by passing through a settlement later in the run —
+  // not an omniscient full-map price check — so the "you could have gotten more" claim reflects a
+  // choice the player could plausibly have made (carry it one more stop) rather than hindsight
+  // they had no way to act on.
+  missedSale: {
+    turn: number
+    chemId: string
+    qty: number
+    pricePerUnit: number
+    betterTurn: number
+    betterSettlementName: string
+    betterPricePerUnit: number
+    missedProfit: number
+  } | null
 }
 
 function computeClosestCall(state: GameState): RunPlaystyleDigest['closestCall'] {
@@ -237,6 +256,60 @@ function computeWorstCombatRound(state: GameState): RunPlaystyleDigest['worstCom
   return worst
 }
 
+// Finds the single biggest missed-sale regret: a chem sold on turn T, where a later turn's
+// snapshot (i.e. somewhere the player actually visited afterward) shows a higher local price for
+// the same chem. Per-turn sale qty/price is recovered by diffing consecutive chemsSoldToDate
+// snapshots rather than needing a separate per-transaction log — a turn's local price is what any
+// sale that turn actually paid, since prices only change on travel (see completeTravel).
+function computeMissedSale(state: GameState, mc: GameModeConfig): RunPlaystyleDigest['missedSale'] {
+  const history = state.history
+  if (!history || history.length < 2) return null
+
+  type PricePoint = { turn: number; location: string; price: number }
+  const pricesByChem = new Map<string, PricePoint[]>()
+  for (const snap of history) {
+    for (const [chemId, price] of Object.entries(snap.localPrices ?? {})) {
+      const arr = pricesByChem.get(chemId) ?? []
+      arr.push({ turn: snap.turn, location: snap.location, price })
+      pricesByChem.set(chemId, arr)
+    }
+  }
+
+  let best: RunPlaystyleDigest['missedSale'] = null
+  for (let i = 1; i < history.length; i++) {
+    const prevSold = history[i - 1].chemsSoldToDate ?? {}
+    const curSold = history[i].chemsSoldToDate ?? {}
+    for (const [chemId, cur] of Object.entries(curSold)) {
+      const prev = prevSold[chemId]
+      const qtyDelta = cur.qty - (prev?.qty ?? 0)
+      const capsDelta = cur.capsEarned - (prev?.capsEarned ?? 0)
+      if (qtyDelta <= 0) continue
+      const pricePerUnit = capsDelta / qtyDelta
+      const saleTurn = history[i].turn
+
+      const laterPrices = (pricesByChem.get(chemId) ?? []).filter(p => p.turn > saleTurn)
+      if (laterPrices.length === 0) continue
+      const better = laterPrices.reduce((a, b) => (b.price > a.price ? b : a))
+      if (better.price <= pricePerUnit) continue
+
+      const missedProfit = (better.price - pricePerUnit) * qtyDelta
+      if (!best || missedProfit > best.missedProfit) {
+        best = {
+          turn: saleTurn,
+          chemId,
+          qty: qtyDelta,
+          pricePerUnit: round2(pricePerUnit),
+          betterTurn: better.turn,
+          betterSettlementName: mc.settlements[better.location]?.name ?? better.location,
+          betterPricePerUnit: better.price,
+          missedProfit: Math.round(missedProfit),
+        }
+      }
+    }
+  }
+  return best
+}
+
 export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead' | 'bankrupt'): RunPlaystyleDigest {
   const mc = GAME_MODES[state.mode]
   const stats: RunStats = state.stats
@@ -284,6 +357,7 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
 
     biggestProfitSwing: computeBiggestProfitSwing(state),
     worstCombatRound: computeWorstCombatRound(state),
+    missedSale: computeMissedSale(state, mc),
   }
 }
 

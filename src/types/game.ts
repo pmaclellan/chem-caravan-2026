@@ -227,6 +227,8 @@ export interface TurnSnapshot {
   xp: number
   ownedGunAmmo: Record<string, number>  // gunId -> ammo on hand; gun count = Object.keys(...).length
   tradeProfitToDate: number             // cumulative sum of stats.chemsSold[*].profitEarned as of this turn
+  localPrices: Record<string, number>   // chemId -> sell price at `location` this turn (prices are static for the whole turn once arrived, so this is what a sale here actually paid)
+  chemsSoldToDate: Record<string, { qty: number; capsEarned: number }>  // cumulative per-chem sales as of this turn; diffing consecutive snapshots recovers what was sold ON a given turn, and at what price
 }
 
 export type AnimStep =
