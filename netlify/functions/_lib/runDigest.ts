@@ -46,6 +46,11 @@ export interface RunPlaystyleDigest {
   avgRoadDangerFirstHalf: number | null
   avgRoadDangerSecondHalf: number | null
   roadTrendNote: 'bolder' | 'more_cautious' | 'steady' | 'insufficient_data'
+
+  // "Key moments" — narrative color for turning points, distinct from aggregate totals above.
+  // Both derived from data already fetched for this run, no extra cost.
+  biggestProfitSwing: { turn: number; amount: number } | null
+  worstCombatRound: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null
 }
 
 function computeClosestCall(state: GameState): RunPlaystyleDigest['closestCall'] {
@@ -113,6 +118,51 @@ function computeRoadDangerTrend(
   return { avgRoadDangerFirstHalf: round2(avgFirst), avgRoadDangerSecondHalf: round2(avgSecond), roadTrendNote }
 }
 
+// Biggest single-turn jump in cumulative trade profit — a cheap, reliable proxy for "made a
+// killing off a market event" without needing to identify which event caused it.
+function computeBiggestProfitSwing(state: GameState): RunPlaystyleDigest['biggestProfitSwing'] {
+  const history = state.history
+  if (!history || history.length < 2) return null
+
+  let best: { turn: number; amount: number } | null = null
+  for (let i = 1; i < history.length; i++) {
+    const amount = history[i].tradeProfitToDate - history[i - 1].tradeProfitToDate
+    if (amount > 0 && (!best || amount > best.amount)) best = { turn: history[i].turn, amount }
+  }
+  return best
+}
+
+// The single combat with the worst hit rate among the player's own side (player/guard/pa_guard
+// shots) — a "bad rolls" luck signal distinct from closestCall (which tracks lowest HP reached,
+// regardless of cause). 'blast' steps are excluded — splash weapons always connect on the
+// primary target, so there's no hit/miss signal to read there. Requires at least 3 shots in a
+// replay to avoid a single lucky/unlucky shot reading as a "round."
+function computeWorstCombatRound(state: GameState): RunPlaystyleDigest['worstCombatRound'] {
+  let worst: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null = null
+
+  for (const replay of state.combatReplays ?? []) {
+    let fired = 0
+    let hit = 0
+    for (const step of replay.steps) {
+      if (step.kind === 'shot' && (step.by === 'player' || step.by === 'guard' || step.by === 'pa_guard')) {
+        fired++
+        if (step.hit) hit++
+      } else if (step.kind === 'burst' || step.kind === 'pa_burst') {
+        for (const s of step.shots) {
+          fired++
+          if (s.hit) hit++
+        }
+      }
+    }
+    if (fired < 3) continue
+    const hitRatePercent = Math.round((hit / fired) * 100)
+    if (!worst || hitRatePercent < worst.hitRatePercent) {
+      worst = { turn: replay.turn, hitRatePercent, shotsFired: fired, damageTaken: replay.totalDamageTaken, damageDealt: replay.totalDamageDealt }
+    }
+  }
+  return worst
+}
+
 export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead' | 'bankrupt'): RunPlaystyleDigest {
   const mc = GAME_MODES[state.mode]
   const stats: RunStats = state.stats
@@ -157,6 +207,9 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
 
     closestCall: computeClosestCall(state),
     ...computeRoadDangerTrend(state, mc),
+
+    biggestProfitSwing: computeBiggestProfitSwing(state),
+    worstCombatRound: computeWorstCombatRound(state),
   }
 }
 
