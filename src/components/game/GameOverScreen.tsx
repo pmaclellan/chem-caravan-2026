@@ -4,8 +4,8 @@ import { inventoryBaseValue, calculateNetWorth } from '../../engine/economy'
 import type { GameState } from '../../types/game'
 import type { RunStats, XpBySource } from '../../types/stats'
 import { ACHIEVEMENT_MAP } from '../../data/achievements'
-import { useAuthStore } from '../../store/authStore'
 import { useGameStore } from '../../store/gameStore'
+import { useWastelandRecap } from '../../hooks/useWastelandRecap'
 
 const KEYFRAMES = `
   @keyframes gosFadeUp {
@@ -143,10 +143,16 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   const [phase, setPhase] = useState<Phase>('header')
   const [logOpen, setLogOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(false)
-  const [recapState, setRecapState] = useState<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
-  const [recapText, setRecapText] = useState<string | null>(null)
-  const accessToken = useAuthStore(s => s.session?.access_token)
   const gameId = useGameStore(s => s.gameId)
+  // Explicit opt-in rather than auto-fire: this is the game's first paid third-party API call,
+  // and many players leave this screen immediately without reading anything on it — auto-firing
+  // would spend money on impressions nobody sees. The button is only reachable once phase reaches
+  // 'buttons' (~3.8s in, see fadeStyle usage below), which conveniently also clears the
+  // save-debounce race: the function re-fetches the row by id and needs it to already reflect
+  // status/state from this just-finished run. gameState.recap is only ever set on a run that's
+  // already been recapped before (impossible for one that just ended), but checking it anyway
+  // keeps this component consistent with how the My Runs browser reads the same hook.
+  const { recapState, recapText, fetchRecap } = useWastelandRecap(gameId, gameState.recap?.summary ?? null)
 
   useEffect(() => {
     const timers = [
@@ -159,29 +165,6 @@ export default function GameOverScreen({ gameState, onHome }: Props) {
   }, [])
 
   const skip = () => setPhase('buttons')
-
-  // Explicit opt-in rather than auto-fire: this is the game's first paid third-party API call,
-  // and many players leave this screen immediately without reading anything on it — auto-firing
-  // would spend money on impressions nobody sees. Only reachable once phase reaches 'buttons'
-  // (~3.8s in), which conveniently also clears the save-debounce race: the function re-fetches
-  // the row by id and needs it to already reflect status/state from this just-finished run.
-  const fetchRecap = async () => {
-    if (!accessToken || !gameId) { setRecapState('unavailable'); return }
-    setRecapState('loading')
-    try {
-      const res = await fetch('/.netlify/functions/run-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ gameId }),
-      })
-      const data = await res.json().catch(() => ({ available: false as const }))
-      if (!res.ok || !data.available) { setRecapState('unavailable'); return }
-      setRecapText(data.summary)
-      setRecapState('ready')
-    } catch {
-      setRecapState('unavailable')
-    }
-  }
 
   const subtitle = endReason ?? (
     isRetired                      ? 'You chose to hang up your pack.' :

@@ -368,6 +368,17 @@ export interface GameState {
   earnedAchievements: import('./achievement').EarnedAchievement[]
   combatReplays: CombatReplay[]  // append-only, one entry per terminal combat resolution (see CombatReplay)
   history: TurnSnapshot[]        // append-only, one entry per turn advance (see TurnSnapshot)
+  recap: RunRecap | null         // AI-generated "Wasteland Recap" — set once by netlify/functions/run-summary.mts and persisted, not regenerated on repeat views
+}
+
+// Persisted result of the Wasteland Recap feature (netlify/functions/run-summary.mts). Cached in
+// GameState so revisiting a finished run (Game Over screen or the My Runs browser) doesn't re-pay
+// for another Claude call — the function checks this field first and returns it directly if set.
+export interface RunRecap {
+  summary: string
+  model: string
+  generatedAt: string        // ISO timestamp
+  baselineRunCount: number   // how many past runs informed the comparison, for transparency
 }
 
 // Shape of a row in the Supabase games table (subset of columns we care about client-side)

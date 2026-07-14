@@ -115,6 +115,7 @@ export function initializeGame(
     earnedAchievements: [],
     combatReplays: [],
     history: [],
+    recap: null,
   }
   return { ...state, history: [buildTurnSnapshot(state)] }
 }

@@ -116,6 +116,21 @@ export default function RunInsights({ row, gameState }: Props) {
 
   return (
     <div className="pip-panel h-full flex flex-col min-h-0">
+      {/* Player-facing "Wasteland Recap" — generated in-game (Game Over screen or My Runs) and
+          persisted on the run, distinct from the ad-hoc deep-analysis chat below. Read-only here;
+          this admin tool never calls run-summary.mts itself. */}
+      {gameState.recap && (
+        <div className="border border-pip-border-dim rounded p-3 mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="pip-label">IN-GAME WASTELAND RECAP</div>
+            <div className="text-[10px] font-mono text-pip-green-dim">
+              {gameState.recap.model} · {new Date(gameState.recap.generatedAt).toLocaleString()} · baseline: {gameState.recap.baselineRunCount} runs
+            </div>
+          </div>
+          <p className="text-xs font-mono text-pip-green leading-relaxed">{gameState.recap.summary}</p>
+        </div>
+      )}
+
       {!started && (
         <div className="flex-1 flex items-center justify-start flex-col gap-3 pt-8">
           <p className="text-xs font-mono text-pip-green-dim max-w-sm text-center">

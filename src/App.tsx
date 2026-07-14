@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore'
 import Home from './pages/Home'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
+import MyRuns from './pages/MyRuns'
 import HowToPlayPage from './pages/HowToPlay'
 import SetPasswordModal from './components/auth/SetPasswordModal'
 import { VersionFooter } from './components/ui/VersionFooter'
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/game', element: <ProtectedRoute><Game /></ProtectedRoute> },
+      { path: '/my-runs', element: <ProtectedRoute><MyRuns /></ProtectedRoute> },
       { path: '/leaderboard', element: <Leaderboard /> },
       { path: '/how-to-play', element: <HowToPlayPage /> },
     ],
