@@ -43,26 +43,33 @@ export interface RunPlaystyleDigest {
   // Derived from gameState.history (TurnSnapshot[], already carries `location` per turn) +
   // GAME_MODES[mode].roads. A run finishing today always has `history`, so no log-text
   // reconstruction fallback is needed here (unlike the admin heatmap's legacy-run handling).
-  avgRoadDangerFirstHalf: number | null
-  avgRoadDangerSecondHalf: number | null
+  // roadTrendNote is derived from travelPhases[0] vs. the last phase's avgRoadDanger.
   roadTrendNote: 'bolder' | 'more_cautious' | 'steady' | 'insufficient_data'
+
+  // Splits the run into early/mid/late thirds (by turn-snapshot index) and reports each phase's
+  // most-repeated route + what it earned — "where did they go, and what did that accomplish" is
+  // a materially different (and better) question than one run-wide aggregate. A route with a real
+  // economic edge (notableModifier) surfaces route-farming tactics an aggregate would flatten out
+  // (e.g. shuttling between two settlements early to cash in on one's price modifier, then
+  // shifting elsewhere once that stopped being the right call). Empty if history is too short to
+  // split meaningfully.
+  travelPhases: Array<{
+    phase: 'early' | 'mid' | 'late'
+    topRoute: {
+      roadName: string
+      settlementA: string
+      settlementB: string
+      timesTraveled: number
+      notableModifier: { settlementName: string; priceModifier?: number; stockMultiplier?: number; availabilityBonus?: number } | null
+    } | null
+    tradeProfitDuring: number   // cumulative trade profit earned within this phase specifically, not run-to-date
+    avgRoadDanger: number | null
+  }>
 
   // "Key moments" — narrative color for turning points, distinct from aggregate totals above.
   // Both derived from data already fetched for this run, no extra cost.
   biggestProfitSwing: { turn: number; amount: number } | null
   worstCombatRound: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null
-
-  // The single most-repeated road segment this run — surfaces route farming (e.g. shuttling
-  // between two settlements to repeatedly cash in on one's price modifier) that pure aggregate
-  // stats never would. notableModifier flags whichever endpoint has a real economic edge, so the
-  // model can ground a "you were farming X's price modifier" claim instead of guessing why.
-  mostTraveledRoute: {
-    roadName: string
-    settlementA: string
-    settlementB: string
-    timesTraveled: number
-    notableModifier: { settlementName: string; priceModifier?: number; stockMultiplier?: number; availabilityBonus?: number } | null
-  } | null
 }
 
 function computeClosestCall(state: GameState): RunPlaystyleDigest['closestCall'] {
@@ -93,62 +100,29 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-function computeRoadDangerTrend(
-  state: GameState,
-  mc: GameModeConfig,
-): Pick<RunPlaystyleDigest, 'avgRoadDangerFirstHalf' | 'avgRoadDangerSecondHalf' | 'roadTrendNote'> {
-  const history = state.history
-  const insufficient = { avgRoadDangerFirstHalf: null, avgRoadDangerSecondHalf: null, roadTrendNote: 'insufficient_data' as const }
-  if (!history || history.length < 4) return insufficient
+type TopRoute = NonNullable<RunPlaystyleDigest['travelPhases'][number]['topRoute']>
+type Snapshot = GameState['history'][number]
 
-  // Build the full sequence of road-danger values actually traveled, in turn order, THEN split
-  // it in half — splitting the raw TurnSnapshot array first could straddle a single traversal
-  // across the boundary awkwardly.
-  const dangers: number[] = []
-  for (let i = 0; i < history.length - 1; i++) {
-    const a = history[i].location
-    const b = history[i + 1].location
-    if (a === b) continue
-    const road = mc.roads.find(r => (r.from === a && r.to === b) || (r.from === b && r.to === a))
-    if (road) dangers.push(road.dangerLevel)
-  }
-  if (dangers.length < 2) return insufficient
-
-  const mid = Math.floor(dangers.length / 2)
-  const firstHalf = dangers.slice(0, mid)
-  const secondHalf = dangers.slice(mid)
-  const avg = (arr: number[]) => arr.reduce((s, x) => s + x, 0) / arr.length
-  const avgFirst = avg(firstHalf)
-  const avgSecond = avg(secondHalf)
-
-  const EPS = 0.05 // avoids noise-driven flips on short runs
-  const roadTrendNote =
-    avgSecond - avgFirst > EPS ? 'bolder' :
-    avgFirst - avgSecond > EPS ? 'more_cautious' :
-    'steady'
-
-  return { avgRoadDangerFirstHalf: round2(avgFirst), avgRoadDangerSecondHalf: round2(avgSecond), roadTrendNote }
-}
-
-// The single most-repeated road segment, by traversal count — same consecutive-pair walk as
-// computeRoadDangerTrend but tallying per-road identity rather than collecting danger levels, so
-// it's a separate pass rather than folded into that one.
-function computeMostTraveledRoute(state: GameState, mc: GameModeConfig): RunPlaystyleDigest['mostTraveledRoute'] {
-  const history = state.history
-  if (!history || history.length < 2) return null
-
+// Most-repeated road segment within a slice of history, plus that slice's average road danger —
+// shared by every phase in computeTravelPhases so the pair-walk logic lives in one place.
+function findTopRoute(historySlice: Snapshot[], mc: GameModeConfig): { route: TopRoute | null; avgDanger: number | null } {
   const counts = new Map<string, number>()
-  for (let i = 0; i < history.length - 1; i++) {
-    const a = history[i].location
-    const b = history[i + 1].location
+  const dangers: number[] = []
+  for (let i = 0; i < historySlice.length - 1; i++) {
+    const a = historySlice[i].location
+    const b = historySlice[i + 1].location
     if (a === b) continue
     const road = mc.roads.find(r => (r.from === a && r.to === b) || (r.from === b && r.to === a))
-    if (road) counts.set(road.id, (counts.get(road.id) ?? 0) + 1)
+    if (road) {
+      counts.set(road.id, (counts.get(road.id) ?? 0) + 1)
+      dangers.push(road.dangerLevel)
+    }
   }
-  if (counts.size === 0) return null
+  const avgDanger = dangers.length > 0 ? round2(dangers.reduce((s, x) => s + x, 0) / dangers.length) : null
+  if (counts.size === 0) return { route: null, avgDanger }
 
   const [topRoadId, timesTraveled] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
-  if (timesTraveled < 2) return null // a single one-off trip isn't a "route"
+  if (timesTraveled < 2) return { route: null, avgDanger } // a single one-off trip isn't a "route"
 
   const road = mc.roads.find(r => r.id === topRoadId)!
   const settlementA = mc.settlements[road.from]
@@ -164,19 +138,58 @@ function computeMostTraveledRoute(state: GameState, mc: GameModeConfig): RunPlay
   const edgeSettlement = hasEdge(settlementA) ? settlementA : hasEdge(settlementB) ? settlementB : null
 
   return {
-    roadName: road.name,
-    settlementA: settlementA?.name ?? road.from,
-    settlementB: settlementB?.name ?? road.to,
-    timesTraveled,
-    notableModifier: edgeSettlement
-      ? {
-          settlementName: edgeSettlement.name,
-          priceModifier: edgeSettlement.priceModifier,
-          stockMultiplier: edgeSettlement.stockMultiplier,
-          availabilityBonus: edgeSettlement.availabilityBonus,
-        }
-      : null,
+    route: {
+      roadName: road.name,
+      settlementA: settlementA?.name ?? road.from,
+      settlementB: settlementB?.name ?? road.to,
+      timesTraveled,
+      notableModifier: edgeSettlement
+        ? {
+            settlementName: edgeSettlement.name,
+            priceModifier: edgeSettlement.priceModifier,
+            stockMultiplier: edgeSettlement.stockMultiplier,
+            availabilityBonus: edgeSettlement.availabilityBonus,
+          }
+        : null,
+    },
+    avgDanger,
   }
+}
+
+// Splits history into early/mid/late thirds by snapshot index (adjacent phases deliberately
+// share their boundary snapshot — every traversal still lands in exactly one phase, since a
+// phase's pair-walk only ever covers pairs strictly within its own slice, and per-phase profit
+// deltas still sum to the run total either way). Each phase reports its own top route (via
+// findTopRoute) and how much trade profit it specifically earned, not the running total.
+function computeTravelPhases(
+  state: GameState,
+  mc: GameModeConfig,
+): { travelPhases: RunPlaystyleDigest['travelPhases']; roadTrendNote: RunPlaystyleDigest['roadTrendNote'] } {
+  const history = state.history
+  if (!history || history.length < 6) return { travelPhases: [], roadTrendNote: 'insufficient_data' }
+
+  const n = history.length
+  const b1 = Math.floor(n / 3)
+  const b2 = Math.floor((2 * n) / 3)
+  const bounds: Array<[number, number, 'early' | 'mid' | 'late']> = [[0, b1, 'early'], [b1, b2, 'mid'], [b2, n - 1, 'late']]
+
+  const travelPhases = bounds.map(([startIdx, endIdx, phase]) => {
+    const slice = history.slice(startIdx, endIdx + 1)
+    const { route, avgDanger } = findTopRoute(slice, mc)
+    const tradeProfitDuring = slice.length > 0 ? slice[slice.length - 1].tradeProfitToDate - slice[0].tradeProfitToDate : 0
+    return { phase, topRoute: route, tradeProfitDuring, avgRoadDanger: avgDanger }
+  })
+
+  const firstDanger = travelPhases[0].avgRoadDanger
+  const lastDanger = travelPhases[travelPhases.length - 1].avgRoadDanger
+  const EPS = 0.05 // avoids noise-driven flips on short runs
+  const roadTrendNote =
+    firstDanger === null || lastDanger === null ? 'insufficient_data' :
+    lastDanger - firstDanger > EPS ? 'bolder' :
+    firstDanger - lastDanger > EPS ? 'more_cautious' :
+    'steady'
+
+  return { travelPhases, roadTrendNote }
 }
 
 // Biggest single-turn jump in cumulative trade profit — a cheap, reliable proxy for "made a
@@ -267,11 +280,10 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
     lifetimeCapsEarned: stats.lifetimeCapsEarned,
 
     closestCall: computeClosestCall(state),
-    ...computeRoadDangerTrend(state, mc),
+    ...computeTravelPhases(state, mc),
 
     biggestProfitSwing: computeBiggestProfitSwing(state),
     worstCombatRound: computeWorstCombatRound(state),
-    mostTraveledRoute: computeMostTraveledRoute(state, mc),
   }
 }
 
