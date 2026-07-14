@@ -335,6 +335,7 @@ export default function Home() {
 
             {/* Footer */}
             <div className="flex gap-2 flex-wrap pt-1">
+              <button className="pip-btn flex-1" onClick={() => navigate('/my-runs')}>MY RUNS</button>
               <button className="pip-btn flex-1" onClick={() => navigate('/leaderboard')}>LEADERBOARD</button>
               <button className="pip-btn flex-1" onClick={() => setShowTutorial(true)}>HOW TO PLAY</button>
               <button className="pip-btn flex-1" onClick={() => setShowChangelog(true)}>WHAT'S NEW</button>

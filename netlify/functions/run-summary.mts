@@ -83,6 +83,18 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     }
 
     const state = normalizeState(typedRow.state)
+
+    // Already generated for this run — return the cached copy instead of paying for another
+    // Anthropic call. This is what makes revisiting a run in the Game Over screen or the My Runs
+    // browser instant instead of re-generating (and re-billing) every time.
+    if (state.recap) {
+      return json({
+        available: true,
+        summary: state.recap.summary,
+        meta: { model: state.recap.model, baselineRunCount: state.recap.baselineRunCount },
+      })
+    }
+
     const outcome = typedRow.status === 'active' ? 'dead' : typedRow.status
     const runDigest = buildRunPlaystyleDigest(state, outcome)
 
@@ -116,6 +128,16 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
     const summary = textBlock?.text?.trim()
     if (!summary) return json({ available: false, reason: 'upstream_error' })
+
+    const recap = { summary, model: ANTHROPIC_MODEL, generatedAt: new Date().toISOString(), baselineRunCount: baseline.runCount }
+    // Persist so this exact run never needs to re-generate. Best-effort: a failed write here
+    // shouldn't turn a successful recap into an error response — the player still gets their
+    // answer this time, they'd just pay for a fresh generation on a future visit.
+    const { error: saveError } = await supabase
+      .from('games')
+      .update({ state: { ...typedRow.state, recap } })
+      .eq('id', gameId)
+    if (saveError) console.error('run-summary: failed to persist recap:', saveError)
 
     return json({ available: true, summary, meta: { model: ANTHROPIC_MODEL, baselineRunCount: baseline.runCount } })
   } catch (err) {

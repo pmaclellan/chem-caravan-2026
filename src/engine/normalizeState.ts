@@ -58,6 +58,7 @@ export function normalizeState(state: GameState): GameState {
     ...state,
     mode,
     gameType: state.gameType ?? 'standard',
+    recap: state.recap ?? null,
     player: {
       ...state.player,
       caps,
