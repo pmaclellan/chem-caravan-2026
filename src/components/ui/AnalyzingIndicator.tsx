@@ -18,7 +18,7 @@ const PHRASES = [
   'Counting bottle caps by hand',
 ]
 
-const PHRASE_INTERVAL_MS = 1700
+const PHRASE_INTERVAL_MS = 3400
 
 export default function AnalyzingIndicator() {
   const [index, setIndex] = useState(0)
