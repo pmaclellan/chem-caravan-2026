@@ -187,3 +187,21 @@
   0%, 100% { stroke-opacity: 0.75; }
   50%       { stroke-opacity: 0.10; }
 }
+
+/* AnalyzingIndicator: cycling status text + trailing loading dots on the recap button */
+@keyframes pip-phrase-fade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.pip-phrase-fade { animation: pip-phrase-fade 300ms ease-out; }
+
+@keyframes pip-loading-dot {
+  0%, 80%, 100% { opacity: 0.25; }
+  40%           { opacity: 1; }
+}
+.pip-loading-dots span {
+  display: inline-block;
+  animation: pip-loading-dot 1.2s ease-in-out infinite;
+}
+.pip-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.pip-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
