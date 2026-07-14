@@ -51,6 +51,18 @@ export interface RunPlaystyleDigest {
   // Both derived from data already fetched for this run, no extra cost.
   biggestProfitSwing: { turn: number; amount: number } | null
   worstCombatRound: { turn: number; hitRatePercent: number; shotsFired: number; damageTaken: number; damageDealt: number } | null
+
+  // The single most-repeated road segment this run — surfaces route farming (e.g. shuttling
+  // between two settlements to repeatedly cash in on one's price modifier) that pure aggregate
+  // stats never would. notableModifier flags whichever endpoint has a real economic edge, so the
+  // model can ground a "you were farming X's price modifier" claim instead of guessing why.
+  mostTraveledRoute: {
+    roadName: string
+    settlementA: string
+    settlementB: string
+    timesTraveled: number
+    notableModifier: { settlementName: string; priceModifier?: number; stockMultiplier?: number; availabilityBonus?: number } | null
+  } | null
 }
 
 function computeClosestCall(state: GameState): RunPlaystyleDigest['closestCall'] {
@@ -116,6 +128,55 @@ function computeRoadDangerTrend(
     'steady'
 
   return { avgRoadDangerFirstHalf: round2(avgFirst), avgRoadDangerSecondHalf: round2(avgSecond), roadTrendNote }
+}
+
+// The single most-repeated road segment, by traversal count — same consecutive-pair walk as
+// computeRoadDangerTrend but tallying per-road identity rather than collecting danger levels, so
+// it's a separate pass rather than folded into that one.
+function computeMostTraveledRoute(state: GameState, mc: GameModeConfig): RunPlaystyleDigest['mostTraveledRoute'] {
+  const history = state.history
+  if (!history || history.length < 2) return null
+
+  const counts = new Map<string, number>()
+  for (let i = 0; i < history.length - 1; i++) {
+    const a = history[i].location
+    const b = history[i + 1].location
+    if (a === b) continue
+    const road = mc.roads.find(r => (r.from === a && r.to === b) || (r.from === b && r.to === a))
+    if (road) counts.set(road.id, (counts.get(road.id) ?? 0) + 1)
+  }
+  if (counts.size === 0) return null
+
+  const [topRoadId, timesTraveled] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+  if (timesTraveled < 2) return null // a single one-off trip isn't a "route"
+
+  const road = mc.roads.find(r => r.id === topRoadId)!
+  const settlementA = mc.settlements[road.from]
+  const settlementB = mc.settlements[road.to]
+
+  // Flag whichever endpoint has a real economic edge (cheaper prices, more stock, better
+  // availability) — the likely reason a route got farmed this hard, if one exists.
+  const hasEdge = (s: typeof settlementA) => s && (
+    (s.priceModifier !== undefined && s.priceModifier !== 1) ||
+    (s.stockMultiplier !== undefined && s.stockMultiplier !== 1) ||
+    (s.availabilityBonus !== undefined && s.availabilityBonus !== 0)
+  )
+  const edgeSettlement = hasEdge(settlementA) ? settlementA : hasEdge(settlementB) ? settlementB : null
+
+  return {
+    roadName: road.name,
+    settlementA: settlementA?.name ?? road.from,
+    settlementB: settlementB?.name ?? road.to,
+    timesTraveled,
+    notableModifier: edgeSettlement
+      ? {
+          settlementName: edgeSettlement.name,
+          priceModifier: edgeSettlement.priceModifier,
+          stockMultiplier: edgeSettlement.stockMultiplier,
+          availabilityBonus: edgeSettlement.availabilityBonus,
+        }
+      : null,
+  }
 }
 
 // Biggest single-turn jump in cumulative trade profit — a cheap, reliable proxy for "made a
@@ -210,6 +271,7 @@ export function buildRunPlaystyleDigest(state: GameState, outcome: 'won' | 'dead
 
     biggestProfitSwing: computeBiggestProfitSwing(state),
     worstCombatRound: computeWorstCombatRound(state),
+    mostTraveledRoute: computeMostTraveledRoute(state, mc),
   }
 }
 
