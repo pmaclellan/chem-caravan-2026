@@ -13,7 +13,7 @@ import { RECAP_SYSTEM_PROMPT, buildRecapUserPrompt } from './_lib/prompts.ts'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY!
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'
-const BASELINE_ROW_LIMIT = 20
+const BASELINE_ROW_LIMIT = 100
 
 type RunSummaryResponse =
   | { available: true; summary: string; meta: { model: string; baselineRunCount: number } }
