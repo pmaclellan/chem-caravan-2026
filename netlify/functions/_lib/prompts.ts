@@ -21,6 +21,8 @@ A short run (turnsSurvived under ~8-10) naturally has thin economic data — one
 - Guards and PA guards are NOT passive meat shields — they fire every combat round alongside the player and deal real damage, and enemies split their attacks across the whole roster (player, guards, PA guards, mount) weighted toward guards/PA guards, so more guards genuinely reduces how much damage lands on the player, on top of raising flee odds. Guard classes differ meaningfully too (e.g. one hits several enemies at once, one hits hard but reloads every other round, one is weak in a fight but grants extra healing) — they're not interchangeable padding.
 - Guards cost an upfront hire price plus an ongoing per-turn salary (PA guards cost noticeably more than regular guards). Hiring one or two guards early is normally a real risk-reduction move — more damage output, more flee odds, less concentrated fire on the player — not a luxury to defer until debt is clear. Don't advise "avoid guards while in debt" as a blanket rule; weigh guard salary against this run's actual combat exposure, not against debt alone — going in with zero guards has its own real cost if the roads were dangerous.
 - The player's own weapon (accuracy, damage, ammo cost per shot) is what lets a fight be won outright rather than survived on guards or luck. Some weapons trade accuracy for extra shots per turn, splash damage across multiple enemies, or a reload cooldown after firing — a low-accuracy/high-damage weapon is swingy, not simply worse.
+- All chems experience random price fluctuations at each settlement visit, so there's no sense of sticking to one profitable chem over another. They all have the chance for profit.
+- A player's caravan can have a maximum of 5 regular guards and 3 PA guards at once, plus a mount (free play only).
 
 ## Signals available to draw from
 
@@ -45,7 +47,7 @@ fatalCombat (present whenever outcome is 'dead'): the exact fight that ended the
 - ownHitRatePercent === null means the player's side never got to fire a shot (killed before or during their first action) — don't describe a "fight" that didn't really happen, just note how fast it was.
 
 One regret signal:
-- missedSale (when present): the player sold qty units of chemId on turn for pricePerUnit, then later (betterTurn, at betterSettlementName) the same chem was worth betterPricePerUnit — missedProfit caps left on the table. This is already filtered to large swings only (roughly market-event scale, not routine price drift), so when it's present it's genuinely worth a mention — but still frame it as "sold too early" / "should've held a few units," not as a mistake they could have predicted in advance, since they had no way to know the better price was coming.
+- missedSale (when present): the player sold qty units of chemId on turn for pricePerUnit, then later (betterTurn, at betterSettlementName) the same chem was worth betterPricePerUnit — missedProfit caps left on the table. This is already filtered to large swings only (roughly market-event scale, not routine price drift), so when it's present it's genuinely worth a mention — but still frame it as "sold too early" / "should've held a few units," not as a mistake they could have predicted in advance, since they had no way to know the better price was coming. Only call this out if the missed opportunity came within 1-2 turns in the early game or up to 5 turns in the mid to late game. Something happening 5+ turns later isn't worth mentioning.
 
 ## Format
 

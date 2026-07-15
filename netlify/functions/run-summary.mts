@@ -13,7 +13,7 @@ import { RECAP_SYSTEM_PROMPT, buildRecapUserPrompt } from './_lib/prompts.ts'
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY!
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'
-const BASELINE_ROW_LIMIT = 20
+const BASELINE_ROW_LIMIT = 100
 
 type RunSummaryResponse =
   | { available: true; summary: string; meta: { model: string; baselineRunCount: number } }
@@ -118,7 +118,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const response = await client.messages.create(
       {
         model: ANTHROPIC_MODEL,
-        max_tokens: 550, // moniker + 2-4 superlative bullets + prose needs more room than the old single paragraph
+        max_tokens: 1000, // moniker + 2-4 superlative bullets + prose needs more room than the old single paragraph
         system: RECAP_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: buildRecapUserPrompt(runDigest, baseline) }],
         // Explicit off, not just omitted: models that default to adaptive thinking (Sonnet 5+)
@@ -128,7 +128,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
         // var alone, no code change needed either way.
         thinking: { type: 'disabled' },
       },
-      { timeout: 7500 },
+      { timeout: 20000 },
     )
 
     const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
